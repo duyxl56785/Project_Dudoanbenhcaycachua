@@ -1,82 +1,102 @@
-# ResNet18 & Transfer Learning
+# NV3 — ResNet18 & Transfer Learning
 
-Phụ trách: NV3 - Trần Văn Chính. Trạng thái: Chưa làm.
+**Phạm vi:** ResNet18 pretrained (ImageNet-1K V1), 4 tình trạng lá cà chua. Chủ nhiệm NV3 phụ trách mô hình; không thay đổi split/nhãn của NV1, CNN của NV2, app của NV4 hay phần tổng hợp NV5.
 
-## 1. Cách chạy
+**Trạng thái:** Code và smoke tests có thể hoàn thiện trước khi NV1 bàn giao dữ liệu. **Chưa có huấn luyện thực nghiệm, checkpoint pretrained đã fine-tune hoặc kết quả Accuracy/F1 thực tế.** Không dùng test giả để báo cáo độ chính xác.
 
-- Huấn luyện (feature extraction + fine-tuning): (chưa điền)
-- Đánh giá trên Test: (chưa điền)
-- Dự đoán một ảnh: (chưa điền)
+## Cấu trúc
 
-## 2. Mô hình
+- `src/models/resnet18.py`: backbone ResNet18, thay lớp `fc` từ 1000 sang 4, điều khiển freeze/unfreeze, BatchNorm.
+- `src/resnet18_workflow.py`: adapter đọc `path,label` từ CSV, tiền xử lý riêng, mapping, checkpoint, inference, metrics.
+- `scripts/train_resnet18.py`: Feature Extraction và Fine-tuning; chọn checkpoint dựa **Validation macro F1** (hòa thì xét Validation Loss).
+- `scripts/eval_resnet18.py`: chỉ kiểm thử trên Test *sau khi đã chốt checkpoint*; confusion matrix và bảng chỉ số.
+- `scripts/infer_resnet18.py`: đọc ảnh JPG/PNG, softmax 4 lớp đúng theo mapping.
+- `configs/resnet18.yaml`: các tham số thử nghiệm ban đầu (chưa chứng minh tối ưu).
+- `tests/test_nv3_resnet18.py`: kiểm tra cấu trúc, shape, freeze, dữ liệu, loss, checkpoint, metrics.
 
-- Pretrained weights (tên/phiên bản torchvision): (chưa điền)
-- Thay classification head: (chưa điền)
-- Tổng số tham số / số tham số huấn luyện được: (chưa điền)
+## Học thuật và kiến trúc
 
-## 3. Tiền xử lý
+ResNet18 là CNN 18 lớp có residual/skip connections, giúp tối ưu hóa các mạng sâu. Các lớp Convolution trong backbone trích xuất đặc trưng; Global Average Pooling cung cấp **512 features**, `fc` mới ánh xạ **512 → 4** nên có **2.052 tham số trainable** khi backbone đóng băng. Tổng số tham số được đọc bằng `parameter_counts` sau khi tạo mô hình.
 
-(chưa điền) – resize/normalize theo yêu cầu pretrained weights, khác gì so với CNN.
+**Stage A (Feature Extraction):** khóa backbone, chỉ huấn luyện FC; BatchNorm bị khóa sử dụng running statistics đã học (ở `eval()`), không vô tình cập nhật thống kê.
 
-## 4. Bước A – Feature extraction
+**Stage B (Fine-tuning):** khởi tạo từ checkpoint tốt nhất Stage A, mở `layer4` và FC. LR backbone nhỏ hơn LR head. Chọn stage cuối bằng Validation, không dùng Test để chọn.
 
-| Tham số       | Giá trị     |
-|---------------|-------------|
-| Optimizer     | (chưa điền) |
-| Learning rate | (chưa điền) |
-| Epochs        | (chưa điền) |
-| Batch size    | (chưa điền) |
+## Dữ liệu và hợp đồng với NV1
 
-## 5. Bước B – Fine-tuning
+Đọc 3 manifest: `data/splits/train.csv`, `val.csv`, `test.csv`. Mỗi CSV có ít nhất cột `path,label`. `path` là đường dẫn tuyệt đối hoặc tương đối với `--data-root` (mặc định root repository). `label` có thể là số 0..3 hoặc tên lớp **khớp chính xác** với `configs/class_mapping.json`:
 
-| Tham số                 | Giá trị     |
-|-------------------------|-------------|
-| Các tầng được mở băng   | (chưa điền) |
-| LR backbone / LR head   | (chưa điền) |
-| Optimizer               | (chưa điền) |
-| Epochs                  | (chưa điền) |
-| Early stopping          | (chưa điền) |
+| ID | Nhãn |
+|---|---|
+| 0 | Healthy |
+| 1 | Early Blight |
+| 2 | Late Blight |
+| 3 | Bacterial Spot |
 
-## 6. Môi trường
+Nếu manifest NV1 sau này có tên cột/đường dẫn khác, **trao đổi với NV1 trước khi sửa adapter**; không sửa các file do NV1 phụ trách và không tự tái chia dữ liệu. Lấy split gốc theo lá để tránh leakage theo quyết định NV1.
 
-- Phần cứng (CPU/GPU): (chưa điền)
-- Python / PyTorch / torchvision: (chưa điền)
-- Seed: (chưa điền)
+**Train transforms:** resize cạnh ngắn 256, random crop 224, horizontal flip, brightness/contrast jitter nhẹ (0.1), tensor, ImageNet normalization.
 
-## 7. So sánh Feature Extraction và Fine-tuning (trên Validation)
+**Validation/Test/Inference:** resize cạnh ngắn 256, center crop 224, tensor, ImageNet normalization. Mean `[0.485,0.456,0.406]`, std `[0.229,0.224,0.225]`. Center crop có thể bỏ sót tổn thương sát mép ảnh; đánh giá giới hạn trên ảnh thực địa.
 
-Kết quả lưu ở `results/resnet18_feature_vs_finetune.csv` (chưa có).
+## Môi trường và lệnh chạy
 
-| Cấu hình            | Val loss    | Val accuracy | Val macro F1 |
-|---------------------|-------------|--------------|--------------|
-| Feature extraction  | (chưa điền) | (chưa điền)  | (chưa điền)  |
-| Fine-tuning         | (chưa điền) | (chưa điền)  | (chưa điền)  |
+Ở thư mục root project, dùng Python hỗ trợ PyTorch, cài môi trường:
 
-- Cấu hình cuối được chọn và lý do: (chưa điền)
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
 
-## 8. Kết quả trên Test (sau khi chốt cấu hình)
+Nếu cần CUDA, xem cấu hình tương thích tại https://pytorch.org/get-started/locally/ . Pretrained weights tải một lần qua mạng trong lần gọi `resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)`; nếu chưa có mạng hoặc cache thì không thể bắt đầu huấn luyện.
 
-- Biểu đồ: `figures/resnet18_train_curves.png` (chưa có)
-- Confusion matrix: (chưa có)
+Chỉ sau khi NV1 hoàn tất Gate 1, xác nhận CSV và có ảnh thật:
 
-| Lớp            | Precision   | Recall      | F1          |
-|----------------|-------------|-------------|-------------|
-| Healthy        | (chưa điền) | (chưa điền) | (chưa điền) |
-| Early Blight   | (chưa điền) | (chưa điền) | (chưa điền) |
-| Late Blight    | (chưa điền) | (chưa điền) | (chưa điền) |
-| Bacterial Spot | (chưa điền) | (chưa điền) | (chưa điền) |
-| Macro avg      | (chưa điền) | (chưa điền) | (chưa điền) |
+```powershell
+.\.venv\Scripts\python.exe -m scripts.train_resnet18 --data-root .
+.\.venv\Scripts\python.exe -m scripts.eval_resnet18 --data-root .
+.\.venv\Scripts\python.exe -m scripts.infer_resnet18 "duong-dan-den-anh-la.jpg"
+```
 
-- Accuracy (Test): (chưa điền)
+Kiểm thử kỹ thuật không cần tải pretrained weights hoặc ảnh thật:
 
-## 9. Hạn chế
+```powershell
+.\.venv\Scripts\python.exe -m pip install pytest
+.\.venv\Scripts\python.exe -m pytest -q tests/test_nv3_resnet18.py
+```
 
-(chưa điền)
+Nếu thiếu CSV sẽ báo chờ `NV1 Gate 1` thay vì tự tạo split. Không chạy eval trên Test để chọn epochs/lr/checkpoint.
 
-## Điều kiện nghiệm thu (mục V.4)
+## Thông số thử nghiệm ban đầu
 
-- [ ] Có mô hình pretrained ResNet18 với 4 đầu ra.
-- [ ] Có bằng chứng chạy feature extraction và fine-tuning.
-- [ ] Không chia lại dataset hoặc dùng Test để chọn cấu hình.
-- [ ] Checkpoint tải lại dự đoán đúng mapping, pipeline và shape.
-- [ ] Có log, metrics, biểu đồ và đánh giá hạn chế.
+| Mục | Giá trị đề xuất |
+|---|---|
+| Weights | IMAGENET1K_V1 |
+| Loss | CrossEntropyLoss (logits, không Softmax trước Loss) |
+| Input | RGB 224×224 |
+| Batch size / Seed | 32 / 42 |
+| Feature extraction | AdamW; LR 0.001; 8 epochs tối đa |
+| Fine-tuning | AdamW; layer4+fc; LR backbone 1e-5, head 1e-4; 10 epochs tối đa |
+| Early stopping | Patience 4 ở fine-tuning |
+| Checkpoint selection | Validation macro F1, tie-break Validation loss |
+
+Các giá trị trên là cấu hình khởi đầu, **không phải kết quả đã xác minh tối ưu**. Ghi Python/torch/torchvision/CPU/GPU thật từ `results/resnet18/selected_stage.json` sau khi huấn luyện.
+
+## File kết quả (sẽ xuất hiện sau khi chạy thật)
+
+- `checkpoints/resnet18_best.pt`: model checkpoint tốt nhất theo Val.
+- `results/resnet18/resnet18_feature_vs_finetune.csv`: Val macro F1, Val loss và parameter count hai stage.
+- `results/resnet18/train_history.csv`, `figures/resnet18_train_curves.png`.
+- `results/resnet18/resnet18_metrics.json`, `results/resnet18/resnet18_confusion_matrix.png`, `results/resnet18/resnet18_test_predictions.csv` (chỉ sau Test).
+
+**NV4 integration:** `scripts.infer_resnet18.run(Path(image), Path(config))` trả `{"label": ..., "scores": {"Healthy": score, ...}}`; không mặc định điểm Softmax đã được hiệu chỉnh xác suất chẩn đoán.
+
+**NV5 reporting:** Chỉ trích số liệu từ log/checkpoint/Test, so sánh trên cùng split với CNN của NV2. Không khẳng định phát hiện triệu chứng giai đoạn sớm nếu chưa có ảnh và đánh giá riêng.
+
+## Checklist nghiệm thu
+
+- [ ] Checkpoint đã được huấn luyện thật trên split chính thức và đủ 4 đầu ra.
+- [ ] Có log chạy Feature Extraction và Fine-tuning thật.
+- [ ] Không tái chia dữ liệu hoặc dùng Test để chọn cấu hình.
+- [ ] Checkpoint đã tải lại và dự đoán đúng mapping/preprocessing.
+- [ ] Có metrics, biểu đồ và phân tích giới hạn từ thực nghiệm.
