@@ -1,11 +1,13 @@
 # Cấu hình CNN tự xây dựng (huấn luyện từ đầu)
 # Phụ trách: NV2 - Nguyễn Văn Duy
-# null = CHƯA QUYẾT ĐỊNH. Người phụ trách điền giá trị và ghi lý do trong docs/CNN_README.md.
+# NV2: giá trị là ĐỀ XUẤT BAN ĐẦU, kiểm chứng bằng Validation; không tuyên bố đã tối ưu.
+# Lý do từng giá trị: docs/CNN_README.md.
 
 model:
   name: cnn
   num_classes: 4            # theo configs/class_mapping.json
   pretrained: false         # bắt buộc: không tải pretrained weights
+                            # kiến trúc (kênh, dropout 0.3) cố định trong src/models/cnn.py
 
 data:
   class_mapping: configs/class_mapping.json
@@ -13,28 +15,29 @@ data:
   val_split: data/splits/val.csv
   test_split: data/splits/test.csv     # chỉ dùng để đánh giá cuối
 
-preprocessing:              # Val/Test: tiền xử lý tất định
-  image_size: null
-  normalize_mean: null
-  normalize_std: null
+preprocessing:              # chuẩn chung nhóm (NV1 đề xuất, cả nhóm AGREE); Val/Test tất định
+  image_size: 224
+  normalize_mean: [0.485, 0.456, 0.406]   # mean/std ImageNet, dùng chung với ResNet18
+  normalize_std: [0.229, 0.224, 0.225]
 
-augmentation:               # CHỈ áp dụng cho Train; lấy từ src/data/transforms.py của NV1
-  train: null
+augmentation:               # CHỈ áp dụng cho Train; transform do NV1 cung cấp (src/data/transforms.py)
+  train: {random_horizontal_flip: true, random_vertical_flip: true, rotation_degrees: 15, color_jitter: 0.1}  # mô tả; NV1 cài đặt trong build_train_transform
 
 training:
-  seed: null
-  epochs: null
-  batch_size: null
-  loss: null
-  optimizer: null
-  learning_rate: null
-  weight_decay: null
+  seed: 42
+  epochs: 40                # tối đa; early stopping có thể dừng sớm hơn
+  batch_size: 32
+  num_workers: 0
+  loss: CrossEntropyLoss
+  optimizer: Adam
+  learning_rate: 0.001
+  weight_decay: 0.0001
   lr_scheduler: null
-  early_stopping_patience: null
+  early_stopping_patience: 7
 
 checkpoint:
-  monitor: null             # phải là chỉ số trên Validation, không dùng Test
-  mode: null
+  monitor: val_macro_f1     # chỉ số trên Validation, không dùng Test
+  mode: max
   path: checkpoints/cnn_best.pt
 
 output:

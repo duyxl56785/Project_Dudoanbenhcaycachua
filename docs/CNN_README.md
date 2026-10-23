@@ -1,39 +1,87 @@
 # CNN tự xây dựng
 
-Phụ trách: NV2 - Nguyễn Văn Duy. Trạng thái: Chưa làm.
+Phụ trách: NV2 - Nguyễn Văn Duy. Trạng thái: Đang làm – code và test xong, **chưa huấn luyện** (chờ dữ liệu Gate 1 của NV1).
 
 ## 1. Cách chạy
 
-- Huấn luyện: (chưa điền)
-- Đánh giá trên Test: (chưa điền)
-- Dự đoán một ảnh: (chưa điền)
+Chạy từ thư mục gốc của dự án, sau khi cài môi trường theo README gốc.
+
+```bash
+python -m pip install pytest
+python -m pytest tests -k nv2 -v          # test hợp đồng (tensor ngẫu nhiên, không phải kết quả)
+python -m scripts.train_cnn --config configs/cnn.yaml --data-root .
+python -m scripts.eval_cnn --config configs/cnn.yaml --data-root . --split test
+python -m scripts.infer_cnn duong_dan_anh.jpg
+```
+
+- `--data-root`: thư mục mà đường dẫn ảnh trong `data/splits/*.csv` được tính tương đối từ đó.
+- `train_cnn` chỉ đọc Train và Validation. `eval_cnn --split test` chỉ chạy **một lần** sau khi đã chốt checkpoint.
+- Đọc dữ liệu và transform dùng module của NV1 (`src/data/`); khi NV1 chưa bàn giao, script báo lỗi rõ ràng và dừng.
+
+Đầu ra:
+
+| File | Nội dung |
+|---|---|
+| `checkpoints/cnn_best.pt` | state_dict thuần của epoch có `val_macro_f1` cao nhất (demo NV4 nạp trực tiếp) |
+| `checkpoints/cnn_best.meta.json` | nhãn, preprocessing, epoch, `val_macro_f1`, seed, config, commit git, môi trường |
+| `results/cnn/train_history.csv` | loss/accuracy/macro F1 Train và Val theo epoch |
+| `results/cnn/run_info.json` | cấu hình, môi trường, thời gian train, epoch tốt nhất |
+| `figures/cnn_train_curves.png` | đường cong loss/accuracy |
+| `results/cnn/cnn_metrics.json` | Accuracy, macro P/R/F1, per-class, confusion matrix |
+| `results/cnn/cnn_test_predictions.csv` | dự đoán và xác suất từng ảnh Test |
+| `results/cnn/cnn_confusion_matrix.png` | confusion matrix |
 
 ## 2. Kiến trúc
 
-(chưa điền) – mô tả từng khối/lớp, kích thước tensor qua từng tầng.
+Mạng `TomatoCNN` (`src/models/cnn.py`), huấn luyện từ đầu, không dùng pretrained weights. Đầu vào ảnh RGB 224×224 (chuẩn chung của nhóm). Nhờ Global Average Pooling, số tham số không phụ thuộc kích thước ảnh.
 
-- Tổng số tham số: (chưa điền)
+| Tầng | Cấu hình | Shape đầu ra | Số tham số |
+|---|---|---|---|
+| Đầu vào | ảnh RGB đã normalize | 3×224×224 | 0 |
+| Khối 1 | Conv 3×3, 32 kênh, stride 1, padding 1, không bias → BatchNorm → ReLU → MaxPool 2×2 | 32×112×112 | 864 + 64 |
+| Khối 2 | Conv 3×3, 64 kênh → BN → ReLU → MaxPool 2×2 | 64×56×56 | 18.432 + 128 |
+| Khối 3 | Conv 3×3, 128 kênh → BN → ReLU → MaxPool 2×2 | 128×28×28 | 73.728 + 256 |
+| Khối 4 | Conv 3×3, 256 kênh → BN → ReLU → MaxPool 2×2 | 256×14×14 | 294.912 + 512 |
+| Global Average Pooling | lấy trung bình mỗi kênh trên 14×14 | 256 | 0 |
+| Dropout | p = 0.3 (chỉ khi train) | 256 | 0 |
+| Linear | 256 → 4 | 4 (logits) | 1.028 |
+
+- **Tổng số tham số: 389.924** (kiểm tra tự động trong `tests/test_nv2_cnn_model.py`).
+- Số tham số conv = `kênh_vào × kênh_ra × 3 × 3` (không bias vì BatchNorm đã có tham số dịch β). BatchNorm có 2 tham số học (γ, β) mỗi kênh. Linear = `256 × 4 + 4`.
+
+Ý nghĩa từng thành phần:
+
+- **Convolution 3×3**: trượt bộ lọc 3×3 trên ảnh để phát hiện đặc trưng cục bộ (cạnh, đốm, vân). Padding 1 giữ nguyên kích thước; stride 1 trượt từng pixel. Các khối sau nhìn vùng rộng hơn nên học đặc trưng phức tạp hơn (hình dạng vết bệnh).
+- **BatchNorm**: chuẩn hóa đầu ra mỗi kênh theo batch, giúp train ổn định và nhanh hơn.
+- **ReLU**: `max(0, x)`, tạo tính phi tuyến để mạng học được quan hệ phức tạp.
+- **MaxPool 2×2**: giữ giá trị lớn nhất mỗi ô 2×2, giảm một nửa chiều rộng/cao, giảm tính toán và giúp chịu được dịch chuyển nhỏ.
+- **Global Average Pooling**: thay cho flatten; giảm mạnh số tham số của tầng fully connected (256×4 thay vì 256×14×14×4), nên ít overfit hơn.
+- **Dropout**: tắt ngẫu nhiên 30% nơ-ron khi train để giảm overfit; khi `model.eval()` thì không tắt.
+- **Linear + softmax**: Linear cho 4 điểm (logits); softmax biến thành 4 xác suất cộng lại bằng 1. Xác suất này là độ tin của mô hình, không phải chẩn đoán chắc chắn.
+- **Cross-entropy và backpropagation**: loss = `-log(xác suất của lớp đúng)`. Backpropagation tính đạo hàm của loss theo từng tham số; optimizer (Adam) cập nhật tham số theo hướng giảm loss.
 
 ## 3. Cấu hình huấn luyện
 
-Giá trị đầy đủ trong `configs/cnn.yaml`.
+Giá trị đầy đủ trong `configs/cnn.yaml`. Đây là **đề xuất ban đầu**, sẽ kiểm chứng bằng Validation.
 
 | Tham số           | Giá trị     | Lý do       |
 |-------------------|-------------|-------------|
-| Loss              | (chưa điền) | (chưa điền) |
-| Optimizer         | (chưa điền) | (chưa điền) |
-| Learning rate     | (chưa điền) | (chưa điền) |
-| LR scheduler      | (chưa điền) | (chưa điền) |
-| Batch size        | (chưa điền) | (chưa điền) |
-| Epochs            | (chưa điền) | (chưa điền) |
-| Early stopping    | (chưa điền) | (chưa điền) |
-| Checkpoint policy | (chưa điền) | (chưa điền) |
-| Seed              | (chưa điền) |             |
+| Kích thước ảnh    | 224×224     | Chuẩn chung nhóm (NV1 đề xuất): cùng kích thước với ResNet18, dùng chung transform và demo |
+| Normalize         | mean [0.485, 0.456, 0.406], std [0.229, 0.224, 0.225] (ImageNet) | Chuẩn chung nhóm; CNN không dùng pretrained nên đây chỉ là bước đưa pixel về khoảng quanh 0 |
+| Loss              | CrossEntropyLoss | Chuẩn cho phân loại nhiều lớp |
+| Optimizer         | Adam, weight decay 1e-4 | Hội tụ nhanh, ít phải chỉnh tay; weight decay giảm overfit |
+| Learning rate     | 0.001 | Mặc định phổ biến của Adam; thử nghiệm E1 so với 0.0003 |
+| LR scheduler      | không dùng | Giữ đơn giản cho baseline |
+| Batch size        | 32 | Đo trên RTX 3050 4 GB: đỉnh khoảng 1,1 GB VRAM mỗi bước train ở 224×224 |
+| Epochs            | tối đa 40 | Early stopping dừng sớm nếu Val không cải thiện |
+| Early stopping    | patience 7 theo `val_macro_f1` | Tránh train tiếp khi đã overfit |
+| Checkpoint policy | lưu epoch có `val_macro_f1` cao nhất; bằng nhau thì chọn Val Loss thấp hơn | Macro F1 công bằng hơn Accuracy khi lớp lệch; theo chuẩn chung của nhóm (giống NV3) |
+| Seed              | 42 | Tái lập kết quả; giống NV3 |
 
 ## 4. Môi trường
 
-- Phần cứng (CPU/GPU): (chưa điền)
-- Python / PyTorch / torchvision: (chưa điền)
+- Môi trường phát triển và test: Windows 11, Python 3.12.10, GPU NVIDIA RTX 3050 Laptop 4 GB.
+- Môi trường huấn luyện thật: (chưa điền – ghi khi train; `run_info.json` tự lưu phiên bản Python/PyTorch/torchvision và thiết bị)
 
 ## 5. Thử nghiệm có kiểm soát (chỉ chọn bằng Validation)
 
