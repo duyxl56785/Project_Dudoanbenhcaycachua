@@ -1,0 +1,16 @@
+# Dữ liệu lớn: không commit ảnh gốc/ảnh đã xử lý (xem data/README.md)
+data/raw/
+data/processed/
+*.zip
+
+# Python / môi trường
+__pycache__/
+.venv/
+.env
+.ipynb_checkpoints/
+
+# Hệ điều hành / IDE
+.DS_Store
+.vscode/
+
+# Lưu ý: KHÔNG chặn *.pt trong checkpoints/. File > 100 MB phải để ở Drive/Release (xem checkpoints/README.md).

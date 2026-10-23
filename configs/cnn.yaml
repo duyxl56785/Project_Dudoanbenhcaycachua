@@ -1,0 +1,42 @@
+# Cấu hình CNN tự xây dựng (huấn luyện từ đầu)
+# Phụ trách: NV2 - Nguyễn Văn Duy
+# null = CHƯA QUYẾT ĐỊNH. Người phụ trách điền giá trị và ghi lý do trong docs/CNN_README.md.
+
+model:
+  name: cnn
+  num_classes: 4            # theo configs/class_mapping.json
+  pretrained: false         # bắt buộc: không tải pretrained weights
+
+data:
+  class_mapping: configs/class_mapping.json
+  train_split: data/splits/train.csv   # do NV1 cung cấp, không tự chia lại
+  val_split: data/splits/val.csv
+  test_split: data/splits/test.csv     # chỉ dùng để đánh giá cuối
+
+preprocessing:              # Val/Test: tiền xử lý tất định
+  image_size: null
+  normalize_mean: null
+  normalize_std: null
+
+augmentation:               # CHỈ áp dụng cho Train; lấy từ src/data/transforms.py của NV1
+  train: null
+
+training:
+  seed: null
+  epochs: null
+  batch_size: null
+  loss: null
+  optimizer: null
+  learning_rate: null
+  weight_decay: null
+  lr_scheduler: null
+  early_stopping_patience: null
+
+checkpoint:
+  monitor: null             # phải là chỉ số trên Validation, không dùng Test
+  mode: null
+  path: checkpoints/cnn_best.pt
+
+output:
+  results_dir: results/cnn
+  figures_dir: figures

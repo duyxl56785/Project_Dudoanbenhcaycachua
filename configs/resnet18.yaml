@@ -1,0 +1,55 @@
+# Cấu hình ResNet18 pretrained + Transfer Learning
+# Phụ trách: NV3 - Trần Văn Chính
+# null = CHƯA QUYẾT ĐỊNH. Người phụ trách điền giá trị và ghi lý do trong docs/RESNET18_README.md.
+
+model:
+  name: resnet18
+  num_classes: 4            # thay classification head, theo configs/class_mapping.json
+  pretrained: true
+  weights: null             # tên/phiên bản pretrained weights của torchvision
+
+data:
+  class_mapping: configs/class_mapping.json
+  train_split: data/splits/train.csv   # cùng split với CNN, không chia lại
+  val_split: data/splits/val.csv
+  test_split: data/splits/test.csv     # chỉ dùng để đánh giá cuối
+
+preprocessing:              # theo yêu cầu của pretrained weights; Val/Test tất định
+  image_size: null
+  normalize_mean: null
+  normalize_std: null
+
+augmentation:               # CHỈ áp dụng cho Train
+  train: null
+
+training:
+  seed: null
+  batch_size: null
+  loss: null
+
+stages:
+  feature_extraction:       # Bước A: đóng băng backbone, chỉ huấn luyện head
+    freeze_backbone: true
+    epochs: null
+    optimizer: null
+    learning_rate: null
+    weight_decay: null
+    lr_scheduler: null
+  fine_tuning:              # Bước B: mở băng một phần/toàn bộ backbone
+    unfreeze_layers: null
+    epochs: null
+    optimizer: null
+    lr_backbone: null
+    lr_head: null
+    weight_decay: null
+    lr_scheduler: null
+    early_stopping_patience: null
+
+checkpoint:
+  monitor: null             # phải là chỉ số trên Validation, không dùng Test
+  mode: null
+  path: checkpoints/resnet18_best.pt
+
+output:
+  results_dir: results/resnet18
+  figures_dir: figures
