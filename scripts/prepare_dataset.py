@@ -1,13 +1,25 @@
-"""Chuẩn bị dữ liệu và tạo split Train/Validation/Test.
+"""Extract preselected PlantVillage archive; never create a new random split.
 
-Phụ trách: NV1 - Lê Xuân Bảo.
-
-Việc cần làm (mục II.A, II.B, III tài liệu bàn giao):
-- Lọc đúng 4 lớp từ PlantVillage; ghi link, phiên bản, ngày tải, giấy phép.
-- Kiểm tra ảnh trùng/gần trùng (hash, perceptual hash, metadata) trước khi
-  chia; ảnh cùng lá (nếu xác định được) không nằm ở hai tập khác nhau.
-- Chia từ ảnh gốc TRƯỚC augmentation; ưu tiên split chính thức theo lá nếu
-  có, nếu không cân nhắc 70/15/15 stratified theo lớp (chưa chốt).
-- Lưu seed và manifest data/splits/{train,val,test}.csv.
-- Xuất configs/class_mapping.json và data/dataset_summary.csv.
+Download tomato_6502_images.zip from the NV1 Google Drive folder first.
+Run: python -m scripts.prepare_dataset --archive /path/to/tomato_6502_images.zip
 """
+import argparse
+from pathlib import Path
+
+from src.data.dataset import prepare_archive
+from scripts.check_dataset import check, ROOT
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--archive", type=Path, required=True)
+    parser.add_argument("--data-root", type=Path, default=ROOT / "data/raw")
+    args = parser.parse_args()
+    prepare_archive(args.archive, args.data_root)
+    summary = check(data_root=args.data_root)
+    print(f"Extracted dataset: {args.data_root}")
+    print(f"NV1 image-path verification: PASS ({sum(summary['split_counts'].values())} files)")
+
+
+if __name__ == "__main__":
+    main()
