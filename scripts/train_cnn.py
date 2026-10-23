@@ -143,7 +143,7 @@ def run(config_path, data_root, run_name, learning_rate=None, no_augmentation=Fa
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     ManifestDataset, build_train_transform, build_val_transform = load_nv1_data_api()
-    train_tf = (build_val_transform if no_augmentation else build_train_transform)("cnn", run_config)
+    train_tf = build_train_transform("cnn", run_config, augment=not no_augmentation)
     val_tf = build_val_transform("cnn", run_config)
     data_root = Path(data_root)
     train_set = ManifestDataset(REPO_ROOT / run_config["data"]["train_split"], data_root, train_tf)

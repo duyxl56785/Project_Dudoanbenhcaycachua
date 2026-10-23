@@ -21,7 +21,7 @@ preprocessing:              # chuẩn chung nhóm (NV1 đề xuất, cả nhóm 
   normalize_std: [0.229, 0.224, 0.225]
 
 augmentation:               # CHỈ áp dụng cho Train; transform do NV1 cung cấp (src/data/transforms.py)
-  train: null               # chờ NV1 chốt danh sách phép biến đổi
+  train: {random_horizontal_flip: true, random_vertical_flip: true, rotation_degrees: 15, color_jitter: 0.1}  # mô tả; NV1 cài đặt trong build_train_transform
 
 training:
   seed: 42
