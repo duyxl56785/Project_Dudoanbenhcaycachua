@@ -1,0 +1,599 @@
+TRƯỜNG ĐẠI HỌC CMC
+HỌC PHẦN: HỌC MÁY VÀ KHAI PHÁ DỮ LIỆU
+
+======================================================================
+TÀI LIỆU BÀN GIAO CÔNG VIỆC CHUNG – NHÓM 5 THÀNH VIÊN
+Đề tài: ỨNG DỤNG CNN VÀ TRANSFER LEARNING TRONG NHẬN DIỆN
+        BỆNH TRÊN LÁ CÀ CHUA QUA HÌNH ẢNH
+Phiên bản: 1.0 | Ngày lập: 23/10/2026
+Trạng thái: ĐÃ CHỐT PHÂN CÔNG; CHƯA XÁC NHẬN HOÀN THÀNH CÔNG VIỆC
+======================================================================
+
+GHI CHÚ ĐỌC TRƯỚC
+- Đây là tài liệu phân công và tiêu chí bàn giao chung, không phải báo cáo
+  kết quả thực nghiệm và không thay thế đề cương/yêu cầu chính thức của thầy.
+- Tên đề tài có thể điều chỉnh theo mẫu nộp cuối kỳ. Phạm vi kỹ thuật đã
+  chốt là PHÂN LOẠI ẢNH LÁ CÀ CHUA THEO 4 LỚP, không phải khoanh vùng bệnh.
+- Cụm từ "phát hiện sớm" là định hướng ứng dụng, CHƯA được chứng minh trên
+  ảnh bệnh giai đoạn sớm. Chỉ tuyên bố nếu có dữ liệu và thí nghiệm riêng.
+- Các tỷ lệ chia, đường dẫn, chuẩn định dạng nêu dưới đây là ĐỀ XUẤT THỰC
+  HIỆN CHUNG. Nếu thầy có yêu cầu khác thì cập nhật và thông báo cả nhóm.
+- Không tự tạo số liệu Accuracy/F1/số ảnh/thời gian huấn luyện để điền báo cáo.
+
+======================================================================
+I. THÔNG TIN CHUNG VÀ PHÂN CÔNG CHÍNH THỨC
+======================================================================
+
+1. Mục tiêu học thuật
+   a) Xây dựng một mô hình CNN huấn luyện từ đầu.
+   b) Xây dựng ResNet18 dùng pretrained weights và Transfer Learning.
+   c) Đánh giá hai hướng trên cùng dữ liệu kiểm thử, có phân tích lỗi.
+   d) Làm demo tải ảnh lá cà chua và dự đoán tình trạng lá.
+   e) Viết báo cáo theo mẫu bài tập lớn của Trường Đại học CMC.
+
+2. Loại cây, lớp dữ liệu đã chốt
+   Loại cây: CÀ CHUA (Tomato).
+   Tổng số lớp: 04, gồm:
+      - Healthy       : Lá khỏe mạnh.
+      - Early Blight  : Bệnh đốm vòng/cháy lá sớm.
+      - Late Blight   : Bệnh mốc sương.
+      - Bacterial Spot: Bệnh đốm vi khuẩn.
+   Chưa mở rộng sang loại cây khác hoặc sâu hại như nhện đỏ.
+
+3. Công nghệ dự kiến
+   - Nguồn dữ liệu: PlantVillage (cần ghi rõ phiên bản/link sử dụng).
+   - Ngôn ngữ: Python.
+   - Thư viện ML: PyTorch/torchvision; thống kê có thể dùng pandas,
+     scikit-learn, matplotlib.
+   - Mô hình 1: CNN tự xây dựng, không tải pretrained weights.
+   - Mô hình 2: ResNet18 pretrained, feature extraction rồi fine-tuning.
+   - Demo: Streamlit.
+   - Môi trường thực nghiệm: Google Colab hoặc máy phù hợp; phải ghi phiên bản.
+   - Chỉ số: Accuracy, Precision/Recall/F1 theo từng lớp, Macro F1,
+     Confusion Matrix; có thể bổ sung thời gian và số tham số.
+
+4. Phân công đã CHỐT
+   NV1 | LÊ XUÂN BẢO    | Dataset & Preprocessing.
+   NV2 | NGUYỄN VĂN DUY | Thiết kế và huấn luyện CNN cơ bản.
+   NV3 | TRẦN VĂN CHÍNH | ResNet18 & Transfer Learning.
+   NV4 | NGUYỄN MINH DUY| Demo Streamlit & tích hợp mô hình.
+   NV5 | PHẠM THẾ CƯỜNG | Kiểm thử, so sánh, báo cáo, slide, tổng hợp.
+
+   Mỗi thành viên chịu trách nhiệm chính với NV của mình, nhưng phải cung
+   cấp nội dung, số liệu, sơ đồ, hình ảnh và giải thích thuộc phần phụ trách.
+   NV5 không có nghĩa Cường phải làm lại công việc của bốn người khác.
+
+======================================================================
+II. HỢP ĐỒNG KỸ THUẬT DÙNG CHUNG (BẮT BUỘC THỐNG NHẤT)
+======================================================================
+
+A. Dữ liệu và nhãn
+   - Chỉ dùng bốn lớp nêu ở Mục I.2. Không tự ý thêm/xóa lớp.
+   - Đề xuất cố định ánh xạ nhãn trong file class_mapping.json:
+        0 = Healthy
+        1 = Early Blight
+        2 = Late Blight
+        3 = Bacterial Spot
+     Bảo xuất file ánh xạ và thông báo cả nhóm tại Gate 1. Tất cả mô hình,
+     script đánh giá và demo phải đọc chung ánh xạ này; không để thứ tự mặc
+     định theo alphabet của ImageFolder làm lệch nhãn.
+   - Lưu nguyên đường dẫn nguồn, phiên bản dataset, cách lọc lớp, giấy phép
+     sử dụng (nếu nguồn công bố) và ngày lấy dữ liệu.
+   - Không mặc định số ảnh theo bài viết trên mạng là số ảnh nhóm đang có.
+     PHẢI đếm lại từ phiên bản dữ liệu nhóm thực sự sử dụng.
+
+B. Chia dữ liệu, chống rò rỉ
+   - Chia Train / Validation / Test từ ảnh gốc TRƯỚC augmentation.
+   - Nếu dataset đã có split chính thức theo lá, ưu tiên split đó; nếu không,
+     cân nhắc tỉ lệ 70/15/15 và có stratification theo lớp.
+   - Các ảnh trùng/ảnh biến thể/cùng lá (khi xác định được) không nằm ở hai
+     tập khác nhau. Kiểm tra bằng metadata, tên nguồn, hash/perceptual hash
+     và khảo sát mẫu; mô tả giới hạn nếu không có mã định danh lá.
+   - Test phải là tập giữ kín cho đánh giá cuối; không điều chỉnh hyperparameter
+     hoặc chọn checkpoint dựa trên Test.
+   - Augmentation chỉ áp dụng với Train. Validation và Test dùng tiền xử lý
+     tất định, không random flip/rotate/crop.
+   - Cùng danh sách ảnh Train/Validation/Test cho CNN và ResNet18; bước
+     normalize/resize có thể khác nếu kiến trúc yêu cầu, nhưng phải ghi rõ.
+   - Lưu split manifest, seed và mã tạo split để có thể chạy lại.
+
+C. Thống nhất đầu ra mô hình
+   - Hai mô hình đều có đầu ra 4 lớp theo class_mapping.json.
+   - Mỗi mô hình phải xuất: code định nghĩa mạng, checkpoint tốt nhất theo
+     Validation, config (kích thước ảnh/normalize/nhãn), script inference.
+   - Thống nhất đầu vào inference là một ảnh RGB được xử lý đúng pipeline.
+   - Nếu trả về 4 scores, cần softmax để biểu diễn xác suất mô hình; xác suất
+     này KHÔNG đồng nghĩa chẩn đoán chắc chắn, không mặc nhiên đã hiệu chỉnh.
+
+D. Kiểm thử và tính công bằng
+   - So sánh trên cùng Test và cùng định nghĩa chỉ số.
+   - Báo cáo per-class Precision/Recall/F1 và Macro Average; khi có mất cân
+     bằng lớp, không chỉ dựa vào Accuracy.
+   - Báo cáo điều kiện đo thời gian: CPU/GPU, batch size, số ảnh, đo trên
+     cùng phần cứng nếu muốn kết luận mô hình nào nhanh hơn.
+   - Log lại random seed, phiên bản thư viện, learning rate, batch size,
+     epochs, optimizer, checkpoint policy.
+   - Không khẳng định ResNet18 tốt hơn CNN trước khi có kết quả thực nghiệm.
+
+======================================================================
+III. NV1 – LÊ XUÂN BẢO – DATASET & PREPROCESSING
+======================================================================
+
+1. Mục tiêu
+   Tạo bộ dữ liệu sạch, rõ nguồn gốc, chia tập hợp lý và chuẩn bị pipeline
+   cho cả hai nhóm huấn luyện, đồng thời có chứng cứ để trả lời câu hỏi thầy
+   về số liệu dữ liệu và kỹ thuật tăng cường ảnh.
+
+2. Việc phải thực hiện
+   [ ] Tìm nguồn PlantVillage phù hợp; lưu link, phiên bản, ngày tải.
+   [ ] Lọc đúng 4 lớp và kiểm tra tên gốc của các thư mục/lớp.
+   [ ] Đếm tổng ảnh gốc và số ảnh từng lớp; lập bảng thống kê.
+   [ ] Thống kê kích thước (rộng x cao), kênh màu, định dạng, dung lượng
+       (nếu cần), ảnh đọc lỗi; minh họa 5–10 ảnh đại diện/lớp.
+   [ ] Kiểm tra ảnh trùng hoàn toàn, ảnh gần trùng, khả năng ảnh cùng lá;
+       ghi cách phát hiện và số ảnh xử lý thực tế.
+   [ ] Phân tích mất cân bằng giữa các lớp: tần suất, tỉ lệ phần trăm,
+       biểu đồ cột, có/không cần biện pháp xử lý.
+   [ ] Chọn và tạo train/val/test, kiểm tra không trùng lặp giữa các tập;
+       lưu seed và manifest đường dẫn + nhãn.
+   [ ] Viết pipeline resize, convert RGB, tensor, normalization; giữ pipeline
+       cụ thể cho CNN/ResNet18 nếu khác nhau.
+   [ ] Thiết kế data augmentation phù hợp trên Train (ví dụ: rotation nhẹ,
+       horizontal/vertical flip nếu có ý nghĩa, color jitter vừa phải,
+       crop hợp lý). Tránh làm biến mất tổn thương hoặc đổi bản chất nhãn.
+   [ ] Phân biệt augmentation online và offline; nếu tạo thêm file ảnh,
+       ghi số lượng trước/sau theo từng lớp. Nếu dùng augmentation online,
+       ghi số FILE ẢNH GỐC KHÔNG ĐỔI và phép biến đổi được lấy ngẫu nhiên.
+   [ ] Viết mã kiểm tra có thể chạy lại; xuất bảng và biểu đồ thống kê.
+   [ ] Viết README về nguồn, quy trình, quyết định và hạn chế của dữ liệu.
+
+3. Những câu hỏi Bảo phải giải thích được
+   - Dataset gốc có bao nhiêu ảnh? Riêng 4 lớp có bao nhiêu?
+   - Mỗi lớp bao nhiêu ảnh? Mất cân bằng như thế nào?
+   - Ảnh kích thước, định dạng, kênh màu gì?
+   - Vì sao resize và normalization? Dùng giá trị nào cho từng mô hình?
+   - Augmentation là gì? Có những biến đổi nào, tại sao lựa chọn chúng?
+   - Nếu nói từ 3.000 lên 5.000 ảnh: đó là tăng file thực (offline) hay
+     biến đổi ngẫu nhiên trong lúc train (online)? Đếm bằng cách nào?
+   - Tại sao augmentation chỉ được áp dụng ở Train?
+   - Có rủi ro data leakage, ảnh cùng lá hoặc ảnh quá giống nhau không?
+   - Vì sao chọn cách chia train/validation/test đó?
+   - Hình PlantVillage khác ảnh chụp ngoài ruộng như thế nào?
+
+4. Tệp bàn giao tối thiểu
+   - data/ hoặc hướng dẫn tải dữ liệu không cần commit ảnh quá lớn lên Git.
+   - dataset_summary.csv: thống kê lớp, số ảnh theo tập.
+   - splits/train.csv, splits/val.csv, splits/test.csv (path + label + group
+     nếu có) hoặc manifest tương đương.
+   - class_mapping.json.
+   - scripts/prepare_dataset.py, scripts/check_dataset.py,
+     scripts/visualize_dataset.py (tên file có thể thay đổi).
+   - src/data/transforms.py hoặc module chung xuất transform cho 2 mô hình.
+   - docs/DATASET_README.md: nguồn, cấu trúc, split, augmentation, hạn chế.
+   - figures/class_distribution.png, figures/augmentation_examples.png.
+
+5. Điều kiện nghiệm thu NV1
+   [ ] Hai thành viên NV2/NV3 đọc được dữ liệu bằng script và nhãn đúng.
+   [ ] Thống kê khớp đúng số file hiện có và có bảng chia tập rõ ràng.
+   [ ] Không có trùng file giữa các tập; rủi ro gần trùng/cùng lá được kiểm
+       tra và ghi nhận trung thực.
+   [ ] Cách split và preprocessing có thể tái tạo.
+   [ ] Mọi augmentation ngẫu nhiên chỉ chạy trong Train.
+   [ ] Có README hướng dẫn người khác sử dụng mà không phải hỏi riêng.
+
+6. Phụ thuộc
+   - Là đầu vào chính thức cho NV2 và NV3.
+   - Bàn giao label mapping/transforms cho NV4.
+   - Bàn giao thống kê, biểu đồ, phương pháp chia tập cho NV5.
+
+======================================================================
+IV. NV2 – NGUYỄN VĂN DUY – CNN TỰ XÂY DỰNG
+======================================================================
+
+1. Mục tiêu
+   Xây dựng baseline CNN huấn luyện từ đầu cho bài toán phân loại 4 lớp.
+   Phải hiểu kiến trúc và giải thích được cơ chế học, không chỉ tải code chạy.
+
+2. Việc phải thực hiện
+   [ ] Đọc và hiểu convolution, kernel, stride, padding, pooling, ReLU,
+       fully connected, softmax, cross-entropy, backpropagation.
+   [ ] Thiết kế CNN phù hợp với 4 lớp; giải thích mỗi khối/lớp, kích thước
+       tensor và tổng số tham số.
+   [ ] Viết model class PyTorch, hàm train/validate và xử lý seed.
+   [ ] Nhận đúng dữ liệu split từ Bảo; không tự chia lại ngẫu nhiên.
+   [ ] Chọn Loss (ví dụ CrossEntropyLoss), optimizer (Adam/SGD) và lịch
+       learning rate nếu dùng; ghi rõ lý do và tham số.
+   [ ] Chạy thử mô hình trên một batch: shape, loss, backward, inference.
+   [ ] Huấn luyện và ghi train/validation loss, accuracy theo epoch.
+   [ ] Cân nhắc early stopping/checkpoint theo Validation để giảm overfit.
+   [ ] Thử nghiệm có kiểm soát 1–2 yếu tố (learning rate/augmentation/
+       depth) phù hợp thời gian; chỉ chọn bằng Validation.
+   [ ] Xuất biểu đồ loss/accuracy, confusion matrix, metrics từng lớp.
+   [ ] Lưu checkpoint và script dự đoán một ảnh.
+   [ ] Viết phần phương pháp CNN và phần kết quả CNN cho báo cáo.
+
+3. Tệp bàn giao tối thiểu
+   - src/models/cnn.py hoặc tương đương.
+   - scripts/train_cnn.py, scripts/eval_cnn.py, scripts/infer_cnn.py.
+   - configs/cnn.yaml hoặc file cấu hình tương đương.
+   - checkpoints/cnn_best.pt (checkpoint có thể lưu ở Drive/Release nếu lớn).
+   - results/cnn_metrics.json, results/cnn_confusion_matrix.png.
+   - figures/cnn_train_curves.png.
+   - docs/CNN_README.md: cách chạy, kiến trúc, tham số, môi trường, kết quả.
+
+4. Điều kiện nghiệm thu NV2
+   [ ] Có CNN huấn luyện TỪ ĐẦU, cho đầu ra đúng 4 lớp.
+   [ ] Cùng split và mapping với NV1, không dùng Test để chọn model.
+   [ ] Có checkpoint chạy inference được trên máy khác theo README.
+   [ ] Có log/biểu đồ/metrics thực tế, không điền số liệu giả.
+   [ ] Chỉ rõ điểm mạnh, điểm yếu, các nhầm lẫn và dấu hiệu overfitting.
+
+5. Phụ thuộc và phối hợp
+   - Chờ manifest và dữ liệu đạt Gate 1 của Bảo để train chính thức.
+   - Bàn giao model definition, checkpoint, preprocessing, mapping, API
+     predict cho Nguyễn Minh Duy (NV4).
+   - Bàn giao log, cấu hình, metrics, confusion matrix, test predictions
+     cho Phạm Thế Cường (NV5).
+
+======================================================================
+V. NV3 – TRẦN VĂN CHÍNH – RESNET18 & TRANSFER LEARNING
+======================================================================
+
+1. Mục tiêu
+   Xây dựng mô hình dựa trên ResNet18 đã pretrained, so sánh feature
+   extraction với fine-tuning và tạo đối chứng với CNN huấn luyện từ đầu.
+
+2. Việc phải thực hiện
+   [ ] Nghiên cứu ResNet18: residual block, skip connection, ưu/nhược.
+   [ ] Nghiên cứu pretrained weights, feature extraction và fine-tuning.
+   [ ] Load ResNet18 bằng torchvision; thay classification head để ra 4 lớp.
+   [ ] Bước A: đóng băng backbone, huấn luyện head (feature extraction).
+   [ ] Bước B: fine-tune một phần/toàn bộ backbone theo thiết kế; có thể
+       đặt learning rate backbone nhỏ hơn head; ghi cấu hình cụ thể.
+   [ ] Sử dụng split chung của Bảo, xác nhận class_mapping.json.
+   [ ] Chuẩn hóa ảnh theo yêu cầu pretrained weights; không giả định pipeline
+       y hệt CNN nếu không phù hợp.
+   [ ] Theo dõi Train/Validation loss, accuracy, lựa chọn checkpoint theo Val.
+   [ ] So sánh Feature Extraction và Fine-tuning bằng số liệu thực tế.
+   [ ] Đánh giá Test sau khi chọn cấu hình cuối, báo cáo các metrics.
+   [ ] Lưu checkpoint, script inference và giải thích mô hình.
+   [ ] Viết phần ResNet18/Transfer Learning và kết quả trong báo cáo.
+
+3. Tệp bàn giao tối thiểu
+   - src/models/resnet18.py hoặc tương đương.
+   - scripts/train_resnet18.py, scripts/eval_resnet18.py,
+     scripts/infer_resnet18.py.
+   - configs/resnet18.yaml (weights, freezing, transforms, optimizer).
+   - checkpoints/resnet18_best.pt.
+   - results/resnet18_metrics.json,
+     results/resnet18_feature_vs_finetune.csv,
+     results/resnet18_confusion_matrix.png.
+   - figures/resnet18_train_curves.png.
+   - docs/RESNET18_README.md.
+
+4. Điều kiện nghiệm thu NV3
+   [ ] Có mô hình pretrained ResNet18 với 4 đầu ra.
+   [ ] Có bằng chứng chạy feature extraction và fine-tuning.
+   [ ] Không chia lại dataset hoặc dùng Test để chọn cấu hình.
+   [ ] Checkpoint tải lại dự đoán đúng mapping, pipeline và shape.
+   [ ] Có log, metrics, biểu đồ và đánh giá hạn chế của mô hình.
+
+5. Phụ thuộc và phối hợp
+   - Nhận split và manifest từ Bảo sau Gate 1.
+   - Bàn giao checkpoint, inference API, preprocessing và mapping cho NV4.
+   - Bàn giao log, metrics, tham số và test predictions cho NV5.
+   - Trao đổi NV2 để thống nhất cách ghi kết quả; không cần buộc hai mô
+     hình dùng một learning rate hay normalization giống hệt nhau.
+
+======================================================================
+VI. NV4 – NGUYỄN MINH DUY – DEMO STREAMLIT & TÍCH HỢP
+======================================================================
+
+1. Mục tiêu
+   Tạo ứng dụng thực tế để giảng viên tải ảnh lá cà chua và xem kết quả
+   dự đoán từ CNN/ResNet18, có thể so sánh hai mô hình trên cùng ảnh.
+
+2. Việc phải thực hiện
+   [ ] Thiết kế giao diện Streamlit: giới thiệu, upload JPG/PNG,
+       preview ảnh, chọn mô hình hoặc so sánh cả hai.
+   [ ] Ban đầu có thể dùng MOCK rõ nhãn để thử giao diện; trước nghiệm thu
+       phải gỡ mock và dùng mô hình thật.
+   [ ] Nhận checkpoint/architecture/config/transforms của NV2 và NV3.
+   [ ] Load checkpoint theo đúng định nghĩa model, chạy model.eval(),
+       dùng torch.no_grad()/inference_mode().
+   [ ] Áp dụng preprocessing phù hợp cho từng mô hình riêng biệt.
+   [ ] Dùng chung ánh xạ nhãn của NV1; không tự sắp xếp lại lớp.
+   [ ] Hiển thị top-1, xác suất của 4 lớp hoặc biểu đồ xác suất (tùy thiết
+       kế), thời gian suy luận nếu đo đúng; có thông báo hạn chế.
+   [ ] Xử lý upload sai định dạng, ảnh lỗi, file quá lớn, thiếu checkpoint,
+       lỗi phụ thuộc và không crash toàn ứng dụng.
+   [ ] Kiểm thử: cùng một ảnh => cùng kết quả khi chạy trực tiếp script
+       inference và trên giao diện (sai số số học nhỏ cho phép).
+   [ ] Có README cài đặt/chạy và video hoặc ảnh chụp demo.
+
+3. Tệp bàn giao tối thiểu
+   - app.py hoặc app/.
+   - src/inference.py (hoặc các module loader/predict).
+   - requirements.txt / pyproject.toml.
+   - docs/DEMO_README.md.
+   - demo/ ảnh chụp/video minh họa (không nhầm với kết quả thực nghiệm).
+
+4. Điều kiện nghiệm thu NV4
+   [ ] Chạy app trên môi trường sạch theo README.
+   [ ] Load được CẢ HAI checkpoint thật, không hardcode nhãn/xác suất.
+   [ ] Đúng mapping, đúng normalization/resize, đúng kết quả kiểm thử.
+   [ ] Có xử lý lỗi và thông báo rõ: mô hình chỉ phân loại 4 lớp trong
+       tập đã học, không thay thế chuyên gia nông nghiệp.
+
+5. Phụ thuộc và phối hợp
+   - Nhận mapping/transforms từ NV1; nhận checkpoints + script từ NV2/NV3.
+   - Cung cấp video/ảnh và hướng dẫn chạy demo cho NV5.
+   - Có thể code UI ngay trước Gate 2, nhưng chỉ nghiệm thu sau tích hợp thật.
+
+======================================================================
+VII. NV5 – PHẠM THẾ CƯỜNG – ĐÁNH GIÁ, BÁO CÁO, SLIDE
+======================================================================
+
+1. Mục tiêu
+   Kiểm định độc lập kết quả so sánh CNN và ResNet18, tổng hợp bản báo cáo
+   theo mẫu giảng viên, chuẩn bị slide và tổ chức tập bảo vệ.
+
+2. Việc phải thực hiện
+   [ ] Thống nhất bảng metric và format log với hai người huấn luyện.
+   [ ] Xây script hoặc notebook đánh giá thống nhất trên tập Test chung.
+   [ ] Kiểm tra model names, seed, nhãn, split, số ảnh, các cột metrics.
+   [ ] Thu kết quả CNN và ResNet18 từ NV2/NV3: cấu hình, kết quả Val/Test,
+       checkpoint, thời gian, số tham số, confusion matrix, dự đoán sai.
+   [ ] Chạy lại hoặc đối chiếu độc lập kết quả (trong khả năng phần cứng),
+       ghi rõ phần nào đã chạy lại, phần nào dựa trên log của tác giả.
+   [ ] Lập bảng so sánh: Accuracy, macro Precision, macro Recall,
+       macro F1, per-class F1, số tham số, thời gian huấn luyện/inference.
+   [ ] Phân tích các cặp lớp dễ nhầm; lấy ví dụ ảnh Test dự đoán đúng/sai.
+   [ ] Phân biệt kết quả trên dữ liệu kiểm soát PlantVillage với thực địa;
+       không khẳng định "phát hiện sớm" nếu chưa có thí nghiệm chứng minh.
+   [ ] Tổng hợp báo cáo Word theo cấu trúc mẫu, kiểm tra trích dẫn nguồn,
+       biểu đồ/bảng/hình và sự nhất quán của số liệu.
+   [ ] Làm slide: mục tiêu, bài toán, dữ liệu, mô hình, thí nghiệm, kết quả,
+       demo, kết luận, hạn chế và hướng phát triển.
+   [ ] Tập hợp câu hỏi phản biện: split/leakage/augmentation, mô hình,
+       transfer learning, F1, overfitting, độ tin cậy ngoài thực tế.
+   [ ] Phối hợp cả nhóm phân chia phần thuyết trình, kiểm tra demo trước nộp.
+
+3. Tệp bàn giao tối thiểu
+   - evaluation/evaluate_models.py hoặc notebook tương đương.
+   - results/comparison.csv hoặc xlsx, results/analysis.md.
+   - Báo cáo cuối kỳ (.docx, và PDF nếu giảng viên yêu cầu).
+   - Slide (.pptx hoặc định dạng giảng viên yêu cầu).
+   - Danh mục tài liệu tham khảo và bộ câu hỏi/đáp án chuẩn bị bảo vệ.
+
+4. Điều kiện nghiệm thu NV5
+   [ ] Có bảng so sánh thật, nguồn số liệu truy vết được đến model/test.
+   [ ] Có ít nhất Confusion Matrix và phân tích nhầm lẫn của hai mô hình.
+   [ ] Báo cáo đúng mẫu trường, nội dung phần nào có người chịu trách nhiệm.
+   [ ] Tất cả kết quả khớp giữa code, bảng, báo cáo, slide và demo.
+   [ ] Cả nhóm đã đọc lại, có người trình bày từng phần và thử demo.
+
+5. Giới hạn trách nhiệm
+   Cường TỔNG HỢP và KIỂM TRA, không phải thay Bảo làm dữ liệu, thay hai
+   người khác huấn luyện mô hình, hay thay Nguyễn Minh Duy xây demo.
+   Khi thiếu số liệu, phải yêu cầu đúng người phụ trách cung cấp minh chứng.
+
+======================================================================
+VIII. BẢNG PHÂN CÔNG NỘI DUNG BÁO CÁO THEO MẪU GIẢNG VIÊN
+======================================================================
+
+Mẫu đã nhận có: MỞ ĐẦU, PHẦN I. TỔNG QUAN,
+PHẦN II. PHƯƠNG PHÁP THỰC HIỆN,
+PHẦN III. THỰC NGHIỆM VÀ ĐÁNH GIÁ KẾT QUẢ,
+PHẦN IV. KẾT LUẬN, TÀI LIỆU THAM KHẢO, PHỤ LỤC.
+
+- MỞ ĐẦU: Bảo soạn/phối hợp Cường chỉnh lý.
+- PHẦN I. TỔNG QUAN:
+    1.1 Giới thiệu bài toán
+    1.2 Một số thông tin liên quan
+    1.3 Kết luận
+  Bảo cung cấp nội dung nền, Cường rà soát trích dẫn và phạm vi.
+- PHẦN II. PHƯƠNG PHÁP THỰC HIỆN:
+    Nguyễn Văn Duy: CNN tự xây dựng (kiến trúc, tham số, loss, train).
+    Trần Văn Chính: ResNet18 và Transfer Learning.
+    Bảo: mô tả pipeline dữ liệu đầu vào cần thiết.
+    Cường: ghép và chuẩn hóa cách diễn đạt, cấu trúc.
+- PHẦN III. THỰC NGHIỆM VÀ ĐÁNH GIÁ KẾT QUẢ:
+    Bảo: nguồn dữ liệu, số liệu từng lớp, chia tập, augmentation.
+    Nguyễn Văn Duy: cấu hình/đồ thị/kết quả CNN.
+    Trần Văn Chính: cấu hình/đồ thị/kết quả ResNet18.
+    Cường: giao thức đánh giá, bảng so sánh và phân tích kết quả.
+    Nguyễn Minh Duy: mô tả demo, ảnh minh họa, cách dùng.
+- PHẦN IV. KẾT LUẬN: Cường dự thảo từ kết quả thật, cả nhóm duyệt.
+- TÀI LIỆU THAM KHẢO: Ai sử dụng tài liệu phải gửi metadata/link/citation;
+  Cường chuẩn hóa một định dạng và đối chiếu tính tồn tại.
+- PHỤ LỤC: người làm chuyên môn cung cấp, Cường tập hợp.
+
+Lưu ý: Mẫu có ví dụ MNIST và nhiều cấu hình CNN minh họa. Đó KHÔNG
+phải số liệu của đề tài cà chua; KHÔNG sao chép các con số ví dụ này.
+
+======================================================================
+IX. THỨ TỰ THỰC HIỆN VÀ GATE NGHIỆM THU
+======================================================================
+
+GATE 0 – THỐNG NHẤT TRƯỚC KHI CODE CHÍNH THỨC
+  Chủ trì: Bảo; cả nhóm xác nhận.
+  Đầu ra: kho chung, quy tắc đặt tên, mapping, định dạng kết quả, quy trình
+  nộp bài/đẩy nhánh, người review. Cường lập khung báo cáo từ sớm.
+  Đạt khi: cả nhóm dùng cùng một tài liệu và kênh bàn giao.
+
+GATE 1 – CHỐT DATASET (NV1)
+  Bảo bàn giao manifest, class_mapping, thống kê, transform, README.
+  Nguyễn Văn Duy và Chính thử load một batch độc lập.
+  Đạt khi: dữ liệu, labels, split chạy được; kiểm tra leakage có biên bản.
+  Sau Gate 1: khóa phiên bản split để đánh giá công bằng. Nếu phải sửa,
+  tạo phiên bản mới và thông báo để các mô hình train/đánh giá lại tương ứng.
+
+GATE 2 – CÓ MÔ HÌNH HUẤN LUYỆN (NV2 + NV3, CHẠY SONG SONG)
+  Hai thành viên tự huấn luyện, lưu checkpoint, logs, best Val, mã inference.
+  Nguyễn Minh Duy có thể hoàn thiện UI mock trong thời gian này.
+  Đạt khi: mỗi model có thể dự đoán ảnh và xuất đầy đủ chứng cứ.
+
+GATE 3 – KIỂM ĐỊNH THỰC NGHIỆM (NV5)
+  Cường nhận mô hình/metrics; thực hiện đánh giá nhất quán trên Test chung.
+  Đạt khi: có bảng so sánh, confusion matrices, nhận xét dựa trên số liệu.
+
+GATE 4 – DEMO TÍCH HỢP (NV4)
+  Nguyễn Minh Duy thay mock bằng hai checkpoint thật, chạy thử end-to-end.
+  Đạt khi: upload ảnh -> đúng preprocessing -> dự đoán -> hiển thị kết quả.
+  GATE 3 và GATE 4 có thể tiến hành song song sau Gate 2.
+
+GATE 5 – ĐÓNG GÓI NỘP VÀ BẢO VỆ (CẢ NHÓM)
+  Cường hợp nhất báo cáo và slide; tất cả cùng soát lỗi kỹ thuật.
+  Bảo kiểm tra số liệu data; Nguyễn Văn Duy và Chính kiểm tra số liệu ML;
+  Nguyễn Minh Duy kiểm tra demo; Cường kiểm tra đối chiếu tổng thể.
+  Đạt khi: code chạy được, tài liệu đúng, trích dẫn đủ, cả nhóm bảo vệ được.
+
+CHƯA CÓ NGÀY HẠN CHÍNH THỨC TRONG THÔNG TIN ĐÃ THỐNG NHẤT.
+Nhóm cần tự điền hạn các Gate theo lịch thầy, không tự hiểu thứ tự Gate là
+phải làm tuần tự hoàn toàn. Việc độc lập nên khởi động ngay.
+
+======================================================================
+X. CẤU TRÚC THƯ MỤC CHUNG ĐỀ XUẤT
+======================================================================
+
+project-tomato-leaf/
+  README.md
+  requirements.txt
+  configs/
+    class_mapping.json
+    cnn.yaml
+    resnet18.yaml
+  data/
+    README.md                # Cách tải/kiểm tra; không bắt buộc commit ảnh
+    splits/
+      train.csv
+      val.csv
+      test.csv
+    dataset_summary.csv
+  src/
+    data/
+      transforms.py
+      dataset.py
+    models/
+      cnn.py
+      resnet18.py
+    inference.py
+  scripts/
+    prepare_dataset.py
+    check_dataset.py
+    train_cnn.py
+    train_resnet18.py
+    evaluate_models.py
+  checkpoints/
+    README.md                # Link/truy xuất trọng số lớn nếu tách khỏi Git
+  results/
+    cnn/
+    resnet18/
+    comparison.csv
+  figures/
+  demo/
+    app.py
+    README.md
+  report/
+    bao_cao.docx
+    slides.pptx
+  docs/
+    DATASET_README.md
+    CNN_README.md
+    RESNET18_README.md
+    DEMO_README.md
+    MEETING_NOTES.md
+
+Cấu trúc này là GỢI Ý. Có thể đổi tên thư mục, nhưng phải nhất quán giữa
+README, script, checkpoint và tài liệu; không commit dataset/checkpoint rất
+lớn vào Git nếu vượt giới hạn lưu trữ, thay bằng liên kết được cấp quyền.
+
+======================================================================
+XI. QUY TẮC LÀM VIỆC NHÓM, REVIEW VÀ BÀN GIAO
+======================================================================
+
+1. Quy ước việc hoàn thành
+   - "Đang làm": chỉ đang triển khai, không tính đã nghiệm thu.
+   - "Sẵn sàng review": có đủ mã nguồn, log, kết quả và README.
+   - "Yêu cầu sửa": reviewer phát hiện thiếu chứng cứ/lỗi logic.
+   - "Đạt": có người khác chạy/đối chiếu được đầu ra chính.
+   - Không đánh dấu Đạt chỉ vì gửi ảnh chụp kết quả.
+
+2. Khi bàn giao một nhiệm vụ, bắt buộc gửi
+   (a) Đường dẫn nhánh/commit hoặc gói source version cụ thể.
+   (b) Mô tả thay đổi đã làm và phạm vi chưa làm.
+   (c) Cách chạy (lệnh, môi trường, dependency).
+   (d) Đầu vào/đầu ra, file log, metrics hoặc minh chứng.
+   (e) Điều đã kiểm thử và kết quả; lỗi hoặc hạn chế còn tồn tại.
+   (f) Người nhận bàn giao và sự phụ thuộc nếu còn vướng.
+
+3. Chống xung đột, tránh sửa đè
+   - Mỗi thành viên làm mảng mình phụ trách; không sửa file của nhau khi
+     chưa trao đổi. Nên dùng nhánh riêng và review trước khi ghép.
+   - Mapping, split và quy ước đánh giá là cấu hình chung; thay đổi phải
+     được Bảo thông báo và cả nhóm đồng thuận.
+   - Không đưa API key, mật khẩu hoặc dữ liệu nhạy cảm lên Git.
+
+4. Tránh "ghép bài mới phát hiện lỗi"
+   - Sau Gate 1: NV2 và NV3 test batch chung.
+   - Sau Gate 2: NV4 thử load checkpoint trên môi trường demo; NV5 thử
+     đánh giá trên Test chung.
+   - Trước nộp: Cường đối chiếu từng con số trong slide với kết quả đã lưu.
+
+5. Điều nhóm phải thừa nhận trong báo cáo
+   - PlantVillage thường là ảnh lá trong điều kiện được kiểm soát;
+     hiệu quả ngoài thực địa có thể thấp hơn.
+   - Mô hình là công cụ hỗ trợ phân loại ảnh, không phải chẩn đoán chắc chắn.
+   - Chỉ có 4 lớp: ảnh thuộc bệnh/loại cây khác vẫn có thể bị ép dự đoán
+     thành một trong 4 lớp; cần thông báo giới hạn.
+   - Không có đánh giá riêng ảnh bệnh mới chớm => không tuyên bố phát hiện
+     bệnh trước triệu chứng hoặc phát hiện sớm đã được kiểm chứng.
+
+======================================================================
+XII. CHECKLIST CHUNG TRƯỚC KHI NỘP
+======================================================================
+
+[ ] Nguồn dữ liệu và số ảnh thực tế được ghi đầy đủ.
+[ ] Thống kê số ảnh 4 lớp, biểu đồ và chia tập khớp với file dữ liệu.
+[ ] Không phát hiện trùng file qua các tập; rủi ro cùng lá được thảo luận.
+[ ] Augmentation chỉ Train và được ghi rõ online/offline.
+[ ] CNN from scratch có mã nguồn, cấu hình, checkpoint và metrics.
+[ ] ResNet18 có feature extraction/fine-tuning và metrics.
+[ ] Cả hai cùng class_mapping, cùng split Test.
+[ ] Có Confusion Matrix, F1 theo lớp và bảng so sánh trung thực.
+[ ] Demo sử dụng mô hình thật và xử lý trường hợp lỗi.
+[ ] README hướng dẫn dựng môi trường và chạy bài toán từ đầu.
+[ ] Báo cáo đúng cấu trúc mẫu CMC, hình và bảng có chú thích.
+[ ] Tài liệu tham khảo có nguồn kiểm tra được.
+[ ] Không sao chép số liệu minh họa của mẫu MNIST vào báo cáo đề tài.
+[ ] Slide thống nhất với báo cáo/code/log.
+[ ] Tất cả 5 thành viên nắm được phần mình và mục tiêu chung.
+
+======================================================================
+XIII. MẪU TIN NHẮN GỬI VÀO NHÓM
+======================================================================
+
+Mọi người xem giúp mình file bàn giao nhiệm vụ chung của bài tập lớn môn
+Học máy và Khai phá dữ liệu. Nhóm đã chốt đề tài phân loại 4 tình trạng lá
+cà chua bằng CNN và ResNet18, phân công: Bảo – Dataset & Preprocessing;
+Nguyễn Văn Duy – CNN; Trần Văn Chính – ResNet18; Nguyễn Minh Duy – Demo;
+Phạm Thế Cường – Đánh giá, báo cáo và slide. Mỗi người đọc kỹ mục nhiệm
+vụ, tiêu chí nghiệm thu và file phải bàn giao của mình. Hai bạn làm mô hình
+sử dụng chung bộ dữ liệu/split do Bảo chốt; người làm demo dùng trọng số
+mô hình thật; Cường tổng hợp và kiểm chứng kết quả chứ không làm thay phần
+của người khác. Trước khi ghép bài, mọi người phải gửi code, README,
+minh chứng và kết quả thực nghiệm có thể kiểm tra lại. Khi có yêu cầu riêng
+của thầy hoặc blocker ảnh hưởng đến dữ liệu/mô hình, báo ngay cho nhóm để
+thống nhất trước khi thay đổi.
+
+======================================================================
+KẾT LUẬN ĐIỀU PHỐI
+- Đã phân công đủ 5/5 người; tất cả đang ở trạng thái CẦN TRIỂN KHAI.
+- Việc ưu tiên số 1: NV1 hoàn thành GATE 1 để mở đường cho NV2 và NV3.
+- NV4 chuẩn bị giao diện, NV5 chuẩn bị cách đánh giá và bố cục báo cáo
+  song song, không cần chờ mọi người chạy mô hình xong mới bắt đầu.
+- Thứ tự cuối: dữ liệu đáng tin -> mô hình chạy thật -> đánh giá độc lập ->
+  demo hoàn chỉnh -> báo cáo và bảo vệ có minh chứng.
+
+HẾT TÀI LIỆU

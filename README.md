@@ -13,6 +13,8 @@ Kèm demo Streamlit để tải ảnh lá và xem dự đoán. Công nghệ: Pyt
 
 > Trạng thái: **mới khởi tạo khung dự án**. Chưa có dữ liệu, mô hình hay kết quả thực nghiệm.
 
+📄 **Mọi thành viên đọc trước:** [Tài liệu bàn giao nhiệm vụ (23/10/2026)](docs/BAN_GIAO_NHIEM_VU_NHOM_HOC_MAY_CA_CHUA_23-10-2026.txt) – phân công, hợp đồng kỹ thuật dùng chung, việc phải làm, tệp bàn giao và điều kiện nghiệm thu của từng NV, các Gate.
+
 ## Các lớp
 
 Ánh xạ nhãn cố định trong [configs/class_mapping.json](configs/class_mapping.json). Mọi mô hình, script đánh giá và demo phải đọc chung file này; không dùng thứ tự alphabet mặc định của `ImageFolder`.
@@ -82,6 +84,7 @@ Project_Dudoanbenhcaycachua/
 │   └── screenshots/
 ├── report/                        # báo cáo .docx, slide (NV5)
 └── docs/
+    ├── BAN_GIAO_NHIEM_VU_NHOM_HOC_MAY_CA_CHUA_23-10-2026.txt   # tài liệu phân công
     ├── DATASET_README.md
     ├── CNN_README.md
     ├── RESNET18_README.md
