@@ -1,92 +1,82 @@
-# Dataset & Preprocessing
+# NV1 – Dataset & Preprocessing (bàn giao Gate 1)
 
-Phụ trách: NV1 - Lê Xuân Bảo. Trạng thái: Chưa làm.
+**Người phụ trách:** Lê Xuân Bảo · **Ngày:** 23/10/2026
 
-## 1. Nguồn dữ liệu
+## 1. Nguồn và phạm vi
 
-- Dataset / link: (chưa điền)
-- Phiên bản: (chưa điền)
-- Ngày tải: (chưa điền)
-- Giấy phép sử dụng: (chưa điền)
-- Tên thư mục/lớp gốc tương ứng với 4 lớp: (chưa điền)
+- Nguồn: [mohanty/PlantVillage](https://huggingface.co/datasets/mohanty/PlantVillage), file `data.zip`, ảnh trong `raw/color/`.
+- Chỉ 4 nhãn `Tomato___healthy`, `Tomato___Early_blight`, `Tomato___Late_blight`, `Tomato___Bacterial_spot`.
+- Tất cả ảnh được khảo sát là JPEG, RGB, 256 × 256 px; không thấy lỗi đọc trong kiểm tra Pillow đã chạy trên Colab.
+- Link ZIP và hướng dẫn: [data/README.md](../data/README.md). Ngày khảo sát/bàn giao 23/10/2026; ngày tải gốc cần đối chiếu log Colab khi ghi báo cáo.
+- Kiểm tra giấy phép phân phối lại ở nguồn trước khi công bố ảnh ra ngoài nhóm.
 
-## 2. Lọc lớp
+## 2. Thống kê ảnh từ manifest chính thức
 
-(chưa điền) – cách lọc đúng 4 lớp Healthy, Early Blight, Late Blight, Bacterial Spot.
+| Lớp | Ban đầu | Train | Val | Test | Được chọn |
+|---|---:|---:|---:|---:|---:|
+| Healthy | 1.591 | 944 | 240 | 330 | 1.514 |
+| Early Blight | 1.000 | 632 | 153 | 215 | 1.000 |
+| Late Blight | 1.909 | 1.188 | 298 | 375 | 1.861 |
+| Bacterial Spot | 2.127 | 1.351 | 340 | 436 | 2.127 |
+| **Tổng** | **6.627** | **4.115** | **1.031** | **1.356** | **6.502** |
 
-## 3. Thống kê dữ liệu
+Dữ liệu không cân bằng hoàn toàn: Bacterial Spot nhiều hơn Early Blight; báo cáo nên ưu tiên thêm macro-F1 và per-class F1 bên cạnh Accuracy. Chưa mặc định oversampling/class weights – chỉ áp dụng khi có thí nghiệm riêng trên Validation.
 
-Số ảnh phải đếm lại từ dữ liệu nhóm thực sự dùng, không lấy từ bài viết trên mạng.
+## 3. Kiểm toán và split
 
-| Lớp            | Số ảnh gốc  | Tỉ lệ (%)   |
-|----------------|-------------|-------------|
-| Healthy        | (chưa điền) | (chưa điền) |
-| Early Blight   | (chưa điền) | (chưa điền) |
-| Late Blight    | (chưa điền) | (chưa điền) |
-| Bacterial Spot | (chưa điền) | (chưa điền) |
-| **Tổng**       | (chưa điền) | 100         |
+1. Kiểm tra dữ liệu gốc với Pillow: 0 file không đọc được.
+2. Phát hiện 14 ảnh trùng SHA-256, loại dư thừa khỏi danh sách sử dụng.
+3. Đối chiếu Leaf ID nguồn (một phần khớp metadata), dùng quy tắc nhóm theo tên file để phát hiện 90 nhóm nghi vấn qua Train/Test; loại 111 ảnh Train thuộc các nhóm nghi vấn.
+4. Giữ Test gốc 1.356 ảnh; chia Validation từ Train đã làm sạch bằng `StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)`, chọn fold gần tỷ lệ mong muốn.
+5. Không có trùng đường dẫn, SHA-256 hoặc group_id giữa Train, Val, Test theo manifest cuối cùng. `group_id` bao gồm giá trị từ đối chiếu metadata và heuristic tên ảnh, **không đảm bảo tuyệt đối trùng lá vật lý đã được loại bỏ**.
 
-- Tổng số ảnh dataset gốc: (chưa điền)
-- Kích thước ảnh (rộng x cao): (chưa điền)
-- Kênh màu, định dạng: (chưa điền)
-- Ảnh đọc lỗi: (chưa điền)
-- Biểu đồ: `figures/class_distribution.png` (chưa có)
+Các chứng cứ nguồn: `data/dataset_manifest.csv`, `data/audit/removed_duplicates.csv`, `data/audit/excluded_train_leaf_overlap.csv`, `data/splits/*.csv`. Split CSV được chiết xuất trực tiếp từ manifest gốc **không thực hiện lại thuật toán chia**.
 
-## 4. Ảnh trùng, gần trùng, cùng lá
+## 4. Preprocessing và tăng cường dữ liệu
 
-- Cách phát hiện (hash, perceptual hash, metadata, khảo sát mẫu): (chưa điền)
-- Số ảnh trùng/gần trùng đã xử lý: (chưa điền)
-- Giới hạn (nếu không có mã định danh lá): (chưa điền)
+- Nhãn cố định: `configs/class_mapping.json` với 0 Healthy, 1 Early Blight, 2 Late Blight, 3 Bacterial Spot.
+- CNN: Resize (224,224) -> ToTensor -> Normalize, mô phỏng pipeline Colab đã kiểm thử.
+- ResNet18: Resize cạnh ngắn 256 -> CenterCrop (224,224) -> ToTensor -> Normalize, phù hợp config và PR #7 NV3. Lưu ý: pipeline này khác bản baseline ResNet18 dùng trong Colab (Resize 224); phải huấn luyện/đánh giá nhất quán với pipeline chính thức sau khi nhóm xác nhận.
+- Normalize chung ImageNet: mean `[0.485,0.456,0.406]`, std `[0.229,0.224,0.225]`.
+- CNN Train augmentation: HorizontalFlip 0.5; VerticalFlip 0.5; RandomRotation ±15°; ColorJitter brightness 0.10, contrast 0.10, saturation 0.08.
+- ResNet18 Train augmentation (theo PR #7): RandomCrop 224 sau Resize256, HorizontalFlip 0.5, ColorJitter brightness/contrast 0.10.
+- **Val/Test/Inference:** tất định, tuyệt đối không random augmentation.
+- Đây là augmentation **online**; tổng số file ảnh vẫn là 6.502.
 
-## 5. Mất cân bằng lớp
+## 5. Giao diện bắt buộc cho thành viên
 
-(chưa điền) – mức độ mất cân bằng, có/không cần xử lý và lý do.
+```python
+# Train/Validation/Test: from repository root
+from src.data.dataset import create_dataloaders
+loaders, datasets, mapping = create_dataloaders(data_root="data/raw", model_name="cnn")
 
-## 6. Chia tập Train / Validation / Test
+# NV4 Demo / NV2, NV3 inference
+from src.data.transforms import build_val_transform
+import yaml
+config = yaml.safe_load(open("configs/cnn.yaml", encoding="utf-8"))
+transform = build_val_transform("cnn", config)
+```
 
-- Phương pháp (split chính thức theo lá hay stratified): (chưa điền)
-- Tỉ lệ: (chưa điền)
-- Seed: (chưa điền)
-- Manifest: `data/splits/train.csv`, `val.csv`, `test.csv` (chưa có)
+`src.data.dataset.ManifestDataset(manifest, data_root, transform)` chấp nhận CSV `path,label[,group]`. Trong split, `path` tương đối từ `data_root`; mọi nhãn là số 0..3. Có thể sử dụng adapter `ManifestDataset` riêng của NV3 nếu dùng đúng split/transform.
 
-| Lớp            | Train       | Val         | Test        |
-|----------------|-------------|-------------|-------------|
-| Healthy        | (chưa điền) | (chưa điền) | (chưa điền) |
-| Early Blight   | (chưa điền) | (chưa điền) | (chưa điền) |
-| Late Blight    | (chưa điền) | (chưa điền) | (chưa điền) |
-| Bacterial Spot | (chưa điền) | (chưa điền) | (chưa điền) |
+## 6. Lệnh chạy và chứng cứ
 
-- Kiểm tra không trùng file giữa các tập: (chưa điền)
+```bash
+python -m scripts.prepare_dataset --archive /path/tomato_6502_images.zip --data-root data/raw
+python -m scripts.check_dataset --data-root data/raw
+python -m scripts.visualize_dataset --data-root data/raw
+```
 
-## 7. Tiền xử lý
+`visualize_dataset.py` tạo `figures/class_distribution.png`, `figures/augmentation_examples.png` từ ảnh gốc đã giải nén, không đưa số liệu hoặc hình giả. Lưu hình kết quả vào PR khi được sinh ra.
 
-| Bước          | CNN         | ResNet18    |
-|---------------|-------------|-------------|
-| Resize        | (chưa điền) | (chưa điền) |
-| Normalize     | (chưa điền) | (chưa điền) |
-| Lý do         | (chưa điền) | (chưa điền) |
+**Trạng thái:** Colab trước đó đã PASS DataLoader và Clean Extraction với `tomato_data.py`. Mã chuẩn hóa mới ở `src/data/` cần được NV2 và NV3 smoke-test độc lập trên bộ ZIP này; không coi đó là PASS trước khi có log xác nhận.
 
-## 8. Augmentation (chỉ Train)
+## 7. Checklist Gate 1 trước khi merge
 
-- Online hay offline: (chưa điền)
-- Các phép biến đổi và lý do chọn: (chưa điền)
-- Nếu offline: số ảnh trước/sau theo từng lớp: (chưa điền)
-- Nếu online: số file ảnh gốc không đổi; ghi rõ phép biến đổi lấy ngẫu nhiên.
-- Hình minh họa: `figures/augmentation_examples.png` (chưa có)
-
-## 9. Cách chạy
-
-(chưa điền) – lệnh chạy prepare/check/visualize.
-
-## 10. Hạn chế
-
-(chưa điền) – bao gồm khác biệt giữa ảnh PlantVillage và ảnh chụp ngoài ruộng.
-
-## Điều kiện nghiệm thu (mục III.5)
-
-- [ ] NV2/NV3 đọc được dữ liệu bằng script và nhãn đúng.
-- [ ] Thống kê khớp đúng số file hiện có, có bảng chia tập rõ ràng.
-- [ ] Không trùng file giữa các tập; rủi ro gần trùng/cùng lá được ghi nhận trung thực.
-- [ ] Split và preprocessing tái tạo được.
-- [ ] Augmentation ngẫu nhiên chỉ chạy trong Train.
-- [ ] README đủ để người khác dùng mà không phải hỏi riêng.
+- [x] Có CSV và manifest 6.502 ảnh, mapping và số lượng từng lớp.
+- [x] Có code Dataset, transforms, script kiểm toán/giải nén/trực quan hóa và README.
+- [ ] Chạy script trên máy/môi trường sạch, đối chiếu 6.502 file ảnh thật.
+- [ ] NV2 và NV3 mỗi người load một batch và xác nhận class IDs, tensor shape, sample paths.
+- [ ] NV4 xác nhận `build_val_transform(model_name, config)` tương thích app Demo.
+- [ ] Nhóm chốt chính thức chính sách crop/resize riêng CNN và ResNet18 trước khi huấn luyện.
+- [ ] Đính kèm hình PNG, bằng chứng thực thi và phản hồi vào PR; reviewer phê duyệt.
