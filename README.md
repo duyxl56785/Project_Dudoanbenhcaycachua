@@ -1,4 +1,4 @@
-# Nhận diện bệnh lá cà chua bằng CNN và ResNet18
+# Nhận diện bệnh qua ảnh lá cà chua bằng CNN và ResNet18
 
 Đồ án nhóm học phần **Học máy và Khai phá dữ liệu** – Trường Đại học CMC.
 
