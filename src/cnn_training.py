@@ -7,6 +7,7 @@ zero_division=0) để hai mô hình so sánh công bằng.
 """
 import json
 import random
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -15,6 +16,12 @@ from sklearn.metrics import (accuracy_score, confusion_matrix,
                              precision_recall_fscore_support)
 
 LABELS = [0, 1, 2, 3]
+
+
+def use_utf8_output():
+    # Windows mặc định ghi cp1252 khi đầu ra đi qua pipe/file, làm hỏng tiếng Việt.
+    for stream in (sys.stdout, sys.stderr):
+        stream.reconfigure(encoding="utf-8")
 
 
 def set_seed(seed):

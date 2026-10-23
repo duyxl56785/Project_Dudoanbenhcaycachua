@@ -33,7 +33,7 @@ from torch import nn  # noqa: E402
 from torch.utils.data import DataLoader  # noqa: E402
 
 from src.cnn_training import (EarlyStopping, load_class_names, run_epoch,  # noqa: E402
-                              save_checkpoint, set_seed)
+                              save_checkpoint, set_seed, use_utf8_output)
 from src.models.cnn import build_model  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -165,12 +165,6 @@ def run(config_path, data_root, run_name, learning_rate=None, no_augmentation=Fa
             "git_commit": git_commit(), "environment": environment(device), "config": run_config}
     (out_dir / "run_info.json").write_text(json.dumps(info, indent=2, ensure_ascii=False), encoding="utf-8")
     return info
-
-
-def use_utf8_output():
-    # Windows mặc định ghi cp1252 khi đầu ra đi qua pipe/file, làm hỏng tiếng Việt.
-    for stream in (sys.stdout, sys.stderr):
-        stream.reconfigure(encoding="utf-8")
 
 
 def main(argv=None):
