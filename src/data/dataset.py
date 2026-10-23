@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import csv
 import json
-from pathlib import Path
-from zipfile import ZipFile, BadZipFile, PurePosixPath
+from pathlib import Path, PurePosixPath
+from zipfile import ZipFile, BadZipFile
 
 import torch
 import yaml
