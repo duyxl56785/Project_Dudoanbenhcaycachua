@@ -62,7 +62,7 @@ def test_load_class_names_keeps_numeric_order(tmp_path):
         load_class_names(path)
 
 
-META = {"labels": NAMES, "preprocessing": {"image_size": 128}, "epoch": 3, "val_macro_f1": 0.5,
+META = {"labels": NAMES, "preprocessing": {"image_size": 224}, "epoch": 3, "val_macro_f1": 0.5,
         "seed": 42, "config": {}, "git_commit": "test", "environment": {}}
 
 

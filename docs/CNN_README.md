@@ -33,16 +33,16 @@ python -m scripts.infer_cnn duong_dan_anh.jpg
 
 ## 2. Kiến trúc
 
-Mạng `TomatoCNN` (`src/models/cnn.py`), huấn luyện từ đầu, không dùng pretrained weights. Đầu vào ảnh RGB 128×128.
+Mạng `TomatoCNN` (`src/models/cnn.py`), huấn luyện từ đầu, không dùng pretrained weights. Đầu vào ảnh RGB 224×224 (chuẩn chung của nhóm). Nhờ Global Average Pooling, số tham số không phụ thuộc kích thước ảnh.
 
 | Tầng | Cấu hình | Shape đầu ra | Số tham số |
 |---|---|---|---|
-| Đầu vào | ảnh RGB đã normalize | 3×128×128 | 0 |
-| Khối 1 | Conv 3×3, 32 kênh, stride 1, padding 1, không bias → BatchNorm → ReLU → MaxPool 2×2 | 32×64×64 | 864 + 64 |
-| Khối 2 | Conv 3×3, 64 kênh → BN → ReLU → MaxPool 2×2 | 64×32×32 | 18.432 + 128 |
-| Khối 3 | Conv 3×3, 128 kênh → BN → ReLU → MaxPool 2×2 | 128×16×16 | 73.728 + 256 |
-| Khối 4 | Conv 3×3, 256 kênh → BN → ReLU → MaxPool 2×2 | 256×8×8 | 294.912 + 512 |
-| Global Average Pooling | lấy trung bình mỗi kênh trên 8×8 | 256 | 0 |
+| Đầu vào | ảnh RGB đã normalize | 3×224×224 | 0 |
+| Khối 1 | Conv 3×3, 32 kênh, stride 1, padding 1, không bias → BatchNorm → ReLU → MaxPool 2×2 | 32×112×112 | 864 + 64 |
+| Khối 2 | Conv 3×3, 64 kênh → BN → ReLU → MaxPool 2×2 | 64×56×56 | 18.432 + 128 |
+| Khối 3 | Conv 3×3, 128 kênh → BN → ReLU → MaxPool 2×2 | 128×28×28 | 73.728 + 256 |
+| Khối 4 | Conv 3×3, 256 kênh → BN → ReLU → MaxPool 2×2 | 256×14×14 | 294.912 + 512 |
+| Global Average Pooling | lấy trung bình mỗi kênh trên 14×14 | 256 | 0 |
 | Dropout | p = 0.3 (chỉ khi train) | 256 | 0 |
 | Linear | 256 → 4 | 4 (logits) | 1.028 |
 
@@ -55,7 +55,7 @@ Mạng `TomatoCNN` (`src/models/cnn.py`), huấn luyện từ đầu, không dù
 - **BatchNorm**: chuẩn hóa đầu ra mỗi kênh theo batch, giúp train ổn định và nhanh hơn.
 - **ReLU**: `max(0, x)`, tạo tính phi tuyến để mạng học được quan hệ phức tạp.
 - **MaxPool 2×2**: giữ giá trị lớn nhất mỗi ô 2×2, giảm một nửa chiều rộng/cao, giảm tính toán và giúp chịu được dịch chuyển nhỏ.
-- **Global Average Pooling**: thay cho flatten; giảm mạnh số tham số của tầng fully connected (256×4 thay vì 256×8×8×4), nên ít overfit hơn.
+- **Global Average Pooling**: thay cho flatten; giảm mạnh số tham số của tầng fully connected (256×4 thay vì 256×14×14×4), nên ít overfit hơn.
 - **Dropout**: tắt ngẫu nhiên 30% nơ-ron khi train để giảm overfit; khi `model.eval()` thì không tắt.
 - **Linear + softmax**: Linear cho 4 điểm (logits); softmax biến thành 4 xác suất cộng lại bằng 1. Xác suất này là độ tin của mô hình, không phải chẩn đoán chắc chắn.
 - **Cross-entropy và backpropagation**: loss = `-log(xác suất của lớp đúng)`. Backpropagation tính đạo hàm của loss theo từng tham số; optimizer (Adam) cập nhật tham số theo hướng giảm loss.
@@ -66,13 +66,13 @@ Giá trị đầy đủ trong `configs/cnn.yaml`. Đây là **đề xuất ban �
 
 | Tham số           | Giá trị     | Lý do       |
 |-------------------|-------------|-------------|
-| Kích thước ảnh    | 128×128     | Mạng nhỏ, train nhanh; vẫn đủ thấy đốm bệnh |
-| Normalize         | mean/std = 0.5 (tạm) | Chờ NV1 cung cấp mean/std tính trên Train |
+| Kích thước ảnh    | 224×224     | Chuẩn chung nhóm (NV1 đề xuất): cùng kích thước với ResNet18, dùng chung transform và demo |
+| Normalize         | mean [0.485, 0.456, 0.406], std [0.229, 0.224, 0.225] (ImageNet) | Chuẩn chung nhóm; CNN không dùng pretrained nên đây chỉ là bước đưa pixel về khoảng quanh 0 |
 | Loss              | CrossEntropyLoss | Chuẩn cho phân loại nhiều lớp |
 | Optimizer         | Adam, weight decay 1e-4 | Hội tụ nhanh, ít phải chỉnh tay; weight decay giảm overfit |
 | Learning rate     | 0.001 | Mặc định phổ biến của Adam; thử nghiệm E1 so với 0.0003 |
 | LR scheduler      | không dùng | Giữ đơn giản cho baseline |
-| Batch size        | 32 | Vừa bộ nhớ GPU 4 GB |
+| Batch size        | 32 | Đo trên RTX 3050 4 GB: đỉnh khoảng 1,1 GB VRAM mỗi bước train ở 224×224 |
 | Epochs            | tối đa 40 | Early stopping dừng sớm nếu Val không cải thiện |
 | Early stopping    | patience 7 theo `val_macro_f1` | Tránh train tiếp khi đã overfit |
 | Checkpoint policy | lưu epoch có `val_macro_f1` cao nhất; bằng nhau thì chọn Val Loss thấp hơn | Macro F1 công bằng hơn Accuracy khi lớp lệch; theo chuẩn chung của nhóm (giống NV3) |

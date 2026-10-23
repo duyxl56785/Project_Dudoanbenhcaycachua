@@ -13,7 +13,7 @@ from src.models.cnn import build_model
 def test_predict_file_any_image_mode(tmp_path, mode):
     img = tmp_path / f"x_{mode}.png"
     Image.new(mode, (300, 200)).save(img)
-    out = predict_file(img, build_model(4).eval(), simple_transform(128), NAMES)
+    out = predict_file(img, build_model(4).eval(), simple_transform(224), NAMES)
     assert list(out["probabilities"]) == NAMES
     assert sum(out["probabilities"].values()) == pytest.approx(1, abs=1e-5)
     assert out["label"] == NAMES[out["index"]]

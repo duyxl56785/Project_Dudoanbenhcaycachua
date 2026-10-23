@@ -5,7 +5,7 @@ Phụ trách: NV2 - Nguyễn Văn Duy.
 Kiến trúc (giải thích chi tiết trong docs/CNN_README.md):
 4 khối Conv3x3 -> BatchNorm -> ReLU -> MaxPool2, số kênh 32-64-128-256,
 rồi Global Average Pooling -> Dropout -> Linear ra 4 lớp.
-Với ảnh 128x128: 3x128x128 -> 32x64x64 -> 64x32x32 -> 128x16x16 -> 256x8x8 -> 256 -> 4.
+Với ảnh 224x224: 3x224x224 -> 32x112x112 -> 64x56x56 -> 128x28x28 -> 256x14x14 -> 256 -> 4.
 
 Hợp đồng với demo NV4 (src/inference.py): build_model(num_classes=4) và
 checkpoint là state_dict thuần của mô hình này.

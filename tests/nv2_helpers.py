@@ -10,7 +10,7 @@ NAMES = ["Healthy", "Early Blight", "Late Blight", "Bacterial Spot"]
 
 def synthetic_loader(n, seed=0, shuffle=True):
     gen = torch.Generator().manual_seed(seed)
-    images = torch.randn(n, 3, 128, 128, generator=gen)
+    images = torch.randn(n, 3, 224, 224, generator=gen)
     labels = torch.arange(n) % 4
     return DataLoader(TensorDataset(images, labels), batch_size=4, shuffle=shuffle,
                       generator=torch.Generator().manual_seed(seed))

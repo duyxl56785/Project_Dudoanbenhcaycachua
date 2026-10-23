@@ -15,10 +15,10 @@ data:
   val_split: data/splits/val.csv
   test_split: data/splits/test.csv     # chỉ dùng để đánh giá cuối
 
-preprocessing:              # Val/Test: tiền xử lý tất định
-  image_size: 128
-  normalize_mean: [0.5, 0.5, 0.5]   # tạm thời; thay bằng mean/std tính trên Train khi NV1 bàn giao
-  normalize_std: [0.5, 0.5, 0.5]
+preprocessing:              # chuẩn chung nhóm (NV1 đề xuất, cả nhóm AGREE); Val/Test tất định
+  image_size: 224
+  normalize_mean: [0.485, 0.456, 0.406]   # mean/std ImageNet, dùng chung với ResNet18
+  normalize_std: [0.229, 0.224, 0.225]
 
 augmentation:               # CHỈ áp dụng cho Train; transform do NV1 cung cấp (src/data/transforms.py)
   train: null               # chờ NV1 chốt danh sách phép biến đổi
