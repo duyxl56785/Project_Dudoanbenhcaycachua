@@ -3,6 +3,8 @@ Không phải kết quả huấn luyện thật."""
 import csv
 import json
 
+import pytest
+
 from nv2_helpers import NAMES, load_yaml, synthetic_loader
 from scripts.train_cnn import plot_curves, train
 from src.models.cnn import build_model
@@ -35,6 +37,23 @@ def test_plot_curves_writes_png(tmp_path):
     assert (tmp_path / "curves.png").stat().st_size > 0
 
 
+def _has_nv1_dataset():
+    try:
+        from src.data.dataset import ManifestDataset  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
+def test_use_utf8_output_keeps_vietnamese_readable_in_pipes():
+    import subprocess
+    import sys
+    code = "from src.cnn_training import use_utf8_output; use_utf8_output(); import sys; sys.stderr.write('Chưa có dữ liệu')"
+    proc = subprocess.run([sys.executable, "-c", code], capture_output=True)
+    assert proc.stderr.decode("utf-8") == "Chưa có dữ liệu"
+
+
+@pytest.mark.skipif(_has_nv1_dataset(), reason="Nhánh đã có code dữ liệu của NV1")
 def test_cli_without_nv1_data_module_exits_with_readable_message():
     import subprocess
     import sys
