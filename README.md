@@ -28,15 +28,17 @@ Kèm demo Streamlit để tải ảnh lá và xem dự đoán. Công nghệ: Pyt
 
 ## Phân công
 
-| NV  | Thành viên      | Nhiệm vụ                                   | Nhánh gợi ý            | Tài liệu |
-|-----|-----------------|--------------------------------------------|------------------------|----------|
-| NV1 | Lê Xuân Bảo     | Dataset & Preprocessing                    | `feature/nv1-dataset`  | [DATASET_README](docs/DATASET_README.md) |
-| NV2 | Nguyễn Văn Duy  | CNN tự xây dựng                            | `feature/nv2-cnn`      | [CNN_README](docs/CNN_README.md) |
-| NV3 | Trần Văn Chính  | ResNet18 & Transfer Learning               | `feature/nv3-resnet18` | [RESNET18_README](docs/RESNET18_README.md) |
-| NV4 | Nguyễn Minh Duy | Demo Streamlit & tích hợp mô hình          | `feature/nv4-demo`     | [DEMO_README](docs/DEMO_README.md) |
-| NV5 | Phạm Thế Cường  | Kiểm thử, so sánh, báo cáo, slide          | `feature/nv5-report`   | `results/`, `report/` |
+| NV  | Thành viên      | GitHub                     | Nhiệm vụ                                   | Nhánh gợi ý            | Tài liệu |
+|-----|-----------------|----------------------------|--------------------------------------------|------------------------|----------|
+| NV1 | Lê Xuân Bảo     | @lexuanbao258-collab       | Dataset & Preprocessing                    | `feature/nv1-dataset`  | [DATASET_README](docs/DATASET_README.md) |
+| NV2 | Nguyễn Văn Duy  | @duyxl56785                | CNN tự xây dựng                            | `feature/nv2-cnn`      | [CNN_README](docs/CNN_README.md) |
+| NV3 | Trần Văn Chính  | @tranvanchinhbg2006-alt    | ResNet18 & Transfer Learning               | `feature/nv3-resnet18` | [RESNET18_README](docs/RESNET18_README.md) |
+| NV4 | Nguyễn Minh Duy | @nguyenminhduy090-alt      | Demo Streamlit & tích hợp mô hình          | `feature/nv4-demo`     | [DEMO_README](docs/DEMO_README.md) |
+| NV5 | Phạm Thế Cường  | @phamthecuong2022006-alt   | Kiểm thử, so sánh, báo cáo, slide          | `feature/nv5-report`   | `results/`, `report/` |
 
 Mỗi người chịu trách nhiệm chính phần của mình và cung cấp số liệu, hình, giải thích cho phần đó. NV5 tổng hợp và kiểm tra, không làm thay phần của người khác.
+
+Chi tiết file phụ trách, Gate và người nhận bàn giao của từng người: [docs/PHAN_CONG.md](docs/PHAN_CONG.md). Checklist công việc nằm trong issue GitHub gán cho từng người.
 
 ## Cấu trúc thư mục
 
@@ -85,6 +87,7 @@ Project_Dudoanbenhcaycachua/
 ├── report/                        # báo cáo .docx, slide (NV5)
 └── docs/
     ├── BAN_GIAO_NHIEM_VU_NHOM_HOC_MAY_CA_CHUA_23-10-2026.txt   # tài liệu phân công
+    ├── PHAN_CONG.md               # bảng phân công kèm tài khoản GitHub
     ├── DATASET_README.md
     ├── CNN_README.md
     ├── RESNET18_README.md
