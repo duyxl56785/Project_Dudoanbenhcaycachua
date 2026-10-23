@@ -2,13 +2,13 @@
 
 Nguồn: [tài liệu bàn giao 23/10/2026](BAN_GIAO_NHIEM_VU_NHOM_HOC_MAY_CA_CHUA_23-10-2026.txt). Checklist chi tiết của từng người nằm trong issue GitHub được gán cho người đó.
 
-| NV  | Thành viên      | GitHub                                                              | Nhiệm vụ                          | Nhánh                  | Mục tài liệu |
-|-----|-----------------|---------------------------------------------------------------------|-----------------------------------|------------------------|--------------|
-| NV1 | Lê Xuân Bảo     | [@lexuanbao258-collab](https://github.com/lexuanbao258-collab)       | Dataset & Preprocessing           | `feature/nv1-dataset`  | III          |
-| NV2 | Nguyễn Văn Duy  | [@duyxl56785](https://github.com/duyxl56785)                         | CNN tự xây dựng                   | `feature/nv2-cnn`      | IV           |
-| NV3 | Trần Văn Chính  | [@tranvanchinhbg2006-alt](https://github.com/tranvanchinhbg2006-alt) | ResNet18 & Transfer Learning      | `feature/nv3-resnet18` | V            |
-| NV4 | Nguyễn Minh Duy | [@nguyenminhduy090-alt](https://github.com/nguyenminhduy090-alt)     | Demo Streamlit & tích hợp mô hình | `feature/nv4-demo`     | VI           |
-| NV5 | Phạm Thế Cường  | [@phamthecuong2022006-alt](https://github.com/phamthecuong2022006-alt) | Đánh giá, báo cáo, slide        | `feature/nv5-report`   | VII          |
+| NV  | Thành viên      | GitHub                                                              | Nhiệm vụ                          | Nhánh                  | Mục tài liệu | Issue |
+|-----|-----------------|---------------------------------------------------------------------|-----------------------------------|------------------------|--------------|-------|
+| NV1 | Lê Xuân Bảo     | [@lexuanbao258-collab](https://github.com/lexuanbao258-collab)       | Dataset & Preprocessing           | `feature/nv1-dataset`  | III          | [#2](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/issues/2) |
+| NV2 | Nguyễn Văn Duy  | [@duyxl56785](https://github.com/duyxl56785)                         | CNN tự xây dựng                   | `feature/nv2-cnn`      | IV           | [#3](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/issues/3) |
+| NV3 | Trần Văn Chính  | [@tranvanchinhbg2006-alt](https://github.com/tranvanchinhbg2006-alt) | ResNet18 & Transfer Learning      | `feature/nv3-resnet18` | V            | [#4](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/issues/4) |
+| NV4 | Nguyễn Minh Duy | [@nguyenminhduy090-alt](https://github.com/nguyenminhduy090-alt)     | Demo Streamlit & tích hợp mô hình | `feature/nv4-demo`     | VI           | [#5](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/issues/5) |
+| NV5 | Phạm Thế Cường  | [@phamthecuong2022006-alt](https://github.com/phamthecuong2022006-alt) | Đánh giá, báo cáo, slide        | `feature/nv5-report`   | VII          | [#6](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/issues/6) |
 
 ## NV1 – Lê Xuân Bảo (@lexuanbao258-collab)
 
