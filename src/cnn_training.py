@@ -7,6 +7,7 @@ zero_division=0) để hai mô hình so sánh công bằng.
 """
 import json
 import random
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -74,6 +75,37 @@ def run_epoch(model, loader, criterion, device, optimizer=None):
     metrics = compute_metrics(y_true, y_pred, [str(i) for i in LABELS])
     return {"loss": total_loss / len(y_true), "accuracy": metrics["accuracy"],
             "macro_f1": metrics["macro_f1"]}
+
+
+META_KEYS = ("labels", "preprocessing", "epoch", "val_macro_f1", "seed", "config",
+             "git_commit", "environment")
+
+
+def meta_path(checkpoint_path):
+    return Path(checkpoint_path).with_suffix(".meta.json")
+
+
+def save_checkpoint(model, path, meta):
+    """Lưu state_dict thuần (đúng hợp đồng demo NV4) và metadata ở file .meta.json."""
+    missing = [k for k in META_KEYS if k not in meta]
+    if missing:
+        raise ValueError(f"meta thiếu khóa: {', '.join(missing)}")
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save({k: v.detach().cpu() for k, v in model.state_dict().items()}, path)
+    meta_path(path).write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def load_checkpoint(path, class_names, device="cpu"):
+    """Nạp CNN từ checkpoint; báo lỗi nếu thứ tự nhãn khác class_mapping hiện tại."""
+    from src.models.cnn import build_model
+
+    meta = json.loads(meta_path(path).read_text(encoding="utf-8"))
+    if meta.get("labels") != list(class_names):
+        raise ValueError(f"Nhãn trong checkpoint {meta.get('labels')} khác class_mapping {list(class_names)}")
+    model = build_model(len(class_names))
+    model.load_state_dict(torch.load(path, map_location=device, weights_only=True), strict=True)
+    return model.to(device).eval(), meta
 
 
 class EarlyStopping:

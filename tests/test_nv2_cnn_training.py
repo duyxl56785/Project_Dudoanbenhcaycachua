@@ -7,8 +7,8 @@ import torch
 from torch import nn
 
 from nv2_helpers import NAMES, synthetic_loader
-from src.cnn_training import (EarlyStopping, compute_metrics, load_class_names,
-                              run_epoch, set_seed)
+from src.cnn_training import (EarlyStopping, compute_metrics, load_checkpoint, load_class_names,
+                              run_epoch, save_checkpoint, set_seed)
 from src.models.cnn import build_model
 
 
@@ -60,3 +60,25 @@ def test_load_class_names_keeps_numeric_order(tmp_path):
     path.write_text(json.dumps({"0": "A", "1": "A", "2": "C", "3": "D"}), encoding="utf-8")
     with pytest.raises(ValueError):
         load_class_names(path)
+
+
+META = {"labels": NAMES, "preprocessing": {"image_size": 128}, "epoch": 3, "val_macro_f1": 0.5,
+        "seed": 42, "config": {}, "git_commit": "test", "environment": {}}
+
+
+def test_checkpoint_is_plain_state_dict(tmp_path):
+    path = tmp_path / "cnn_best.pt"
+    save_checkpoint(build_model(4), path, META)
+    state = torch.load(path, map_location="cpu", weights_only=True)
+    assert isinstance(state, dict) and state
+    assert all(isinstance(k, str) and isinstance(v, torch.Tensor) for k, v in state.items())
+    build_model(4).load_state_dict(state, strict=True)
+
+
+def test_load_rejects_label_mismatch(tmp_path):
+    path = tmp_path / "cnn_best.pt"
+    save_checkpoint(build_model(4), path, META)
+    model, meta = load_checkpoint(path, NAMES)
+    assert not model.training and meta["labels"] == NAMES
+    with pytest.raises(ValueError):
+        load_checkpoint(path, list(reversed(NAMES)))
