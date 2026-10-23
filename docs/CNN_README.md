@@ -75,7 +75,7 @@ Giá trị đầy đủ trong `configs/cnn.yaml`. Đây là **đề xuất ban �
 | Batch size        | 32 | Vừa bộ nhớ GPU 4 GB |
 | Epochs            | tối đa 40 | Early stopping dừng sớm nếu Val không cải thiện |
 | Early stopping    | patience 7 theo `val_macro_f1` | Tránh train tiếp khi đã overfit |
-| Checkpoint policy | lưu epoch có `val_macro_f1` cao nhất | Macro F1 công bằng hơn Accuracy khi lớp lệch; giống tiêu chí của NV3 |
+| Checkpoint policy | lưu epoch có `val_macro_f1` cao nhất; bằng nhau thì chọn Val Loss thấp hơn | Macro F1 công bằng hơn Accuracy khi lớp lệch; theo chuẩn chung của nhóm (giống NV3) |
 | Seed              | 42 | Tái lập kết quả; giống NV3 |
 
 ## 4. Môi trường

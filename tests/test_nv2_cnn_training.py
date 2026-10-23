@@ -82,3 +82,11 @@ def test_load_rejects_label_mismatch(tmp_path):
     assert not model.training and meta["labels"] == NAMES
     with pytest.raises(ValueError):
         load_checkpoint(path, list(reversed(NAMES)))
+
+
+def test_early_stopping_tie_prefers_lower_val_loss():
+    es = EarlyStopping(patience=3)
+    assert es.step(0.6, tiebreak=1.0) is True
+    assert es.step(0.6, tiebreak=0.9) is True    # bằng F1, loss thấp hơn -> chọn epoch này
+    assert es.step(0.6, tiebreak=0.95) is False  # bằng F1, loss cao hơn -> giữ epoch trước
+    assert es.best_epoch == 1

@@ -116,21 +116,31 @@ def load_checkpoint(path, class_names, device="cpu"):
 
 
 class EarlyStopping:
-    """Dừng khi chỉ số Validation không cải thiện sau `patience` epoch liên tiếp."""
+    """Dừng khi chỉ số Validation không cải thiện sau `patience` epoch liên tiếp.
+
+    Khi chỉ số chính bằng nhau, `tiebreak` (ví dụ val_loss, càng thấp càng tốt)
+    quyết định epoch nào tốt hơn - theo chuẩn chung của nhóm.
+    """
 
     def __init__(self, patience, mode="max"):
         if mode not in ("max", "min"):
             raise ValueError("mode phải là 'max' hoặc 'min'")
         self.patience, self.mode = patience, mode
-        self.best = self.best_epoch = None
+        self.best = self.best_epoch = self.best_tiebreak = None
         self.should_stop = False
         self._epoch, self._bad = -1, 0
 
-    def step(self, value):
+    def step(self, value, tiebreak=None):
         self._epoch += 1
-        improved = self.best is None or (value > self.best if self.mode == "max" else value < self.best)
+        if self.best is None:
+            improved = True
+        elif value == self.best:
+            improved = (tiebreak is not None and self.best_tiebreak is not None
+                        and tiebreak < self.best_tiebreak)
+        else:
+            improved = value > self.best if self.mode == "max" else value < self.best
         if improved:
-            self.best, self.best_epoch, self._bad = value, self._epoch, 0
+            self.best, self.best_tiebreak, self.best_epoch, self._bad = value, tiebreak, self._epoch, 0
         else:
             self._bad += 1
             self.should_stop = self._bad >= self.patience

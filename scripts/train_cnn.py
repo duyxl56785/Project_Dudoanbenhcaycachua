@@ -95,7 +95,7 @@ def train(model, train_loader, val_loader, config, out_dir, ckpt_path, device):
             stream.flush()
             print(f"epoch {epoch}: train_loss={tr['loss']:.4f} val_loss={va['loss']:.4f} "
                   f"val_acc={va['accuracy']:.4f} val_macro_f1={va['macro_f1']:.4f}", flush=True)
-            if early.step(va["macro_f1"]):
+            if early.step(va["macro_f1"], tiebreak=va["loss"]):
                 best_epoch = epoch
                 save_checkpoint(model, ckpt_path, {
                     "labels": class_names, "preprocessing": config["preprocessing"],
