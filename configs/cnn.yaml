@@ -30,7 +30,7 @@ training:
   num_workers: 0
   loss: CrossEntropyLoss
   optimizer: Adam
-  learning_rate: 0.001
+  learning_rate: 0.0003     # chọn bằng Validation (E1); baseline 0.001 - xem results/cnn/experiments.csv
   weight_decay: 0.0001
   lr_scheduler: null
   early_stopping_patience: 7
