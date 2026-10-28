@@ -1,11 +1,11 @@
 """NV3-only dataset adapter and reusable inference/evaluation utilities.
 
 Contract: NV1's CSV splits must exist with 'path' and 'label' columns; `path`
-resolves relative to --data-root (default: repository root). No re-splitting.
+resolves relative to --data-root (CLI default: data/raw). No re-splitting.
+Dataset and transforms are delegated to NV1 PR #8.
 """
 from __future__ import annotations
 
-import csv
 import json
 import random
 from pathlib import Path
@@ -15,8 +15,6 @@ import torch
 import yaml
 from PIL import Image
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score
-from torch.utils.data import Dataset
-from torchvision import transforms
 
 from src.models.resnet18 import WEIGHTS_NAME, build_resnet18
 
@@ -28,6 +26,12 @@ def read_config(path: str | Path) -> dict:
         config = yaml.safe_load(stream)
     if config["model"]["num_classes"] != 4 or config["model"]["weights"] != WEIGHTS_NAME:
         raise ValueError("Unexpected classes/weights in NV3 configuration")
+    if not config["model"].get("pretrained"):
+        raise ValueError("Training requires ImageNet pretrained weights")
+    if config["checkpoint"].get("mode") != "max":
+        raise ValueError("Validation macro F1 must be maximized")
+    if any(stage.get("lr_scheduler") is not None for stage in config["stages"].values()):
+        raise ValueError("Learning rate schedulers are not implemented; use null")
     if config["checkpoint"]["monitor"] != "val_macro_f1":
         raise ValueError("Checkpoints must be selected on validation macro F1")
     return config
@@ -52,57 +56,30 @@ def set_seed(seed: int) -> None:
         torch.cuda.manual_seed_all(seed)
 
 
-def image_transform(config: dict, *, train: bool) -> transforms.Compose:
-    p = config["preprocessing"]
-    ops: list = [transforms.Resize(p["resize_size"])]
-    if train:
-        ops.append(transforms.RandomCrop(p["image_size"]))
-        if config["augmentation"]["train"].get("random_horizontal_flip"):
-            ops.append(transforms.RandomHorizontalFlip())
-        jitter = float(config["augmentation"]["train"].get("color_jitter", 0.0))
-        if jitter:
-            ops.append(transforms.ColorJitter(brightness=jitter, contrast=jitter))
-    else:
-        ops.append(transforms.CenterCrop(p["image_size"]))
-    ops.extend((transforms.ToTensor(), transforms.Normalize(p["normalize_mean"], p["normalize_std"])))
-    return transforms.Compose(ops)
+def _shared_data_api():
+    """Require NV1's reviewed implementation instead of duplicating its pipeline."""
+    from src.data import dataset, transforms as shared_transforms
+    required = (hasattr(dataset, "ManifestDataset"),
+                hasattr(shared_transforms, "build_train_transform"),
+                hasattr(shared_transforms, "build_val_transform"))
+    if not all(required):
+        raise RuntimeError("NV1 PR #8 shared Dataset/transforms must be integrated before running NV3 data workflows")
+    return dataset, shared_transforms
 
 
-class ManifestDataset(Dataset):
-    def __init__(self, manifest: Path, data_root: Path, labels: list[str], transform: transforms.Compose):
-        if not manifest.is_file():
-            raise FileNotFoundError(f"NV1 split not available: {manifest}")
-        with manifest.open(newline="", encoding="utf-8-sig") as stream:
-            reader = csv.DictReader(stream)
-            if not reader.fieldnames or not {"path", "label"}.issubset(reader.fieldnames):
-                raise ValueError(f"Expected 'path' and 'label' CSV columns: {manifest}")
-            records = list(reader)
-        if not records:
-            raise ValueError(f"Empty split manifest: {manifest}")
-        self.samples: list[tuple[Path, int]] = []
-        for row in records:
-            raw_label = str(row["label"]).strip()
-            if raw_label.isdigit() and int(raw_label) in range(len(labels)):
-                label = int(raw_label)
-            elif raw_label in labels:
-                label = labels.index(raw_label)
-            else:
-                raise ValueError(f"Unknown label {raw_label!r} in {manifest}")
-            raw_path = Path(row["path"].strip())
-            resolved = raw_path if raw_path.is_absolute() else data_root / raw_path
-            if not resolved.is_file():
-                raise FileNotFoundError(f"Missing image listed in {manifest}: {resolved}")
-            self.samples.append((resolved, label))
-        self.transform = transform
+def image_transform(config: dict, *, train: bool):
+    _, shared = _shared_data_api()
+    factory = shared.build_train_transform if train else shared.build_val_transform
+    return factory("resnet18", config)
 
-    def __len__(self) -> int:
-        return len(self.samples)
 
-    def __getitem__(self, index: int):
-        path, label = self.samples[index]
-        with Image.open(path) as img:
-            tensor = self.transform(img.convert("RGB"))
-        return tensor, label
+def ManifestDataset(manifest: Path, data_root: Path, labels: list[str], transform):
+    """Compatibility wrapper for NV3 callers; all data validation belongs to NV1."""
+    shared, _ = _shared_data_api()
+    dataset = shared.ManifestDataset(manifest, data_root, transform=transform)
+    if dataset.labels != labels:
+        raise ValueError("NV1 class mapping differs from NV3 labels")
+    return dataset
 
 
 def resolved_paths(config: dict, root: Path = REPO_ROOT) -> dict[str, Path]:
@@ -116,16 +93,34 @@ def checkpoint_payload(model, config: dict, labels: list[str], stage: str, best_
             "best_val_macro_f1": float(best_val_f1)}
 
 
+def save_checkpoint(path: Path, model, metadata: dict) -> None:
+    """Save the agreed demo format and its traceable metadata sidecar."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(model.state_dict(), path)
+    path.with_suffix(".meta.json").write_text(
+        json.dumps(metadata, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
 def load_checkpoint(path: Path, config: dict, labels: list[str], device: torch.device):
     checkpoint = torch.load(path, map_location="cpu", weights_only=True)
-    if checkpoint.get("labels") != labels or checkpoint.get("num_classes") != 4:
+    if "model_state_dict" in checkpoint:
+        # Legacy internal artifacts remain readable; never rewrite them implicitly.
+        metadata = {key: value for key, value in checkpoint.items() if key != "model_state_dict"}
+        state = checkpoint["model_state_dict"]
+    else:
+        sidecar = path.with_suffix(".meta.json")
+        if not sidecar.is_file():
+            raise FileNotFoundError(f"Missing checkpoint metadata: {sidecar}")
+        metadata = json.loads(sidecar.read_text(encoding="utf-8"))
+        state = checkpoint
+    if metadata.get("labels") != labels or metadata.get("num_classes") != 4:
         raise ValueError("Checkpoint class mapping does not match shared config")
-    if checkpoint.get("preprocessing") != config["preprocessing"] or checkpoint.get("weights") != WEIGHTS_NAME:
+    if metadata.get("preprocessing") != config["preprocessing"] or metadata.get("weights") != WEIGHTS_NAME:
         raise ValueError("Checkpoint preprocessing/weights differs from NV3 config")
     model = build_resnet18(num_classes=4, pretrained=False)
-    model.load_state_dict(checkpoint["model_state_dict"], strict=True)
+    model.load_state_dict(state, strict=True)
     model.to(device).eval()
-    return model, checkpoint
+    return model, metadata
 
 
 def calculate_metrics(y_true: list[int], y_pred: list[int], labels: list[str]) -> dict:

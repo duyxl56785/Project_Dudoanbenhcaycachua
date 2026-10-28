@@ -2,12 +2,12 @@
 
 **Phạm vi:** ResNet18 pretrained (ImageNet-1K V1), 4 tình trạng lá cà chua. Chủ nhiệm NV3 phụ trách mô hình; không thay đổi split/nhãn của NV1, CNN của NV2, app của NV4 hay phần tổng hợp NV5.
 
-**Trạng thái:** Code và smoke tests có thể hoàn thiện trước khi NV1 bàn giao dữ liệu. **Chưa có huấn luyện thực nghiệm, checkpoint pretrained đã fine-tune hoặc kết quả Accuracy/F1 thực tế.** Không dùng test giả để báo cáo độ chính xác.
+**Trạng thái:** Đã sửa theo review PR #7: factory offline, checkpoint thuần + metadata JSON, dùng chung API NV1. Nhánh NV3 cần tích hợp NV1 PR #8 trước khi chạy luồng dữ liệu. **Chưa có huấn luyện thực nghiệm, checkpoint pretrained đã fine-tune hoặc kết quả Accuracy/F1 thực tế.** Không dùng test giả để báo cáo độ chính xác.
 
 ## Cấu trúc
 
 - `src/models/resnet18.py`: backbone ResNet18, thay lớp `fc` từ 1000 sang 4, điều khiển freeze/unfreeze, BatchNorm.
-- `src/resnet18_workflow.py`: adapter đọc `path,label` từ CSV, tiền xử lý riêng, mapping, checkpoint, inference, metrics.
+- `src/resnet18_workflow.py`: wrapper gọi Dataset/transforms dùng chung của NV1, mapping, checkpoint, inference, metrics.
 - `scripts/train_resnet18.py`: Feature Extraction và Fine-tuning; chọn checkpoint dựa **Validation macro F1** (hòa thì xét Validation Loss).
 - `scripts/eval_resnet18.py`: chỉ kiểm thử trên Test *sau khi đã chốt checkpoint*; confusion matrix và bảng chỉ số.
 - `scripts/infer_resnet18.py`: đọc ảnh JPG/PNG, softmax 4 lớp đúng theo mapping.
@@ -24,7 +24,7 @@ ResNet18 là CNN 18 lớp có residual/skip connections, giúp tối ưu hóa c�
 
 ## Dữ liệu và hợp đồng với NV1
 
-Đọc 3 manifest: `data/splits/train.csv`, `val.csv`, `test.csv`. Mỗi CSV có ít nhất cột `path,label`. `path` là đường dẫn tuyệt đối hoặc tương đối với `--data-root` (mặc định root repository). `label` có thể là số 0..3 hoặc tên lớp **khớp chính xác** với `configs/class_mapping.json`:
+Đọc 3 manifest: `data/splits/train.csv`, `val.csv`, `test.csv`. Mỗi CSV có ít nhất cột `path,label`. `path` là đường dẫn tương đối an toàn với `--data-root` (CLI mặc định `data/raw`). `label` có thể là số 0..3 hoặc tên lớp **khớp chính xác** với `configs/class_mapping.json`:
 
 | ID | Nhãn |
 |---|---|
@@ -33,7 +33,7 @@ ResNet18 là CNN 18 lớp có residual/skip connections, giúp tối ưu hóa c�
 | 2 | Late Blight |
 | 3 | Bacterial Spot |
 
-Nếu manifest NV1 sau này có tên cột/đường dẫn khác, **trao đổi với NV1 trước khi sửa adapter**; không sửa các file do NV1 phụ trách và không tự tái chia dữ liệu. Lấy split gốc theo lá để tránh leakage theo quyết định NV1.
+Đã đối chiếu NV1 commit `6a03cbe`: `path,label,group`, đường dẫn `raw/color/...`; ảnh sau giải nén nằm ở `data/raw/raw/color/...`. Dataset kiểm tra nhãn khớp thư mục lớp và từ chối đường dẫn không an toàn. Không hardcode số ảnh. Nếu manifest NV1 sau này có tên cột/đường dẫn khác, **trao đổi với NV1 trước khi sửa adapter**; không sửa các file do NV1 phụ trách và không tự tái chia dữ liệu. Lấy split gốc theo lá để tránh leakage theo quyết định NV1.
 
 **Train transforms:** resize cạnh ngắn 256, random crop 224, horizontal flip, brightness/contrast jitter nhẹ (0.1), tensor, ImageNet normalization.
 
@@ -53,8 +53,8 @@ Nếu cần CUDA, xem cấu hình tương thích tại https://pytorch.org/get-s
 Chỉ sau khi NV1 hoàn tất Gate 1, xác nhận CSV và có ảnh thật:
 
 ```powershell
-.\.venv\Scripts\python.exe -m scripts.train_resnet18 --data-root .
-.\.venv\Scripts\python.exe -m scripts.eval_resnet18 --data-root .
+.\.venv\Scripts\python.exe -m scripts.train_resnet18 --data-root data/raw
+.\.venv\Scripts\python.exe -m scripts.eval_resnet18 --data-root data/raw
 .\.venv\Scripts\python.exe -m scripts.infer_resnet18 "duong-dan-den-anh-la.jpg"
 ```
 
@@ -88,6 +88,29 @@ Các giá trị trên là cấu hình khởi đầu, **không phải kết quả
 - `results/resnet18/resnet18_feature_vs_finetune.csv`: Val macro F1, Val loss và parameter count hai stage.
 - `results/resnet18/train_history.csv`, `figures/resnet18_train_curves.png`.
 - `results/resnet18/resnet18_metrics.json`, `results/resnet18/resnet18_confusion_matrix.png`, `results/resnet18/resnet18_test_predictions.csv` (chỉ sau Test).
+
+## Hợp đồng checkpoint NV4
+
+```python
+from src.models.resnet18 import build_model
+model = build_model(num_classes=4)  # không truy cập Internet
+state = torch.load("checkpoints/resnet18_best.pt", map_location="cpu", weights_only=True)
+model.load_state_dict(state, strict=True)
+model.eval()
+```
+
+Checkpoint mới là plain `state_dict`; `resnet18_best.meta.json` đi kèm chứa mapping, preprocessing, ImageNet weights version, stage, epoch, val_macro_f1, val_loss, seed, toàn bộ config và phiên bản môi trường. Các checkpoint từng stage cũng dùng định dạng này. Loader NV3 vẫn đọc được checkpoint cũ dạng `model_state_dict` + metadata; không tự chuyển đổi hay xóa file cũ. CLI NV3 yêu cầu sidecar cho checkpoint thuần để kiểm tra mapping/preprocessing; loader NV4 trực tiếp tải state_dict.
+
+Mỗi lần chạy mới cần đường dẫn checkpoint/results chưa chứa checkpoint cũ: chương trình từ chối ghi đè để bảo toàn trọng số. Nếu đổi augmentation, cập nhật pipeline chung qua NV1; wrapper NV3 không còn giữ augmentation riêng.
+
+## Kiểm chứng sửa review (28/10/2026)
+
+- Python 3.12.14, torch 2.14.1+cpu, torchvision 0.29.1+cpu.
+- Kết quả: **8 pass, 3 skip** trên nhánh NV3; **11/11 pass** trên bản sao tích hợp NV1/NV3/NV4. Các test dữ liệu/tích hợp được đánh dấu skip nếu chưa tích hợp API NV1/NV4; không coi skip là pass.
+- Bản sao tạm tích hợp code NV1 `6a03cbe`, NV4 `21b1778` và code NV3 hiện tại: kiểm tra dataset thật của NV1 bằng ảnh tổng hợp đúng schema; hai stage, checkpoint, eval, inference; xác suất NV3 khớp API NV4 trên cùng ảnh.
+- Đã tải ImageNet weights chính thức qua torchvision (kiểm tra checksum), forward được `[1,4]`. Dùng `TORCH_HOME=/workspace/.cache/torch` trong môi trường cloud để tái dùng cache.
+- Không có bộ ảnh PlantVillage trong môi trường; chưa chạy huấn luyện chính thức, chưa đánh giá Test thật, chưa nghiệm thu Gate 1. Dữ liệu tổng hợp chỉ phục vụ kiểm thử kỹ thuật.
+- Linux: `OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python -m pytest -q tests/test_nv3_resnet18.py`. Windows PowerShell dùng lệnh pytest ở trên. Tích hợp PR #8/#1 là phần việc phối hợp; không tự sửa file NV1/NV4 hoặc merge main.
 
 **NV4 integration:** `scripts.infer_resnet18.run(Path(image), Path(config))` trả `{"label": ..., "scores": {"Healthy": score, ...}}`; không mặc định điểm Softmax đã được hiệu chỉnh xác suất chẩn đoán.
 

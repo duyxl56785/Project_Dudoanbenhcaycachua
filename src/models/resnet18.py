@@ -7,6 +7,15 @@ from torchvision.models import ResNet18_Weights, resnet18
 WEIGHTS_NAME = "IMAGENET1K_V1"
 
 
+def build_model(num_classes: int = 4, *, pretrained: bool = False) -> nn.Module:
+    """NV4 entry point: build offline by default, then load a state_dict.
+
+    Training must explicitly request ImageNet weights with pretrained=True.
+    Keep build_resnet18 available for existing NV3 callers.
+    """
+    return build_resnet18(num_classes=num_classes, pretrained=pretrained)
+
+
 def build_resnet18(num_classes: int = 4, pretrained: bool = True) -> nn.Module:
     """Build ResNet18; use pretrained weights only when explicitly requested."""
     if num_classes != 4:

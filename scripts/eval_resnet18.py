@@ -61,7 +61,7 @@ def run(config_path: Path, data_root: Path, checkpoint_path: Path | None = None)
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=Path, default=REPO_ROOT / "configs/resnet18.yaml")
-    parser.add_argument("--data-root", type=Path, default=REPO_ROOT)
+    parser.add_argument("--data-root", type=Path, default=REPO_ROOT / "data/raw")
     parser.add_argument("--checkpoint", type=Path, default=None)
     args = parser.parse_args()
     scores = run(args.config, args.data_root, args.checkpoint)

@@ -8,7 +8,6 @@ import argparse
 import csv
 import json
 import platform
-import shutil
 from pathlib import Path
 
 import matplotlib
@@ -22,7 +21,7 @@ from torch.utils.data import DataLoader
 from src.models.resnet18 import build_resnet18, configure_stage, parameter_counts, training_mode
 from src.resnet18_workflow import (REPO_ROOT, ManifestDataset, checkpoint_payload,
                                    image_transform, read_config, read_labels,
-                                   resolved_paths, set_seed)
+                                   resolved_paths, set_seed, load_checkpoint, save_checkpoint)
 
 
 def epoch_pass(model, loader, criterion, device, optimizer=None) -> dict[str, float]:
@@ -87,8 +86,17 @@ def plot_curves(records: list[dict], path: Path) -> None:
     plt.close(fig)
 
 
-def run(config_path: Path, data_root: Path, *, allow_missing: bool = False) -> dict:
+def run(config_path: Path, data_root: Path) -> dict:
     config = read_config(config_path)
+    delivery = REPO_ROOT / config["checkpoint"]["path"]
+    result_root = REPO_ROOT / config["output"]["results_dir"]
+    protected = [delivery, delivery.with_suffix(".meta.json")]
+    for stage in ("feature_extraction", "fine_tuning"):
+        protected.extend([result_root / f"{stage}_best.pt", result_root / f"{stage}_best.meta.json"])
+        if int(config["stages"][stage]["epochs"]) < 1:
+            raise ValueError("Each training stage requires at least one epoch")
+    if any(path.exists() for path in protected):
+        raise FileExistsError("Existing checkpoints are preserved; configure new checkpoint and results paths for a new run")
     labels = read_labels(REPO_ROOT / config["data"]["class_mapping"])
     set_seed(int(config["training"]["seed"]))
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -116,8 +124,7 @@ def run(config_path: Path, data_root: Path, *, allow_missing: bool = False) -> d
     for stage in ("feature_extraction", "fine_tuning"):
         if stage == "fine_tuning":
             # Start from the strongest feature-extraction checkpoint, not its last epoch.
-            model.load_state_dict(torch.load(stage_checkpoints["feature_extraction"],
-                                             map_location="cpu", weights_only=True)["model_state_dict"])
+            model, _ = load_checkpoint(stage_checkpoints["feature_extraction"], config, labels, device)
         stage_cfg = config["stages"][stage]
         configure_stage(model, stage, tuple(config["stages"]["fine_tuning"]["unfreeze_layers"]))
         counts = parameter_counts(model)
@@ -133,11 +140,19 @@ def run(config_path: Path, data_root: Path, *, allow_missing: bool = False) -> d
             records.append(record)
             print(f"{stage} epoch={epoch} train_loss={train['loss']:.4f} "
                   f"val_loss={val['loss']:.4f} val_macro_f1={val['macro_f1']:.4f}")
-            improved = (val["macro_f1"] > best_score + 1e-9 or
-                        (abs(val["macro_f1"] - best_score) <= 1e-9 and val["loss"] < best_loss))
+            improved = (val["macro_f1"] > best_score or
+                        (val["macro_f1"] == best_score and val["loss"] < best_loss))
             if improved:
                 best_score, best_loss, stale = val["macro_f1"], val["loss"], 0
-                torch.save(checkpoint_payload(model, config, labels, stage, best_score), stage_checkpoint)
+                metadata = checkpoint_payload(model, config, labels, stage, best_score)
+                metadata.pop("model_state_dict")
+                metadata.update({"epoch": epoch, "val_loss": best_loss,
+                                 "seed": int(config["training"]["seed"]), "config": config,
+                                 "environment": {"python": platform.python_version(),
+                                                 "torch": str(torch.__version__),
+                                                 "torchvision": str(__import__("torchvision").__version__),
+                                                 "device": str(device)}})
+                save_checkpoint(stage_checkpoint, model, metadata)
             else:
                 stale += 1
             patience = stage_cfg.get("early_stopping_patience")
@@ -149,7 +164,10 @@ def run(config_path: Path, data_root: Path, *, allow_missing: bool = False) -> d
 
     # Select by Validation only; tie breaks on lower val loss.
     winner = sorted(comparison, key=lambda r: (-r["val_macro_f1"], r["val_loss"]))[0]
-    shutil.copyfile(stage_checkpoints[winner["stage"]], checkpoint_path)
+    selected_model, selected_metadata = load_checkpoint(stage_checkpoints[winner["stage"]], config, labels, device)
+    if checkpoint_path.exists() or checkpoint_path.with_suffix(".meta.json").exists():
+        raise FileExistsError(f"Refusing to overwrite an existing delivery checkpoint: {checkpoint_path}; configure a new path")
+    save_checkpoint(checkpoint_path, selected_model, selected_metadata)
     with (results_dir / "resnet18_feature_vs_finetune.csv").open("w", newline="", encoding="utf-8") as stream:
         writer = csv.DictWriter(stream, fieldnames=list(comparison[0]))
         writer.writeheader(); writer.writerows(comparison)
@@ -168,6 +186,6 @@ def run(config_path: Path, data_root: Path, *, allow_missing: bool = False) -> d
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train NV3 ResNet18 on NV1 splits")
     parser.add_argument("--config", type=Path, default=REPO_ROOT / "configs/resnet18.yaml")
-    parser.add_argument("--data-root", type=Path, default=REPO_ROOT)
+    parser.add_argument("--data-root", type=Path, default=REPO_ROOT / "data/raw")
     args = parser.parse_args()
     print(json.dumps(run(args.config, args.data_root), indent=2))
