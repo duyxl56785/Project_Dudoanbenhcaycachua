@@ -191,11 +191,11 @@ def predict(image, model, transform, names, device="cpu"):
 def predict_image(image, model_name, root=ROOT, device="cpu"):
     if model_name not in MODELS:
         raise InferenceError(f"Mô hình không hỗ trợ: {model_name}")
-    names = class_names(root)
-    config = load_config(model_name, root)
     checkpoint = root / "checkpoints" / MODELS[model_name]
     if not checkpoint.is_file():
         raise InferenceError(f"Thiếu checkpoint {checkpoint}; chỉ dùng file do nhóm xác nhận.")
+    names = class_names(root)
+    config = load_config(model_name, root)
     validate_metadata(model_name, root, config, names)
     device = resolve_device(device) if device != "cpu" else "cpu"
     transform = load_transform(model_name, config)

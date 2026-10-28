@@ -41,6 +41,8 @@ class InferenceTests(unittest.TestCase):
                 load_config("cnn", root)
             with self.assertRaisesRegex(InferenceError, "Thiếu checkpoint"):
                 load_model("cnn", root)
+            with self.assertRaisesRegex(InferenceError, "Thiếu checkpoint"):
+                predict_image(Image.new("RGB", (2, 2)), "cnn", root)
 
     def test_valid_config_and_metadata_mismatch(self):
         with tempfile.TemporaryDirectory() as tmp:
