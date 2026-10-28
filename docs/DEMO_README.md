@@ -10,6 +10,8 @@ Giao diện và API suy luận đã triển khai trên `feature/nv4-demo`; **Gat
 
 Sidebar chọn mô hình, thiết bị và hiển thị trạng thái checkpoint. Tab **Dự đoán** nhận tối đa **8 ảnh** JPG/JPEG/PNG, xem trước và chạy từng ảnh; một ảnh lỗi không chặn ảnh còn lại. Tab **Lịch sử phiên** giữ tên ảnh, thời điểm, mô hình, nhãn và xác suất trong `st.session_state`; không lưu nội dung ảnh vào lịch sử hay ghi file trên server. Có thể xem lại từng kết quả, tải CSV UTF-8 BOM cho Excel và xóa lịch sử. Tab **Thống kê phiên** đếm ảnh riêng biệt, lượt theo mô hình, nhãn được dự đoán và forward trung bình. Đây không phải tỷ lệ bệnh thực tế trong vườn.
 
+Lịch sử cũng ghi trạng thái và thông báo cho ảnh hỏng hoặc mô hình thiếu checkpoint. Chỉ giữ 200 bản ghi mới nhất. CSV có 10 cột `timestamp`, `filename`, `model`, `predicted_class`, `top1_probability`, bốn xác suất theo thứ tự mapping và `status`; ô xác suất của lượt lỗi để trống. Tên file bắt đầu bằng ký tự công thức được vô hiệu hóa khi mở trong Excel. Dashboard có bộ lọc mô hình và đếm riêng lượt thành công/lỗi; thời gian forward trung bình chỉ tính trên lượt thành công.
+
 Ở chế độ so sánh, kết quả CNN và ResNet18 nằm hai cột cho từng ảnh. Khi ResNet18 thiếu checkpoint, CNN vẫn cho kết quả thật và cột ResNet18 báo chưa sẵn sàng. Đổi danh sách ảnh, mô hình hoặc thiết bị sẽ xóa kết quả lượt hiện tại để tránh ghép nhầm. Trên màn hình hẹp, Streamlit tự xếp lại cột.
 
 Với từng ảnh lá cà chua, demo xác minh nội dung JPEG/PNG, chuyển ảnh về RGB, áp dụng đúng transform Val/Test của mô hình, chạy forward pass trong `torch.inference_mode()`, rồi hiển thị nhãn top-1, bốn xác suất softmax và biểu đồ. Luồng chính:
@@ -84,7 +86,7 @@ API: `predict_bytes(data, model_name, root=ROOT, device="cpu")` hoặc `predict_
 
 ## Kiểm thử và bàn giao cho NV5
 
-Đã chạy trong `.venv`: `python -m pytest tests -q` → **33 passed, 19 subtests passed**. `python -m compileall -q src demo tests` và `git diff --check` đạt. Streamlit khởi động thành công ở `127.0.0.1`; sau khi kiểm thử server đã được dừng.
+Đã chạy trong `.venv`: `python -m pytest tests -q` → **34 passed, 19 subtests passed**. `python -m compileall -q src demo tests` và `git diff --check` đạt. Streamlit khởi động thành công ở `127.0.0.1`; sau khi kiểm thử server đã được dừng.
 
 Kiểm thử CNN thật dùng checkpoint từ head PR #9 trong bản sao tạm, không sửa nhánh NV2 và không đưa checkpoint vào commit NV4. Checkpoint có SHA-256 `d33c95bbe15e82fa83f1fd954136ebfff6e1cbba1a86fe40af473a377390de1`, metadata epoch 24, Validation macro-F1 0,976836. Trên ảnh Test nhãn Bacterial Spot `00416648-...3110.JPG` (SHA-256 `3320c467...db06`), `demo.check_consistency` xác nhận top-1 và cả bốn softmax của script NV2/API NV4 khớp tuyệt đối (`max |delta| = 0`) trên CPU. Đánh giá lại toàn bộ 1.356 ảnh Test trên CPU cho Accuracy **0,969764** và macro-F1 **0,965034**, khớp file kết quả NV2. Đây là kiểm chứng tái lập kỹ thuật của checkpoint đã chốt bằng Validation, không phải lựa chọn mô hình bằng Test.
 
@@ -123,6 +125,10 @@ ResNet18 từ head PR #7 đã nhận batch ảnh thật `[1,3,224,224]` và tr�
 ### Ảnh bằng chứng demo thật
 
 Giao diện đa ảnh và dashboard sau khi chạy CNN thật: [so sánh đa ảnh](../demo/screenshots/multi_image_compare.jpg), [thống kê phiên](../demo/screenshots/dashboard_multi_image.jpg).
+
+Kiểm thử lại ngày 28/10/2026 với checkpoint CNN SHA-256 `d33c95bb...f473a377390de1f`: tải ảnh Bacterial Spot và Healthy thật cùng `corrupt.jpg`. Hai ảnh được CNN dự đoán đúng, ảnh hỏng bị từ chối riêng; lịch sử ghi đủ hai lượt thành công và một lượt lỗi, nút CSV tải file thành công, dashboard hiển thị 2 ảnh/2 lượt thành công/1 lỗi. Chọn ResNet18 cho cùng ảnh hiển thị trạng thái thiếu checkpoint, không tạo dự đoán. Xóa lịch sử trong phiên đã xác nhận trạng thái trống. [Preview đa ảnh và lỗi](../demo/screenshots/preview_batch_error_20261028.jpg), [lịch sử và CSV](../demo/screenshots/history_csv_20261028.jpg), [dashboard có lượt lỗi](../demo/screenshots/dashboard_error_20261028.jpg).
+
+**Video demo chưa được quay.** [Kịch bản và danh sách thao tác](DEMO_SCRIPT_NV4.md) đã cập nhật để quay màn hình thật khi nhóm chốt bản trình bày.
 
 Các ảnh dưới đây được chụp trực tiếp từ phiên Streamlit kiểm thử, không phải ảnh dựng. Chúng là bằng chứng hành vi giao diện; số liệu đánh giá tập Test vẫn lấy từ phép kiểm thử tái lập nêu trên.
 

@@ -18,7 +18,7 @@ Thời lượng gợi ý: 4–6 phút. Chỉ quay khi đang dùng checkpoint nh�
 
 **Màn hình:** lần lượt chỉ vùng chọn mô hình, thiết bị, uploader và nút **Dự đoán bệnh**.
 
-**Lời nói:** “Người dùng có thể chọn CNN, ResNet18 hoặc so sánh cả hai; chọn thiết bị tự động, CPU hoặc CUDA; sau đó tải ảnh JPG hoặc PNG tối đa 10 MiB.”
+**Lời nói:** “Người dùng có thể chọn CNN, ResNet18 hoặc so sánh cả hai; chọn thiết bị tự động, CPU hoặc CUDA; sau đó tải tối đa tám ảnh JPG hoặc PNG, mỗi ảnh tối đa 10 MiB.”
 
 ## 4. Demo tải ảnh thật
 
@@ -40,23 +40,29 @@ Thời lượng gợi ý: 4–6 phút. Chỉ quay khi đang dùng checkpoint nh�
 
 ## 7. Demo ảnh không hợp lệ
 
-**Màn hình:** tải file TXT đổi tên thành JPG hoặc `corrupt.png`.
+**Màn hình:** tải hai ảnh thật thuộc lớp Bacterial Spot và Healthy cùng file TXT đổi tên thành `corrupt.jpg`; bấm **Dự đoán bệnh**.
 
-**Lời nói:** “File này có phần mở rộng hợp lệ nhưng nội dung không phải ảnh. Ứng dụng từ chối bằng thông báo tiếng Việt, không hiển thị traceback và không giữ kết quả dự đoán cũ. File rỗng, GIF và file quá 10 MiB cũng bị chặn.”
+**Lời nói:** “Hai ảnh thật được xử lý độc lập; một ảnh trả về Bacterial Spot, ảnh còn lại Healthy. File hỏng được báo lỗi riêng nên không làm dừng hai kết quả thật. File rỗng, GIF và file quá 10 MiB cũng bị chặn.”
 
-## 8. Trạng thái ResNet18
+## 8. Lịch sử, CSV và dashboard
+
+**Màn hình:** mở tab **Lịch sử phiên**, chọn lần lượt một kết quả thành công và lượt lỗi, bấm **Tải kết quả CSV**; mở file trong Excel nếu có. Sang **Thống kê phiên**, quan sát hai ảnh thành công và một lượt lỗi; thử bộ lọc mô hình, quay lại lịch sử và bấm **Xóa lịch sử**.
+
+**Lời nói:** “Lịch sử chỉ giữ tên ảnh, thời điểm và kết quả trong phiên, tối đa 200 bản ghi; không lưu nội dung ảnh. CSV UTF-8 BOM chứa trạng thái và xác suất của bốn lớp, còn lượt lỗi để trống xác suất. Dashboard đếm lượt thành công, lượt lỗi, nhãn mô hình dự đoán và thời gian forward đo thật. Đây không phải tỷ lệ bệnh thực tế ngoài vườn.”
+
+## 9. Trạng thái ResNet18
 
 **Màn hình:** tải lại ảnh thật, chọn ResNet18 rồi bấm dự đoán; sau đó chọn **So sánh cả hai**.
 
 **Lời nói:** “Hiện NV3 chưa bàn giao checkpoint ResNet18 fine-tuned. Ứng dụng báo rõ thiếu checkpoint và tuyệt đối không dùng trọng số ngẫu nhiên để tạo kết quả giả. Ở chế độ so sánh, CNN vẫn chạy bình thường còn lỗi ResNet18 được hiển thị riêng.”
 
-## 9. Kết quả kiểm thử
+## 10. Kết quả kiểm thử
 
 **Màn hình:** mở bảng kiểm thử trong `docs/DEMO_README.md`.
 
-**Lời nói:** “Bộ test tự động hiện có 29 test và 19 subtests đều đạt. Trình duyệt đã kiểm tra đủ bốn lớp. Ba ảnh được dự đoán đúng; ảnh Early Blight đầu tiên bị nhầm thành Late Blight với 58,16% so với 41,74%. Nhóm ghi nhận nguyên kết quả này vì báo cáo Test của CNN cũng cho thấy nhầm lẫn chính giữa hai lớp bệnh này.”
+**Lời nói:** “Bộ test tự động hiện có 34 test và 19 subtests đều đạt. Trình duyệt đã kiểm tra đủ bốn lớp. Ba ảnh được dự đoán đúng; ảnh Early Blight đầu tiên bị nhầm thành Late Blight với 58,16% so với 41,74%. Nhóm ghi nhận nguyên kết quả này vì báo cáo Test của CNN cũng cho thấy nhầm lẫn chính giữa hai lớp bệnh này.”
 
-## 10. Giới hạn và kết luận
+## 11. Giới hạn và kết luận
 
 **Màn hình:** quay lại phần cảnh báo đầu trang.
 
@@ -68,5 +74,8 @@ Thời lượng gợi ý: 4–6 phút. Chỉ quay khi đang dùng checkpoint nh�
 - Tắt thông báo cá nhân, không quay đường dẫn chứa thông tin nhạy cảm.
 - Chuẩn bị sẵn một ảnh thật, một file hỏng và cửa sổ README.
 - Quay rõ preview, tên bệnh, đủ bốn xác suất, biểu đồ và thông báo lỗi.
+- Quay lịch sử có cả lượt lỗi, tải CSV, dashboard và thao tác xóa lịch sử.
 - Không cắt ghép để thay đổi nhãn hoặc xác suất; nếu dự đoán sai, giữ nguyên và giải thích.
 - Sau khi NV3 bàn giao checkpoint thật, quay bổ sung ResNet18 và chế độ so sánh; trước đó phải nói rõ đang thiếu checkpoint.
+
+**Trạng thái:** chưa có video được ghi hoặc bàn giao; các ảnh chụp trình duyệt thật nằm trong `demo/screenshots/`.
