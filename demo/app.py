@@ -9,13 +9,13 @@ try:
 except ImportError as exc:
     raise SystemExit("Thiếu Streamlit. Cài đặt bằng pip install -r requirements.txt") from exc
 
-from demo.session import MAX_UPLOADS, MODEL_LABELS, dashboard, export_csv, predict_uploads, selected_models
+from demo.session import MAX_UPLOADS, MODEL_LABELS, append_history, dashboard, export_csv, predict_uploads, selected_models
 from src.inference import InferenceError, MAX_IMAGE_BYTES, MODELS, ROOT, class_names, predict_image, read_image
 
 st.set_page_config(page_title="Dự đoán bệnh lá cà chua", page_icon="🍅", layout="wide")
 st.markdown("""<style>
     .block-container {max-width: 1200px; padding-top: 2rem;}
-    [data-testid="stMetric"] {background: #f3f8f5; border: 1px solid #dce9df;
+    [data-testid="stMetric"] {background: rgba(72, 150, 95, 0.13); border: 1px solid rgba(72, 150, 95, 0.35);
       border-radius: 12px; padding: 1rem;}
     @media (max-width: 640px) {.block-container {padding: 1rem .75rem;}}
 </style>""", unsafe_allow_html=True)
@@ -71,10 +71,16 @@ with tab_predict:
         if not uploads:
             st.error("Vui lòng tải ít nhất một ảnh JPG hoặc PNG trước khi dự đoán.")
         else:
-            with st.spinner("Đang xử lý ảnh..."):
-                items, records = predict_uploads(uploads, selected_models(choice), predict_image, device=device)
+            progress = st.progress(0, text="Đang xử lý ảnh...")
+            items, records = [], []
+            for index, upload in enumerate(uploads, 1):
+                batch_items, batch_records = predict_uploads([upload], selected_models(choice), predict_image, device=device)
+                items.extend(batch_items)
+                records.extend(batch_records)
+                progress.progress(index / len(uploads), text=f"Đã xử lý {index}/{len(uploads)} ảnh")
+            progress.empty()
             st.session_state.nv4_results = items
-            st.session_state.nv4_history.extend(records)
+            st.session_state.nv4_history = append_history(st.session_state.nv4_history, records)
     if st.session_state.nv4_results:
         st.subheader("Kết quả lượt này")
         for item in st.session_state.nv4_results:
@@ -106,11 +112,17 @@ with tab_history:
     st.caption("Chỉ lưu tên ảnh và kết quả trong phiên trình duyệt; không lưu nội dung ảnh vào lịch sử.")
     if records:
         names = class_names()
-        st.dataframe([{"Thời gian": row["predicted_at"], "Ảnh": row["image_name"], "Mô hình": row["model"], "Nhãn": row["top_label"], "Top-1": f'{row["top_probability"]:.2%}'} for row in records], width="stretch", hide_index=True)
+        st.dataframe([{"Thời gian": row["predicted_at"], "Ảnh": row["image_name"], "Mô hình": row["model"],
+                       "Trạng thái": row.get("status", "Thành công"), "Nhãn": row["top_label"],
+                       "Top-1": f'{row["top_probability"]:.2%}' if row.get("top_probability") is not None else "—"}
+                      for row in records], width="stretch", hide_index=True)
         selected_index = st.selectbox("Xem lại kết quả", range(len(records)), format_func=lambda index: f'{records[index]["image_name"]} · {records[index]["model"]} · {records[index]["predicted_at"]}')
         selected = records[selected_index]
-        st.write(f"**{selected['top_label']}** · {selected['top_probability']:.2%}")
-        st.table({"Lớp": names, "Xác suất": [f'{selected["probabilities"][name]:.2%}' for name in names]})
+        if selected.get("status", "Thành công") == "Lỗi":
+            st.error(selected["error"])
+        else:
+            st.write(f"**{selected['top_label']}** · {selected['top_probability']:.2%}")
+            st.table({"Lớp": names, "Xác suất": [f'{selected["probabilities"][name]:.2%}' for name in names]})
         st.download_button("Tải kết quả CSV", export_csv(records, names), file_name="du_doan_la_ca_chua.csv", mime="text/csv")
         if st.button("Xóa lịch sử"):
             st.session_state.nv4_history = []
@@ -121,11 +133,15 @@ with tab_history:
 
 with tab_dashboard:
     names = class_names()
-    summary = dashboard(st.session_state.nv4_history, names)
-    metrics = st.columns(3)
+    model_filter = st.selectbox("Lọc theo mô hình", ("Tất cả", "CNN", "ResNet18"))
+    summary = dashboard(st.session_state.nv4_history, names, None if model_filter == "Tất cả" else model_filter)
+    metrics = st.columns(4)
     metrics[0].metric("Ảnh đã dự đoán", summary["images"])
     metrics[1].metric("Lượt suy luận", summary["predictions"])
-    metrics[2].metric("Forward trung bình", f'{summary["mean_forward_ms"]:.2f} ms' if summary["mean_forward_ms"] is not None else "—")
+    metrics[2].metric("Lượt lỗi", summary["errors"])
+    metrics[3].metric("Forward trung bình", f'{summary["mean_forward_ms"]:.2f} ms' if summary["mean_forward_ms"] is not None else "—")
+    if not st.session_state.nv4_history:
+        st.info("Chưa có dữ liệu trong phiên. Hãy dự đoán ảnh để xem thống kê.")
     left, right = st.columns(2)
     with left:
         st.subheader("Lượt theo mô hình")

@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 from PIL import Image
 
-from demo.session import MAX_UPLOADS, dashboard, export_csv, predict_uploads, selected_models
+from demo.session import MAX_HISTORY, MAX_UPLOADS, append_history, dashboard, export_csv, predict_uploads, selected_models
 from src.inference import InferenceError
 
 
@@ -38,10 +38,12 @@ class SessionTests(unittest.TestCase):
         items, records = predict_uploads(uploads, ("cnn",), predict, device="cpu", now=fixed)
         self.assertEqual([item["name"] for item in items], ["a.jpg", "bad.jpg", "b.jpg"])
         self.assertIn("image", items[1]["errors"])
-        self.assertEqual([row["top_label"] for row in records], ["Healthy", "Late Blight"])
-        self.assertEqual([row["image_name"] for row in records], ["a.jpg", "b.jpg"])
+        self.assertEqual([row["top_label"] for row in records], ["Healthy", "", "Late Blight"])
+        self.assertEqual([row["image_name"] for row in records], ["a.jpg", "bad.jpg", "b.jpg"])
+        self.assertEqual(records[1]["status"], "Lỗi")
         self.assertNotIn("image", records[0])
         self.assertEqual(dashboard(records, tuple(records[0]["probabilities"]))["predictions"], 2)
+        self.assertEqual(dashboard(records, tuple(records[0]["probabilities"]))["errors"], 1)
 
     def test_missing_model_does_not_hide_cnn(self):
         def predict(image, model, device):
@@ -51,9 +53,11 @@ class SessionTests(unittest.TestCase):
                     "Late Blight": 0.0, "Bacterial Spot": 0.0}, "forward_ms": 3.0}
 
         items, records = predict_uploads([Upload("a.jpg", picture())], selected_models("So sánh cả hai"), predict)
-        self.assertEqual(len(records), 1)
+        self.assertEqual(len(records), 2)
         self.assertIn("cnn", items[0]["results"])
         self.assertEqual(items[0]["errors"]["resnet18"], "Thiếu checkpoint")
+        self.assertEqual(records[1]["model"], "ResNet18")
+        self.assertEqual(records[1]["status"], "Lỗi")
 
     def test_limit_and_csv_excel_encoding(self):
         with self.assertRaisesRegex(InferenceError, str(MAX_UPLOADS)):
@@ -64,8 +68,12 @@ class SessionTests(unittest.TestCase):
         content = export_csv([record], tuple(record["probabilities"]))
         self.assertTrue(content.startswith(b"\xef\xbb\xbf"))
         rows = list(csv.reader(io.StringIO(content.decode("utf-8-sig"))))
-        self.assertEqual(rows[1][0:4], ["lá cà chua.jpg", "CNN", "Healthy", "1.000000"])
+        self.assertEqual(rows[1][0:5], ["2026-10-28T12:00:00+00:00", "lá cà chua.jpg", "CNN", "Healthy", "1.000000"])
         self.assertEqual(len(rows[0]), 10)
+        self.assertEqual(rows[0], ["timestamp", "filename", "model", "predicted_class", "top1_probability",
+                                   "healthy_probability", "early_blight_probability", "late_blight_probability",
+                                   "bacterial_spot_probability", "status"])
+        self.assertEqual(len(list(csv.reader(io.StringIO(export_csv([], tuple(record["probabilities"])).decode("utf-8-sig"))))), 1)
 
     def test_dashboard_empty_and_session_aggregates(self):
         names = ("Healthy", "Early Blight", "Late Blight", "Bacterial Spot")
@@ -75,3 +83,20 @@ class SessionTests(unittest.TestCase):
         summary = dashboard(records, names)
         self.assertEqual((summary["images"], summary["predictions"], summary["mean_forward_ms"]), (1, 2, 3.0))
         self.assertEqual(summary["by_model"], {"CNN": 1, "ResNet18": 1})
+
+    def test_history_limit_csv_formula_safety_and_dashboard_filter(self):
+        history = [{"id": index} for index in range(MAX_HISTORY)]
+        self.assertEqual(append_history(history, [{"id": MAX_HISTORY}])[0]["id"], 1)
+        names = ("Healthy", "Early Blight", "Late Blight", "Bacterial Spot")
+        rows = [{"predicted_at": "2026-10-28T12:00:00+00:00", "image_name": "=HYPERLINK(\"bad\")",
+                 "model": "CNN", "top_label": "Healthy", "top_probability": 1.0,
+                 "probabilities": dict(zip(names, (1.0, 0.0, 0.0, 0.0))), "forward_ms": 2.0,
+                 "status": "Thành công"},
+                {"predicted_at": "2026-10-28T12:00:01+00:00", "image_name": "bad.jpg",
+                 "model": "ResNet18", "top_label": "", "top_probability": None,
+                 "probabilities": {}, "forward_ms": None, "status": "Lỗi"}]
+        parsed = list(csv.reader(io.StringIO(export_csv(rows, names).decode("utf-8-sig"))))
+        self.assertTrue(parsed[1][1].startswith("'="))
+        self.assertEqual(parsed[2][4:9], ["", "", "", "", ""])
+        self.assertEqual(dashboard(rows, names, "CNN")["errors"], 0)
+        self.assertEqual(dashboard(rows, names, "ResNet18")["errors"], 1)
