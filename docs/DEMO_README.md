@@ -44,17 +44,29 @@ API: `predict_bytes(data, model_name, root=ROOT, device="cpu")` hoặc `predict_
 
 ## Kiểm thử và bàn giao cho NV5
 
-Đã chạy trong `.venv`: `python -m pytest tests -q` → **17 passed, 6 subtests passed**. `python -m compileall -q src demo tests` và `git diff --check` đạt. Streamlit khởi động với `--server.headless true --server.port 8506 --server.address 127.0.0.1`, health endpoint trả `ok`, sau đó server đã dừng. Health endpoint chỉ chứng minh server khởi động, không kiểm chứng thao tác upload trong trình duyệt.
+Đã chạy trong `.venv`: `python -m pytest tests -q` → **17 passed, 6 subtests passed**. `python -m compileall -q src demo tests` và `git diff --check` đạt. Streamlit khởi động thành công ở `127.0.0.1`; sau khi kiểm thử server đã được dừng.
 
 Kiểm thử CNN thật dùng checkpoint từ head PR #9 trong bản sao tạm, không sửa nhánh NV2 và không đưa checkpoint vào commit NV4. Checkpoint có SHA-256 `d33c95bbe15e82fa83f1fd954136ebfff6e1cbba1a86fe40af473a377390de1`, metadata epoch 24, Validation macro-F1 0,976836. Trên ảnh Test nhãn Bacterial Spot `00416648-...3110.JPG` (SHA-256 `3320c467...db06`), `demo.check_consistency` xác nhận top-1 và cả bốn softmax của script NV2/API NV4 khớp tuyệt đối (`max |delta| = 0`) trên CPU. Đánh giá lại toàn bộ 1.356 ảnh Test trên CPU cho Accuracy **0,969764** và macro-F1 **0,965034**, khớp file kết quả NV2. Đây là kiểm chứng tái lập kỹ thuật của checkpoint đã chốt bằng Validation, không phải lựa chọn mô hình bằng Test.
 
+Kiểm thử trình duyệt tự động cũng dùng đúng bản tích hợp tạm nói trên và một ảnh Test thật. Ảnh xem trước hiển thị đúng; chọn CNN rồi bấm **Dự đoán** trả về `Bacterial Spot` cùng đủ bốn xác suất: Healthy 0,00%, Early Blight 2,99%, Late Blight 0,06%, Bacterial Spot 96,95%. File PNG giả nội dung ảnh hỏng được từ chối với thông báo không đọc được ảnh. Khi chọn ResNet18, app báo đúng `Thiếu checkpoint ... resnet18_best.pt`; thứ tự kiểm tra trong `src/inference.py` đã được sửa để lỗi thiếu checkpoint không bị che bởi config preprocessing chưa hoàn thiện, kèm regression test.
+
 ResNet18 từ head PR #7 đã nhận batch ảnh thật `[1,3,224,224]` và trả logits hữu hạn `[1,4]` với `pretrained=False`; đây chỉ là kiểm thử kiến trúc khởi tạo ngẫu nhiên. Chưa có checkpoint ResNet18 thật nên chưa chạy suy luận/đánh giá ResNet18 và chưa chạy `demo.check_consistency --model both`.
 
-NV5 có thể dùng phần mô tả chức năng, cách chạy và giới hạn ở đây cho báo cáo. Chỉ bổ sung ảnh chụp vào `demo/screenshots/` sau khi chạy demo thật, ghi rõ đó là minh họa giao diện, không phải kết quả thực nghiệm. PlantVillage chủ yếu là ảnh trong điều kiện kiểm soát; ảnh cây/bệnh khác vẫn bị ép vào một trong bốn lớp. Không dùng demo để khẳng định chẩn đoán chắc chắn hay phát hiện sớm.
+### Ảnh bằng chứng demo thật
+
+Các ảnh dưới đây được chụp trực tiếp từ phiên Streamlit kiểm thử, không phải ảnh dựng. Chúng là bằng chứng hành vi giao diện; số liệu đánh giá tập Test vẫn lấy từ phép kiểm thử tái lập nêu trên.
+
+![CNN dự đoán ảnh lá thật](../demo/screenshots/cnn_prediction_real.jpg)
+
+![Từ chối tệp ảnh hỏng](../demo/screenshots/invalid_image_error.jpg)
+
+![ResNet18 báo thiếu checkpoint thật](../demo/screenshots/resnet18_missing_checkpoint.jpg)
+
+NV5 có thể dùng phần mô tả chức năng, cách chạy, giới hạn và ảnh bằng chứng ở đây cho báo cáo. PlantVillage chủ yếu là ảnh trong điều kiện kiểm soát; ảnh cây/bệnh khác vẫn bị ép vào một trong bốn lớp. Không dùng demo để khẳng định chẩn đoán chắc chắn hay phát hiện sớm.
 
 ## Nghiệm thu VI.4
 
-- [x] App khởi động trong `.venv` dựng từ `requirements.txt`; health endpoint trả `ok`. Tương tác trình duyệt chưa được tự động hóa.
+- [x] App khởi động trong `.venv` dựng từ `requirements.txt`; trình duyệt đã tự động upload/xem trước ảnh thật, chọn CNN, dự đoán và hiển thị đủ bốn xác suất.
 - [ ] Load cả hai checkpoint thật: CNN đã đạt trong bản tích hợp tạm; ResNet18 chưa có checkpoint.
 - [ ] Mapping, preprocessing và kết quả script khớp: CNN đã đối chiếu thật; ResNet18 còn chờ checkpoint.
-- [x] UI xử lý ảnh lỗi, thiếu checkpoint và hiển thị hạn chế; mã và test độc lập đã có, cần xác minh lại trong môi trường đầy đủ.
+- [x] UI xử lý ảnh lỗi, thiếu checkpoint và hiển thị hạn chế; ảnh hỏng và ResNet18 thiếu checkpoint đã được xác minh trực tiếp trong trình duyệt.
