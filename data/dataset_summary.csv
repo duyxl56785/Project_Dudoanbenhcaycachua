@@ -1,0 +1,6 @@
+class_id,class_name,original_count,train,val,test,selected_total
+0,Healthy,1591,944,240,330,1514
+1,Early Blight,1000,632,153,215,1000
+2,Late Blight,1909,1188,298,375,1861
+3,Bacterial Spot,2127,1351,340,436,2127
+TOTAL,ALL,6627,4115,1031,1356,6502
