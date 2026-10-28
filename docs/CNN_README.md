@@ -1,6 +1,6 @@
 # CNN tự xây dựng
 
-Phụ trách: NV2 - Nguyễn Văn Duy. Trạng thái: Đang làm – code và test xong, **chưa huấn luyện** (chờ dữ liệu Gate 1 của NV1).
+Phụ trách: NV2 - Nguyễn Văn Duy. Trạng thái: Sẵn sàng review – đã huấn luyện, chọn cấu hình bằng Validation và đánh giá Test một lần (28/10/2026).
 
 ## 1. Cách chạy
 
@@ -9,12 +9,14 @@ Chạy từ thư mục gốc của dự án, sau khi cài môi trường theo RE
 ```bash
 python -m pip install pytest
 python -m pytest tests -k nv2 -v          # test hợp đồng (tensor ngẫu nhiên, không phải kết quả)
-python -m scripts.train_cnn --config configs/cnn.yaml --data-root .
-python -m scripts.eval_cnn --config configs/cnn.yaml --data-root . --split test
+python -m scripts.train_cnn --config configs/cnn.yaml --data-root data/raw --run-name e1_lr3e-4
+python -m scripts.eval_cnn --config configs/cnn.yaml --data-root data/raw --split test
 python -m scripts.infer_cnn duong_dan_anh.jpg
 ```
 
-- `--data-root`: thư mục mà đường dẫn ảnh trong `data/splits/*.csv` được tính tương đối từ đó.
+- Dữ liệu: giải nén `tomato_6502_images.zip` theo [data/README.md](../data/README.md) vào `data/raw`.
+- `--data-root`: thư mục mà đường dẫn ảnh trong `data/splits/*.csv` được tính tương đối từ đó (`data/raw`).
+- Ba run đã chạy: `--run-name baseline --learning-rate 0.001`, `--run-name e1_lr3e-4` (giá trị hiện tại của config), `--run-name e2_no_aug --learning-rate 0.001 --no-augmentation`.
 - `train_cnn` chỉ đọc Train và Validation. `eval_cnn --split test` chỉ chạy **một lần** sau khi đã chốt checkpoint.
 - Đọc dữ liệu và transform dùng module của NV1 (`src/data/`); khi NV1 chưa bàn giao, script báo lỗi rõ ràng và dừng.
 
@@ -24,9 +26,9 @@ python -m scripts.infer_cnn duong_dan_anh.jpg
 |---|---|
 | `checkpoints/cnn_best.pt` | state_dict thuần của epoch có `val_macro_f1` cao nhất (demo NV4 nạp trực tiếp) |
 | `checkpoints/cnn_best.meta.json` | nhãn, preprocessing, epoch, `val_macro_f1`, seed, config, commit git, môi trường |
-| `results/cnn/train_history.csv` | loss/accuracy/macro F1 Train và Val theo epoch |
-| `results/cnn/run_info.json` | cấu hình, môi trường, thời gian train, epoch tốt nhất |
-| `figures/cnn_train_curves.png` | đường cong loss/accuracy |
+| `results/cnn/runs/<run>/` | mỗi run: `train_history.csv` (loss/accuracy/macro F1 Train và Val theo epoch), `run_info.json` (cấu hình, môi trường, thời gian, epoch tốt nhất), `cnn_best.pt`, `cnn_train_curves.png` |
+| `results/cnn/experiments.csv` | bảng so sánh các run trên Validation |
+| `figures/cnn_train_curves.png` | đường cong loss/accuracy của run được chọn |
 | `results/cnn/cnn_metrics.json` | Accuracy, macro P/R/F1, per-class, confusion matrix |
 | `results/cnn/cnn_test_predictions.csv` | dự đoán và xác suất từng ảnh Test |
 | `results/cnn/cnn_confusion_matrix.png` | confusion matrix |
@@ -62,7 +64,7 @@ Mạng `TomatoCNN` (`src/models/cnn.py`), huấn luyện từ đầu, không dù
 
 ## 3. Cấu hình huấn luyện
 
-Giá trị đầy đủ trong `configs/cnn.yaml`. Đây là **đề xuất ban đầu**, sẽ kiểm chứng bằng Validation.
+Giá trị đầy đủ trong `configs/cnn.yaml`. Đây là cấu hình **cuối**, chọn bằng Validation (mục 5); chưa phải giá trị tối ưu toàn cục.
 
 | Tham số           | Giá trị     | Lý do       |
 |-------------------|-------------|-------------|
@@ -70,7 +72,7 @@ Giá trị đầy đủ trong `configs/cnn.yaml`. Đây là **đề xuất ban �
 | Normalize         | mean [0.485, 0.456, 0.406], std [0.229, 0.224, 0.225] (ImageNet) | Chuẩn chung nhóm; CNN không dùng pretrained nên đây chỉ là bước đưa pixel về khoảng quanh 0 |
 | Loss              | CrossEntropyLoss | Chuẩn cho phân loại nhiều lớp |
 | Optimizer         | Adam, weight decay 1e-4 | Hội tụ nhanh, ít phải chỉnh tay; weight decay giảm overfit |
-| Learning rate     | 0.001 | Mặc định phổ biến của Adam; thử nghiệm E1 so với 0.0003 |
+| Learning rate     | 0.0003 | E1 cho `val_macro_f1` cao nhất; baseline 0.001 là mặc định phổ biến của Adam (mục 5) |
 | LR scheduler      | không dùng | Giữ đơn giản cho baseline |
 | Batch size        | 32 | Đo trên RTX 3050 4 GB: đỉnh khoảng 1,1 GB VRAM mỗi bước train ở 224×224 |
 | Epochs            | tối đa 40 | Early stopping dừng sớm nếu Val không cải thiện |
@@ -81,38 +83,60 @@ Giá trị đầy đủ trong `configs/cnn.yaml`. Đây là **đề xuất ban �
 ## 4. Môi trường
 
 - Môi trường phát triển và test: Windows 11, Python 3.12.10, GPU NVIDIA RTX 3050 Laptop 4 GB.
-- Môi trường huấn luyện thật: (chưa điền – ghi khi train; `run_info.json` tự lưu phiên bản Python/PyTorch/torchvision và thiết bị)
+- Môi trường huấn luyện thật (ghi trong `run_info.json`): Windows 11, Python 3.12.10, PyTorch 2.14.1+cu126, torchvision 0.29.1+cu126, GPU NVIDIA GeForce RTX 3050 Laptop (4 GB), `num_workers: 0`.
+- Code: commit `b0b6fe3` (nhánh `feature/nv2-cnn`, đã gồm dữ liệu NV1 từ PR #8). Dữ liệu: `tomato_6502_images.zip`, split cố định Train 4.115 / Val 1.031 / Test 1.356.
 
 ## 5. Thử nghiệm có kiểm soát (chỉ chọn bằng Validation)
 
-(chưa điền)
+Mỗi run chỉ đổi **một** yếu tố so với baseline; cùng seed 42, cùng split, cùng kiến trúc. Số liệu là của epoch tốt nhất theo `val_macro_f1` (nguồn: `results/cnn/experiments.csv`, `results/cnn/runs/<run>/train_history.csv`).
 
-## 6. Kết quả
+| Run | Thay đổi | Epoch tốt nhất / đã chạy | Val macro-F1 | Val accuracy | Val loss | Thời gian train |
+|---|---|---|---|---|---|---|
+| `baseline` | lr 1e-3, có augmentation | 22 / 29 | 0,9690 | 0,9728 | 0,0823 | 1.487,5 s |
+| **`e1_lr3e-4`** | **lr 3e-4** | **24 / 31** | **0,9768** | **0,9806** | **0,0647** | 1.118,7 s |
+| `e2_no_aug` | tắt augmentation Train | 11 / 18 | 0,9615 | 0,9651 | 0,1074 | 434,4 s |
 
-Chỉ điền số liệu thực tế, truy vết được đến log và checkpoint.
+**Cấu hình được chọn:** `e1_lr3e-4` (Val macro-F1 cao nhất). Checkpoint, đường cong và bảng so sánh được commit ở `7731e26` **trước** khi chạy Test.
 
-- Biểu đồ loss/accuracy: `figures/cnn_train_curves.png` (chưa có)
-- Metrics: (chưa có)
-- Confusion matrix: (chưa có)
+## 6. Kết quả trên Test
 
-| Lớp            | Precision   | Recall      | F1          |
-|----------------|-------------|-------------|-------------|
-| Healthy        | (chưa điền) | (chưa điền) | (chưa điền) |
-| Early Blight   | (chưa điền) | (chưa điền) | (chưa điền) |
-| Late Blight    | (chưa điền) | (chưa điền) | (chưa điền) |
-| Bacterial Spot | (chưa điền) | (chưa điền) | (chưa điền) |
-| Macro avg      | (chưa điền) | (chưa điền) | (chưa điền) |
+Đánh giá **một lần** trên 1.356 ảnh Test, checkpoint `e1_lr3e-4` epoch 24 (nguồn: `results/cnn/cnn_metrics.json`, `results/cnn/cnn_test_predictions.csv`).
 
-- Accuracy (Test): (chưa điền)
+- Biểu đồ loss/accuracy: `figures/cnn_train_curves.png`
+- Confusion matrix: `results/cnn/cnn_confusion_matrix.png`
+
+| Lớp            | Precision | Recall | F1     | Số ảnh |
+|----------------|-----------|--------|--------|--------|
+| Healthy        | 0,9850    | 0,9970 | 0,9910 | 330    |
+| Early Blight   | 0,9340    | 0,9209 | 0,9274 | 215    |
+| Late Blight    | 0,9496    | 0,9547 | 0,9521 | 375    |
+| Bacterial Spot | 0,9931    | 0,9862 | 0,9896 | 436    |
+| Macro avg      | 0,9654    | 0,9647 | 0,9650 | 1.356  |
+
+- Accuracy (Test): 0,9698 (1.315/1.356 ảnh đúng, 41 ảnh sai).
+
+Confusion matrix (hàng = thực tế, cột = dự đoán; thứ tự Healthy, Early Blight, Late Blight, Bacterial Spot):
+
+```
+Healthy         329    0    1    0
+Early Blight      0  198   14    3
+Late Blight       5   12  358    0
+Bacterial Spot    0    2    4  430
+```
 
 ## 7. Phân tích
 
-(chưa điền) – điểm mạnh, điểm yếu, các nhầm lẫn, dấu hiệu overfitting.
+- **Điểm mạnh:** Healthy (F1 0,991) và Bacterial Spot (F1 0,990) gần như không bị nhầm. Mô hình nhỏ (389.924 tham số), mỗi run train dưới 25 phút trên GPU laptop.
+- **Điểm yếu / nhầm lẫn chính:** cặp **Early Blight ↔ Late Blight** chiếm 26/41 lỗi (14 Early→Late, 12 Late→Early). Early Blight có F1 thấp nhất (0,927) và cũng là lớp ít ảnh Train nhất (632). Khi xem 10 ảnh sai có độ tin cao nhất: các lá có mảng hoại tử sẫm màu lớn bị nhầm qua lại giữa hai lớp blight; vài lá Late Blight chỉ có vết nhỏ ở mép hoặc vàng lá bị dự đoán Healthy (5 ảnh). Đây là quan sát bằng mắt, không phải đánh giá chuyên môn bệnh cây.
+- **Độ tin chưa hiệu chỉnh:** có ảnh sai với xác suất softmax tới 0,97, nên xác suất không được hiểu là mức chắc chắn của chẩn đoán.
+- **Overfitting:** chưa thấy dấu hiệu rõ ở run được chọn. Val loss giảm và đi ngang cùng Train loss; Val loss thấp hơn Train loss vì số liệu Train đo khi augmentation và dropout đang bật. Test macro-F1 (0,9650) thấp hơn Val (0,9768) khoảng 0,012.
+- **Augmentation:** bỏ augmentation (E2) cho Val macro-F1 thấp nhất và Val loss dao động mạnh hơn ở các epoch cuối (0,099 → 0,149 → 0,088 → 0,129), phù hợp với vai trò giảm overfit của augmentation; chỉ là một thử nghiệm với một seed.
+- **Giới hạn:** kết quả trên ảnh PlantVillage chụp trong điều kiện kiểm soát; chưa đánh giá ảnh thực địa hay bệnh giai đoạn sớm. Mỗi cấu hình mới chạy một seed.
 
 ## Điều kiện nghiệm thu (mục IV.4)
 
-- [ ] CNN huấn luyện TỪ ĐẦU, đầu ra đúng 4 lớp.
-- [ ] Cùng split và mapping với NV1, không dùng Test để chọn model.
-- [ ] Checkpoint chạy inference được trên máy khác theo README này.
-- [ ] Có log/biểu đồ/metrics thực tế.
-- [ ] Chỉ rõ điểm mạnh, điểm yếu, nhầm lẫn và dấu hiệu overfitting.
+- [x] CNN huấn luyện TỪ ĐẦU, đầu ra đúng 4 lớp.
+- [x] Cùng split và mapping với NV1, không dùng Test để chọn model (chọn ở `7731e26`, Test chạy sau).
+- [ ] Checkpoint chạy inference được trên máy khác theo README này (mới chạy trên máy NV2; cần một thành viên khác xác nhận).
+- [x] Có log/biểu đồ/metrics thực tế.
+- [x] Chỉ rõ điểm mạnh, điểm yếu, nhầm lẫn và dấu hiệu overfitting.
