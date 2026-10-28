@@ -45,8 +45,9 @@ def git_commit():
     try:
         head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, capture_output=True,
                               text=True, check=True).stdout.strip()
-        dirty = subprocess.run(["git", "status", "--porcelain"], cwd=REPO_ROOT, capture_output=True,
-                               text=True, check=True).stdout.strip()
+        # Chỉ tính file đã theo dõi: kết quả run trước (chưa commit) không làm sai nhãn commit.
+        dirty = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"], cwd=REPO_ROOT,
+                               capture_output=True, text=True, check=True).stdout.strip()
         return head + ("-dirty" if dirty else "")
     except (OSError, subprocess.CalledProcessError):
         return "unknown"
