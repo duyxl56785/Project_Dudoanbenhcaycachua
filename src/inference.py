@@ -115,7 +115,7 @@ def validate_metadata(model_name, root, config, names):
     """Reject a supplied sidecar if its labels/preprocessing disagree with the app."""
     path = (root / "checkpoints" / MODELS[model_name]).with_suffix(".meta.json")
     if not path.is_file():
-        return
+        raise InferenceError(f"Thiếu metadata {path}; cần nhãn và preprocessing đi kèm checkpoint.")
     try:
         meta = json.loads(path.read_text(encoding="utf-8"))
         if meta.get("labels") != list(names):
@@ -191,14 +191,14 @@ def predict(image, model, transform, names, device="cpu"):
 def predict_image(image, model_name, root=ROOT, device="cpu"):
     if model_name not in MODELS:
         raise InferenceError(f"Mô hình không hỗ trợ: {model_name}")
-    device = resolve_device(device) if device != "cpu" else "cpu"
     names = class_names(root)
     config = load_config(model_name, root)
-    validate_metadata(model_name, root, config, names)
-    transform = load_transform(model_name, config)
     checkpoint = root / "checkpoints" / MODELS[model_name]
     if not checkpoint.is_file():
         raise InferenceError(f"Thiếu checkpoint {checkpoint}; chỉ dùng file do nhóm xác nhận.")
+    validate_metadata(model_name, root, config, names)
+    device = resolve_device(device) if device != "cpu" else "cpu"
+    transform = load_transform(model_name, config)
     try:
         modified_ns = checkpoint.stat().st_mtime_ns
     except OSError as exc:

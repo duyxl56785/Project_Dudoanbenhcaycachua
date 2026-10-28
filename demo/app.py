@@ -10,8 +10,8 @@ except ImportError as exc:
 
 from src.inference import InferenceError, MAX_IMAGE_BYTES, ROOT, MODELS, class_names, predict_image, read_image
 
-st.set_page_config(page_title="Phân loại lá cà chua", page_icon="🍅")
-st.title("Phân loại tình trạng lá cà chua")
+st.set_page_config(page_title="Hệ thống dự đoán bệnh lá cà chua", page_icon="🍅")
+st.title("Hệ thống dự đoán bệnh lá cà chua")
 st.write("Đồ án phân loại ảnh lá cà chua bằng CNN tự xây dựng và ResNet18 Transfer Learning. Tải một ảnh để xem dự đoán hoặc so sánh hai mô hình trên cùng ảnh.")
 st.info("Chỉ phân loại bốn lớp đã học. Ảnh bệnh hoặc cây khác vẫn có thể bị gán vào một lớp. PlantVillage chủ yếu là ảnh trong điều kiện kiểm soát. Kết quả không phải chẩn đoán chắc chắn và không thay thế chuyên gia nông nghiệp. Xác suất softmax chưa được hiệu chỉnh.")
 for model_name, checkpoint_name in MODELS.items():
@@ -31,7 +31,7 @@ if upload is not None:
             names = class_names()
             st.image(image, caption="Ảnh đã tải", width="stretch")
             selected = ("cnn", "resnet18") if choice == "So sánh cả hai" else (choice.lower(),)
-            if st.button("Dự đoán", type="primary"):
+            if st.button("Dự đoán bệnh", type="primary"):
                 for model_name in selected:
                     st.subheader("CNN" if model_name == "cnn" else "ResNet18")
                     try:

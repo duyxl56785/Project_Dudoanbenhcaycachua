@@ -6,7 +6,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from src.inference import InferenceError, MAX_IMAGE_BYTES, class_names, load_config, load_model, read_image, resolve_device, validate_metadata
+from src.inference import InferenceError, MAX_IMAGE_BYTES, class_names, load_config, load_model, predict_image, read_image, resolve_device, validate_metadata
 
 
 class InferenceTests(unittest.TestCase):
@@ -55,7 +55,12 @@ class InferenceTests(unittest.TestCase):
             config = load_config("cnn", root)
             self.assertEqual(config["preprocessing"]["image_size"], 224)
             names = ("A", "B", "C", "D")
+            (root / "configs/class_mapping.json").write_text(json.dumps(dict(enumerate(names))), encoding="utf-8")
+            with self.assertRaisesRegex(InferenceError, "Thiếu checkpoint"):
+                predict_image(Image.new("RGB", (2, 2)), "cnn", root)
             metadata = root / "checkpoints/cnn_best.meta.json"
+            with self.assertRaisesRegex(InferenceError, "Thiếu metadata"):
+                validate_metadata("cnn", root, config, names)
             metadata.write_text(json.dumps({"labels": list(names), "preprocessing": config["preprocessing"]}), encoding="utf-8")
             validate_metadata("cnn", root, config, names)
             metadata.write_text(json.dumps({"labels": list(reversed(names)), "preprocessing": config["preprocessing"]}), encoding="utf-8")
