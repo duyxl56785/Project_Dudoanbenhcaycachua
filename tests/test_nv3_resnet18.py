@@ -245,3 +245,43 @@ def test_nv4_actual_loader_predictions_match_nv3(tmp_path, shared_nv1):
     assert actual["top_label"] == expected["label"]
     assert actual["probabilities"] == pytest.approx(expected["scores"])
     inference._cached_model.cache_clear()
+
+
+def test_nv1_create_dataloaders_rgb_normalization_contract(tmp_path, shared_nv1):
+    """NV1 public loader and NV3 wrapper must produce identical Val tensors."""
+    from pathlib import Path
+    from src.data.dataset import create_dataloaders
+    from src.data.transforms import build_train_transform, build_val_transform
+    root = Path(__file__).resolve().parents[1]
+    config = read_config(root / "configs/resnet18.yaml")
+    manifest_dir = tmp_path / "splits"
+    manifest_dir.mkdir()
+    folders = ["Tomato___healthy", "Tomato___Early_blight", "Tomato___Late_blight", "Tomato___Bacterial_spot"]
+    for split in ("train", "val", "test"):
+        with (manifest_dir / f"{split}.csv").open("w", newline="") as stream:
+            writer = csv.writer(stream)
+            writer.writerow(["path", "label", "group"])
+            for label, folder in enumerate(folders):
+                relative = Path("raw/color") / folder / f"{split}.png"
+                path = tmp_path / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                # Grayscale input verifies conversion to RGB in the shared Dataset.
+                Image.new("L", (300, 260), 128).save(path)
+                writer.writerow([relative.as_posix(), label, f"{split}-{label}"])
+    loaders, datasets, mapping = create_dataloaders(
+        data_root=tmp_path, model_name="resnet18", config=config,
+        manifest_dir=manifest_dir, batch_size=4, num_workers=0, seed=42)
+    assert mapping == {name: index for index, name in enumerate(read_labels(root / "configs/class_mapping.json"))}
+    images, targets = next(iter(loaders["train"]))
+    assert images.shape == (4, 3, 224, 224)
+    assert sorted(targets.tolist()) == [0, 1, 2, 3]
+    first = datasets["val"][0][0]
+    torch.testing.assert_close(first, datasets["val"][0][0], rtol=0, atol=0)
+    mean = torch.tensor([0.485, 0.456, 0.406])
+    std = torch.tensor([0.229, 0.224, 0.225])
+    torch.testing.assert_close(first[:, 0, 0], (128 / 255 - mean) / std)
+    with Image.open(datasets["val"].samples[0][0]) as image:
+        rgb = image.convert("RGB")
+        torch.testing.assert_close(first, image_transform(config, train=False)(rgb), rtol=0, atol=0)
+        torch.testing.assert_close(first, build_val_transform("resnet18", config)(rgb), rtol=0, atol=0)
+    assert str(image_transform(config, train=True)) == str(build_train_transform("resnet18", config))

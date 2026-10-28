@@ -106,7 +106,7 @@ Mỗi lần chạy mới cần đường dẫn checkpoint/results chưa chứa c
 ## Kiểm chứng sửa review (28/10/2026)
 
 - Python 3.12.14, torch 2.14.1+cpu, torchvision 0.29.1+cpu.
-- Kết quả: **8 pass, 3 skip** trên nhánh NV3; **11/11 pass** trên bản sao tích hợp NV1/NV3/NV4. Các test dữ liệu/tích hợp được đánh dấu skip nếu chưa tích hợp API NV1/NV4; không coi skip là pass.
+- Kết quả: **8 pass, 4 skip** trên nhánh NV3; **12/12 pass** trên bản sao tích hợp NV1/NV3/NV4. Các test dữ liệu/tích hợp được đánh dấu skip nếu chưa tích hợp API NV1/NV4; không coi skip là pass.
 - Bản sao tạm tích hợp code NV1 `6a03cbe`, NV4 `21b1778` và code NV3 hiện tại: kiểm tra dataset thật của NV1 bằng ảnh tổng hợp đúng schema; hai stage, checkpoint, eval, inference; xác suất NV3 khớp API NV4 trên cùng ảnh.
 - Đã tải ImageNet weights chính thức qua torchvision (kiểm tra checksum), forward được `[1,4]`. Dùng `TORCH_HOME=/workspace/.cache/torch` trong môi trường cloud để tái dùng cache.
 - Không có bộ ảnh PlantVillage trong môi trường; chưa chạy huấn luyện chính thức, chưa đánh giá Test thật, chưa nghiệm thu Gate 1. Dữ liệu tổng hợp chỉ phục vụ kiểm thử kỹ thuật.
@@ -123,3 +123,24 @@ Mỗi lần chạy mới cần đường dẫn checkpoint/results chưa chứa c
 - [ ] Không tái chia dữ liệu hoặc dùng Test để chọn cấu hình.
 - [ ] Checkpoint đã tải lại và dự đoán đúng mapping/preprocessing.
 - [ ] Có metrics, biểu đồ và phân tích giới hạn từ thực nghiệm.
+
+
+## NV3-01 — kiểm chứng tích hợp
+
+Đã kiểm tra lại remote/working tree, PR #7/#8 và các nhánh ngày 28/10/2026. Code contract có từ commit `3412da6`; lần NV3-01 bổ sung test trực tiếp API `create_dataloaders` NV1 và sửa ví dụ `--data-root data/raw` trong docstring script train.
+
+Các nguồn được kiểm chứng: NV1 `6a03cbe762aef571d56f36805665a253ad2af87a`, NV4 `21b177867c4196a771f02813ba5d2c4f7af3a7a7`. Bản sao ngoài checkout được tạo bằng `git archive`, chỉ ghép file dữ liệu/manifest NV1 và API inference NV4; không merge nhánh, không sửa file thành viên khác. Lệnh kiểm thử:
+
+```bash
+# Từ root checkout NV3:
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 MPLCONFIGDIR=/tmp/dudoan-mpl .venv/bin/python -m pytest -q tests/test_nv3_resnet18.py
+# 8 passed, 4 skipped: thiếu code NV1/NV4 trong nhánh NV3.
+
+# Từ /workspace/onboarding/nv3-01-integration (bản sao cô lập):
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 MPLCONFIGDIR=/tmp/dudoan-mpl /workspace/Project_Dudoanbenhcaycachua/.venv/bin/python -m pytest -q tests/test_nv3_resnet18.py
+# 12 passed, 0 failed, 0 skipped.
+```
+
+Test mới xác minh manifest `path,label,group`, mapping 0..3, ảnh grayscale được Dataset chuyển RGB, batch `[4,3,224,224]`, giá trị ImageNet Normalize, Val tất định và tensor Val NV3 trùng API NV1. Test luồng training chặn mọi truy cập Dataset Test trong lúc chọn mô hình; Test tổng hợp chỉ được đọc ở bước eval sau training. Năm test gốc vẫn chạy đạt trong bản sao tích hợp. Factory không tải mạng, freeze/unfreeze/BatchNorm, strict checkpoint load, legacy metadata và xác suất NV4 khớp NV3 đều đã được kiểm tra.
+
+Không có ảnh thật: chưa xác minh checksum ảnh PlantVillage, chưa nghiệm thu Gate 1, chưa huấn luyện chính thức hoặc có checkpoint bệnh lá bàn giao. Smoke checkpoints chỉ nằm trong thư mục tạm của pytest, không được commit hoặc đưa vào demo như trọng số thật. PR #8 cần được tích hợp qua quy trình review của nhóm trước khi chạy luồng dữ liệu trên nhánh chung.

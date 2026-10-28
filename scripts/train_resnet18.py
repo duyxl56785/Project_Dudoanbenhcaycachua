@@ -1,6 +1,6 @@
 """NV3: Train ImageNet-pretrained ResNet18 in two stages on NV1 manifests.
 
-From repository root: python -m scripts.train_resnet18 --data-root .
+From repository root: python -m scripts.train_resnet18 --data-root data/raw
 """
 from __future__ import annotations
 
