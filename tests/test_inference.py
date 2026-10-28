@@ -6,7 +6,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from src.inference import InferenceError, MAX_IMAGE_BYTES, class_names, load_config, load_model, read_image
+from src.inference import InferenceError, MAX_IMAGE_BYTES, class_names, load_config, load_model, read_image, resolve_device, validate_metadata
 
 
 class InferenceTests(unittest.TestCase):
@@ -29,10 +29,43 @@ class InferenceTests(unittest.TestCase):
                 read_image(data)
 
     def test_unfinished_config_and_missing_checkpoint(self):
-        with self.assertRaisesRegex(InferenceError, "preprocessing chưa chốt"):
-            load_config("cnn")
-        with self.assertRaisesRegex(InferenceError, "Thiếu checkpoint"):
-            load_model("cnn")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "configs").mkdir()
+            (root / "configs/cnn.yaml").write_text(
+                "model: {num_classes: 4}\n"
+                "preprocessing: {image_size: null, normalize_mean: null, normalize_std: null}\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(InferenceError, "preprocessing chưa chốt"):
+                load_config("cnn", root)
+            with self.assertRaisesRegex(InferenceError, "Thiếu checkpoint"):
+                load_model("cnn", root)
+
+    def test_valid_config_and_metadata_mismatch(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "configs").mkdir()
+            (root / "checkpoints").mkdir()
+            (root / "configs/cnn.yaml").write_text(
+                "model: {num_classes: 4}\n"
+                "preprocessing: {image_size: 224, normalize_mean: [0.1, 0.2, 0.3], normalize_std: [1, 1, 1]}\n",
+                encoding="utf-8",
+            )
+            config = load_config("cnn", root)
+            self.assertEqual(config["preprocessing"]["image_size"], 224)
+            names = ("A", "B", "C", "D")
+            metadata = root / "checkpoints/cnn_best.meta.json"
+            metadata.write_text(json.dumps({"labels": list(names), "preprocessing": config["preprocessing"]}), encoding="utf-8")
+            validate_metadata("cnn", root, config, names)
+            metadata.write_text(json.dumps({"labels": list(reversed(names)), "preprocessing": config["preprocessing"]}), encoding="utf-8")
+            with self.assertRaisesRegex(InferenceError, "thứ tự nhãn"):
+                validate_metadata("cnn", root, config, names)
+
+    def test_explicit_cpu_and_invalid_device(self):
+        self.assertEqual(resolve_device("cpu"), "cpu")
+        with self.assertRaises(InferenceError):
+            resolve_device("unknown")
 
 
 try:
