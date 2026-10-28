@@ -1,14 +1,16 @@
-
 # NV1 – Dataset & Preprocessing (Bàn giao Gate 1)
 
-**Người phụ trách:** Lê Xuân Bảo  
-**Ngày bàn giao ban đầu:** 23/10/2026  
-**Ngày cập nhật tài liệu:** 28/10/2026  
-**Issue:** #2 – Dataset & Preprocessing  
+**Người phụ trách:** Lê Xuân Bảo
+
+**Ngày bàn giao ban đầu:** 23/10/2026
+
+**Ngày cập nhật tài liệu:** 28/10/2026
+
+**Issue:** #2 – Dataset & Preprocessing
+
 **Pull Request:** [PR #8](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/pull/8)
 
 ---
-
 ## 1. Nguồn và phạm vi dữ liệu
 
 - **Nguồn dữ liệu:** [mohanty/PlantVillage](https://huggingface.co/datasets/mohanty/PlantVillage).
