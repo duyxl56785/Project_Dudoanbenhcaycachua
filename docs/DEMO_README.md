@@ -30,7 +30,7 @@ API: `predict_bytes(data, model_name, root=ROOT, device="cpu")` hoặc `predict_
 
 ## Kiểm thử và bàn giao cho NV5
 
-Đã chạy trong `.venv`: `python -m pytest tests -q` → **17 passed, 6 subtests passed**. `python -m compileall -q src demo tests` và `git diff --check` đạt. `streamlit.testing.v1.AppTest` không trả kết quả sau hơn một phút và đã được dừng; thay vào đó `python -m streamlit run demo/app.py --server.headless true --server.port 8504 --server.address 127.0.0.1` khởi động server, `GET http://127.0.0.1:8504/_stcore/health` trả `ok`, sau đó server đã dừng. Chưa có checkpoint thật để đối chiếu script và API.
+Đã chạy trong `.venv`: `python -m pytest tests -q` → **17 passed, 6 subtests passed**. `python -m compileall -q src demo tests` và `git diff --check` đạt. `streamlit.testing.v1.AppTest` không trả kết quả sau hơn một phút và đã được dừng; thay vào đó Streamlit khởi động với `--server.headless true --server.port 8506 --server.address 127.0.0.1`, `GET http://127.0.0.1:8506/_stcore/health` trả `ok`, sau đó server đã dừng. Health endpoint chỉ chứng minh server khởi động, không kiểm chứng tương tác upload/dự đoán. Chưa có checkpoint thật để đối chiếu script và API.
 
 Sau khi nhận hai checkpoint đã huấn luyện, chọn **cùng một ảnh**, lưu path và SHA-256 ảnh, path/SHA-256 checkpoint, commit của NV1/NV2/NV3/NV4, phiên bản Python/torch/torchvision/Streamlit và thiết bị. Chạy `python -m scripts.infer_cnn <ảnh>` và `python -m scripts.infer_resnet18 <ảnh>`, rồi `predict_bytes` cho mỗi mô hình. Đối chiếu top-1 và cả bốn softmax với sai số `1e-5`; ghi lệnh và đầu ra vào PR. **Chưa thực hiện do thiếu checkpoint thật và PR phụ thuộc chưa merge.**
 
