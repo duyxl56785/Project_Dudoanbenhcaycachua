@@ -6,7 +6,13 @@ Giao diện và API suy luận đã triển khai trên `feature/nv4-demo`; **Gat
 
 ## Giới thiệu và luồng hoạt động
 
-Demo nhận một ảnh lá cà chua, xác minh nội dung JPEG/PNG, chuyển ảnh về RGB, áp dụng đúng transform Val/Test của mô hình, chạy forward pass trong `torch.inference_mode()`, rồi hiển thị nhãn top-1, bốn xác suất softmax và biểu đồ. Luồng chính:
+### Giao diện phiên đa ảnh
+
+Sidebar chọn mô hình, thiết bị và hiển thị trạng thái checkpoint. Tab **Dự đoán** nhận tối đa **8 ảnh** JPG/JPEG/PNG, xem trước và chạy từng ảnh; một ảnh lỗi không chặn ảnh còn lại. Tab **Lịch sử phiên** giữ tên ảnh, thời điểm, mô hình, nhãn và xác suất trong `st.session_state`; không lưu nội dung ảnh vào lịch sử hay ghi file trên server. Có thể xem lại từng kết quả, tải CSV UTF-8 BOM cho Excel và xóa lịch sử. Tab **Thống kê phiên** đếm ảnh riêng biệt, lượt theo mô hình, nhãn được dự đoán và forward trung bình. Đây không phải tỷ lệ bệnh thực tế trong vườn.
+
+Ở chế độ so sánh, kết quả CNN và ResNet18 nằm hai cột cho từng ảnh. Khi ResNet18 thiếu checkpoint, CNN vẫn cho kết quả thật và cột ResNet18 báo chưa sẵn sàng. Đổi danh sách ảnh, mô hình hoặc thiết bị sẽ xóa kết quả lượt hiện tại để tránh ghép nhầm. Trên màn hình hẹp, Streamlit tự xếp lại cột.
+
+Với từng ảnh lá cà chua, demo xác minh nội dung JPEG/PNG, chuyển ảnh về RGB, áp dụng đúng transform Val/Test của mô hình, chạy forward pass trong `torch.inference_mode()`, rồi hiển thị nhãn top-1, bốn xác suất softmax và biểu đồ. Luồng chính:
 
 `Upload → kiểm tra ảnh → RGB → transform NV1 → CNN/ResNet18 → logits 4 lớp → softmax → bảng/biểu đồ`
 
@@ -62,7 +68,7 @@ Mỗi mô hình cần ba thành phần đồng bộ: kiến trúc `build_model(4
 
 ## Sử dụng giao diện và đọc kết quả
 
-Upload JPEG/PNG tối đa **10 MiB**, xem trước ảnh, chọn CNN/ResNet18/so sánh cả hai, chọn thiết bị Tự động/CPU/CUDA rồi bấm **Dự đoán**. App hiển thị top-1, bảng và biểu đồ softmax bốn lớp theo thứ tự `configs/class_mapping.json`. Thời gian hiển thị chỉ đo forward pass, loại trừ tải mô hình, đọc ảnh và tiền xử lý; CUDA được đồng bộ trước và sau. Cache chỉ dùng lại mô hình khi file checkpoint không đổi. Softmax **không phải độ chắc chắn đã hiệu chỉnh**.
+Upload tối đa 8 ảnh JPEG/PNG, mỗi ảnh tối đa **10 MiB**, xem trước, chọn CNN/ResNet18/so sánh cả hai trong sidebar, chọn thiết bị Tự động/CPU/CUDA rồi bấm **Dự đoán bệnh**. App hiển thị top-1, bảng và biểu đồ softmax bốn lớp theo thứ tự `configs/class_mapping.json` cho từng ảnh. Thời gian hiển thị chỉ đo forward pass, loại trừ tải mô hình, đọc ảnh và tiền xử lý; CUDA được đồng bộ trước và sau. Cache chỉ dùng lại mô hình khi file checkpoint không đổi. Softmax **không phải độ chắc chắn đã hiệu chỉnh**.
 
 App kiểm tra nội dung ảnh, ảnh hỏng, giới hạn dung lượng, config/metadata, checkpoint và đầu ra logits. Khi thiếu checkpoint, app báo trước khi dự đoán; lỗi một mô hình không ngăn hiển thị kết quả mô hình còn lại trong chế độ so sánh. Chỉ đặt checkpoint do nhóm xác nhận tại `checkpoints/`. Checkpoint CNN hiện nằm trên nhánh NV2 và chưa được chép/commit vào NV4 trong khi PR #9 còn chờ review.
 
@@ -78,7 +84,7 @@ API: `predict_bytes(data, model_name, root=ROOT, device="cpu")` hoặc `predict_
 
 ## Kiểm thử và bàn giao cho NV5
 
-Đã chạy trong `.venv`: `python -m pytest tests -q` → **29 passed, 19 subtests passed**. `python -m compileall -q src demo tests` và `git diff --check` đạt. Streamlit khởi động thành công ở `127.0.0.1`; sau khi kiểm thử server đã được dừng.
+Đã chạy trong `.venv`: `python -m pytest tests -q` → **33 passed, 19 subtests passed**. `python -m compileall -q src demo tests` và `git diff --check` đạt. Streamlit khởi động thành công ở `127.0.0.1`; sau khi kiểm thử server đã được dừng.
 
 Kiểm thử CNN thật dùng checkpoint từ head PR #9 trong bản sao tạm, không sửa nhánh NV2 và không đưa checkpoint vào commit NV4. Checkpoint có SHA-256 `d33c95bbe15e82fa83f1fd954136ebfff6e1cbba1a86fe40af473a377390de1`, metadata epoch 24, Validation macro-F1 0,976836. Trên ảnh Test nhãn Bacterial Spot `00416648-...3110.JPG` (SHA-256 `3320c467...db06`), `demo.check_consistency` xác nhận top-1 và cả bốn softmax của script NV2/API NV4 khớp tuyệt đối (`max |delta| = 0`) trên CPU. Đánh giá lại toàn bộ 1.356 ảnh Test trên CPU cho Accuracy **0,969764** và macro-F1 **0,965034**, khớp file kết quả NV2. Đây là kiểm chứng tái lập kỹ thuật của checkpoint đã chốt bằng Validation, không phải lựa chọn mô hình bằng Test.
 
@@ -115,6 +121,8 @@ Mỗi ảnh dưới đây là ảnh đầu tiên của lớp tương ứng trong
 ResNet18 từ head PR #7 đã nhận batch ảnh thật `[1,3,224,224]` và trả logits hữu hạn `[1,4]` với `pretrained=False`; đây chỉ là kiểm thử kiến trúc khởi tạo ngẫu nhiên. Chưa có checkpoint ResNet18 thật nên chưa chạy suy luận/đánh giá ResNet18 và chưa chạy `demo.check_consistency --model both`.
 
 ### Ảnh bằng chứng demo thật
+
+Giao diện đa ảnh và dashboard sau khi chạy CNN thật: [so sánh đa ảnh](../demo/screenshots/multi_image_compare.jpg), [thống kê phiên](../demo/screenshots/dashboard_multi_image.jpg).
 
 Các ảnh dưới đây được chụp trực tiếp từ phiên Streamlit kiểm thử, không phải ảnh dựng. Chúng là bằng chứng hành vi giao diện; số liệu đánh giá tập Test vẫn lấy từ phép kiểm thử tái lập nêu trên.
 
