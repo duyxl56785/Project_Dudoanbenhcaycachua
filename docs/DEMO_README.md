@@ -2,11 +2,25 @@
 
 ## Trạng thái ngày 28/10/2026
 
-Giao diện và API suy luận đã triển khai trên `feature/nv4-demo`; **Gate 4 chưa nghiệm thu**. PR [NV1 #8](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/pull/8) đã merge vào `main` và cung cấp `build_val_transform` cùng manifest 6.502 ảnh. PR [NV2 #9](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/pull/9) có CNN, `build_model`, cấu hình 224×224/ImageNet, script và định dạng checkpoint `state_dict` thuần + `.meta.json`. PR [NV3 #7](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/pull/7) đã bổ sung `build_model`, checkpoint `state_dict` thuần + metadata và dùng transform chung của NV1. Hai PR mô hình chưa merge và chưa bàn giao checkpoint đã huấn luyện; không coi kiểm thử mô hình khởi tạo ngẫu nhiên là kết quả thực nghiệm.
+Giao diện và API suy luận đã triển khai trên `feature/nv4-demo`; **Gate 4 chưa nghiệm thu**. PR [NV1 #8](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/pull/8) đã merge vào `main`. Dataset thật và checkpoint CNN của PR [NV2 #9](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/pull/9) đã được NV4 kiểm tra trong một bản tích hợp tạm trên CPU; PR #9 vẫn mở, chưa có review và chưa merge. PR [NV3 #7](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/pull/7) đã được NV2 approve, nhưng chưa merge và chưa có checkpoint ResNet18 đã fine-tune. Vì vậy nhánh NV4 chưa chứa kiến trúc/checkpoint thật của hai mô hình và chế độ so sánh hai mô hình chưa thể nghiệm thu.
+
+## Dataset đã xác minh trên máy NV4
+
+- Nguồn nhóm: [Google Drive – ML_Tomato_Dataset/v1_manifests](https://drive.google.com/drive/folders/1gazFJNC1zdyAj8adjYeKTlOu1JJWIj7v), file `tomato_6502_images.zip`; nguồn gốc ảnh là [mohanty/PlantVillage](https://huggingface.co/datasets/mohanty/PlantVillage), cấu hình ảnh màu.
+- ZIP được lưu cục bộ tại `data/tomato_6502_images.zip`, SHA-256 `303c77726cd56def12de4bec9a86517c6c65abd62b1dca8614f717fcfc227304`, kích thước 105.542.302 byte. ZIP và `data/raw/` đã được `.gitignore` loại khỏi commit.
+- Ảnh giải nén nằm tại `data/raw/raw/color/`: **6.502 JPEG RGB 256×256**, gồm đúng bốn thư mục lớp. Train/Validation/Test giữ nguyên manifest: **4.115 / 1.031 / 1.356**.
+- `python -m scripts.check_dataset --data-root data/raw --verify-hashes` đã đối chiếu thành công SHA-256 của cả 6.502 ảnh. Manifest có 6.502 path/hash duy nhất và không có path, SHA-256 hoặc `group_id` chồng lấn giữa các split theo quy tắc kiểm toán NV1. Pillow `verify()` đọc được toàn bộ ảnh.
+
+Chuẩn bị lại dữ liệu trên máy khác:
+
+```powershell
+python -m scripts.prepare_dataset --archive data/tomato_6502_images.zip --data-root data/raw
+python -m scripts.check_dataset --data-root data/raw --verify-hashes
+```
 
 ## Cài đặt và chạy
 
-`requirements.txt` đã liệt kê Streamlit, PyTorch, torchvision, Pillow và PyYAML. Môi trường `.venv` dựng từ file này đã được kiểm tra với Python 3.12.0, PyTorch 2.14.1+cpu, torchvision 0.29.1+cpu, Streamlit 1.66.1, Pillow 13.0.0 và PyYAML 6.0.3. **Chưa xác minh dự đoán end-to-end** do chưa có checkpoint. Các lệnh cần chạy từ thư mục gốc dự án:
+`requirements.txt` đã liệt kê Streamlit, PyTorch, torchvision, Pillow và PyYAML. Môi trường `.venv` dựng từ file này đã được kiểm tra với Python 3.12.0, PyTorch 2.14.1+cpu, torchvision 0.29.1+cpu, Streamlit 1.66.1, Pillow 13.0.0 và PyYAML 6.0.3. CNN đã được xác minh end-to-end trong bản tích hợp tạm; nhánh NV4 hiện vẫn thiếu mã/checkpoint đã merge. Các lệnh cần chạy từ thư mục gốc dự án:
 
 ```powershell
 python -m venv .venv
@@ -18,7 +32,7 @@ python -m unittest discover -s tests -v
 
 Upload JPEG/PNG tối đa **10 MiB**, xem trước ảnh, chọn CNN/ResNet18/so sánh cả hai, chọn thiết bị Tự động/CPU/CUDA rồi bấm **Dự đoán**. App hiển thị top-1, bảng và biểu đồ softmax bốn lớp theo thứ tự `configs/class_mapping.json`. Thời gian hiển thị chỉ đo forward pass, loại trừ tải mô hình, đọc ảnh và tiền xử lý; CUDA được đồng bộ trước và sau. Cache chỉ dùng lại mô hình khi file checkpoint không đổi. Softmax **không phải độ chắc chắn đã hiệu chỉnh**.
 
-App kiểm tra nội dung ảnh, ảnh hỏng, giới hạn dung lượng, config/metadata, checkpoint và đầu ra logits. Khi thiếu checkpoint, app báo trước khi dự đoán; lỗi một mô hình không ngăn hiển thị kết quả mô hình còn lại trong chế độ so sánh. Chỉ đặt checkpoint do nhóm xác nhận tại `checkpoints/`; chưa có link tải đã xác minh.
+App kiểm tra nội dung ảnh, ảnh hỏng, giới hạn dung lượng, config/metadata, checkpoint và đầu ra logits. Khi thiếu checkpoint, app báo trước khi dự đoán; lỗi một mô hình không ngăn hiển thị kết quả mô hình còn lại trong chế độ so sánh. Chỉ đặt checkpoint do nhóm xác nhận tại `checkpoints/`. Checkpoint CNN hiện nằm trên nhánh NV2 và chưa được chép/commit vào NV4 trong khi PR #9 còn chờ review.
 
 ## Hợp đồng tích hợp
 
@@ -30,17 +44,17 @@ API: `predict_bytes(data, model_name, root=ROOT, device="cpu")` hoặc `predict_
 
 ## Kiểm thử và bàn giao cho NV5
 
-Đã chạy trong `.venv`: `python -m pytest tests -q` → **17 passed, 6 subtests passed**. `python -m compileall -q src demo tests` và `git diff --check` đạt. `streamlit.testing.v1.AppTest` không trả kết quả sau hơn một phút và đã được dừng; thay vào đó Streamlit khởi động với `--server.headless true --server.port 8506 --server.address 127.0.0.1`, `GET http://127.0.0.1:8506/_stcore/health` trả `ok`, sau đó server đã dừng. Health endpoint chỉ chứng minh server khởi động, không kiểm chứng tương tác upload/dự đoán. Chưa có checkpoint thật để đối chiếu script và API.
+Đã chạy trong `.venv`: `python -m pytest tests -q` → **17 passed, 6 subtests passed**. `python -m compileall -q src demo tests` và `git diff --check` đạt. Streamlit khởi động với `--server.headless true --server.port 8506 --server.address 127.0.0.1`, health endpoint trả `ok`, sau đó server đã dừng. Health endpoint chỉ chứng minh server khởi động, không kiểm chứng thao tác upload trong trình duyệt.
 
-Sau khi nhận hai checkpoint đã huấn luyện, chọn **cùng một ảnh**, lưu path và SHA-256 ảnh, path/SHA-256 checkpoint, commit của NV1/NV2/NV3/NV4, phiên bản Python/torch/torchvision/Streamlit và thiết bị. Chạy `python -m scripts.infer_cnn <ảnh>` và `python -m scripts.infer_resnet18 <ảnh>`, rồi `predict_bytes` cho mỗi mô hình. Đối chiếu top-1 và cả bốn softmax với sai số `1e-5`; ghi lệnh và đầu ra vào PR. **Chưa thực hiện do thiếu checkpoint thật và PR phụ thuộc chưa merge.**
+Kiểm thử CNN thật dùng checkpoint từ head PR #9 trong bản sao tạm, không sửa nhánh NV2 và không đưa checkpoint vào commit NV4. Checkpoint có SHA-256 `d33c95bbe15e82fa83f1fd954136ebfff6e1cbba1a86fe40af473a377390de1`, metadata epoch 24, Validation macro-F1 0,976836. Trên ảnh Test nhãn Bacterial Spot `00416648-...3110.JPG` (SHA-256 `3320c467...db06`), `demo.check_consistency` xác nhận top-1 và cả bốn softmax của script NV2/API NV4 khớp tuyệt đối (`max |delta| = 0`) trên CPU. Đánh giá lại toàn bộ 1.356 ảnh Test trên CPU cho Accuracy **0,969764** và macro-F1 **0,965034**, khớp file kết quả NV2. Đây là kiểm chứng tái lập kỹ thuật của checkpoint đã chốt bằng Validation, không phải lựa chọn mô hình bằng Test.
 
-Khi scripts và checkpoint đã sẵn sàng, chạy `python -m demo.check_consistency <ảnh> --model both`. Script dùng CPU cho API và vô hiệu CUDA ở tiến trình script, so sánh top-1 cùng bốn xác suất với ngưỡng `1e-5`, trả mã lỗi nếu khác. Bài unit test của bộ so sánh chỉ kiểm logic so sánh bằng số giả; **chưa phải phép đối chiếu mô hình thật**.
+ResNet18 từ head PR #7 đã nhận batch ảnh thật `[1,3,224,224]` và trả logits hữu hạn `[1,4]` với `pretrained=False`; đây chỉ là kiểm thử kiến trúc khởi tạo ngẫu nhiên. Chưa có checkpoint ResNet18 thật nên chưa chạy suy luận/đánh giá ResNet18 và chưa chạy `demo.check_consistency --model both`.
 
 NV5 có thể dùng phần mô tả chức năng, cách chạy và giới hạn ở đây cho báo cáo. Chỉ bổ sung ảnh chụp vào `demo/screenshots/` sau khi chạy demo thật, ghi rõ đó là minh họa giao diện, không phải kết quả thực nghiệm. PlantVillage chủ yếu là ảnh trong điều kiện kiểm soát; ảnh cây/bệnh khác vẫn bị ép vào một trong bốn lớp. Không dùng demo để khẳng định chẩn đoán chắc chắn hay phát hiện sớm.
 
 ## Nghiệm thu VI.4
 
-- [ ] App chạy trong môi trường sạch: chưa xác minh.
-- [ ] Load cả hai checkpoint thật: chưa có checkpoint đã huấn luyện được bàn giao.
-- [ ] Mapping, preprocessing và kết quả script khớp: mapping được kiểm thử độc lập; đối chiếu thật còn chờ.
+- [x] App khởi động trong `.venv` dựng từ `requirements.txt`; health endpoint trả `ok`. Tương tác trình duyệt chưa được tự động hóa.
+- [ ] Load cả hai checkpoint thật: CNN đã đạt trong bản tích hợp tạm; ResNet18 chưa có checkpoint.
+- [ ] Mapping, preprocessing và kết quả script khớp: CNN đã đối chiếu thật; ResNet18 còn chờ checkpoint.
 - [x] UI xử lý ảnh lỗi, thiếu checkpoint và hiển thị hạn chế; mã và test độc lập đã có, cần xác minh lại trong môi trường đầy đủ.
