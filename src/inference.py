@@ -5,6 +5,7 @@ import io
 import json
 import math
 import time
+from functools import lru_cache
 from importlib import import_module
 from pathlib import Path
 
@@ -57,11 +58,24 @@ def load_config(model_name, root=ROOT):
         import yaml
         config = yaml.safe_load((root / f"configs/{model_name}.yaml").read_text(encoding="utf-8"))
         prep = config["preprocessing"]
-        missing = [k for k in ("image_size", "normalize_mean", "normalize_std") if prep.get(k) is None]
+        required = ("image_size", "normalize_mean", "normalize_std")
+        if model_name == "resnet18":
+            required += ("resize_size",)
+        missing = [k for k in required if prep.get(k) is None]
         if missing:
             raise InferenceError(f"{model_name}: preprocessing chưa chốt: {', '.join(missing)}.")
         if config["model"]["num_classes"] != 4:
             raise InferenceError(f"{model_name}: num_classes phải bằng 4.")
+        if not isinstance(prep["image_size"], int) or prep["image_size"] <= 0:
+            raise InferenceError(f"{model_name}: image_size không hợp lệ.")
+        if model_name == "resnet18" and (not isinstance(prep["resize_size"], int) or prep["resize_size"] < prep["image_size"]):
+            raise InferenceError(f"{model_name}: resize_size không hợp lệ.")
+        for key in ("normalize_mean", "normalize_std"):
+            values = prep[key]
+            if not isinstance(values, (list, tuple)) or len(values) != 3 or any(not isinstance(v, (float, int)) or not math.isfinite(v) for v in values):
+                raise InferenceError(f"{model_name}: {key} phải có ba số hữu hạn.")
+        if any(v <= 0 for v in prep["normalize_std"]):
+            raise InferenceError(f"{model_name}: normalize_std phải dương.")
         return config
     except InferenceError:
         raise
@@ -78,7 +92,11 @@ def load_model(model_name, root=ROOT, device="cpu", *, factory=None):
     try:
         import torch
         if factory is None:
-            factory = getattr(import_module(f"src.models.{model_name}"), "build_model", None)
+            module = import_module(f"src.models.{model_name}")
+            factory = getattr(module, "build_model", None)
+            if factory is None and model_name == "resnet18" and hasattr(module, "build_resnet18"):
+                # Adapter for NV3 PR #7; inference must never fetch pretrained weights.
+                factory = lambda num_classes: module.build_resnet18(num_classes=num_classes, pretrained=False)
             if factory is None:
                 raise InferenceError(f"Chưa bàn giao build_model(num_classes) trong src.models.{model_name}.")
         model = factory(num_classes=4)
@@ -91,6 +109,44 @@ def load_model(model_name, root=ROOT, device="cpu", *, factory=None):
         raise
     except (ImportError, AttributeError, RuntimeError, ValueError, TypeError, OSError) as exc:
         raise InferenceError(f"Không tải được checkpoint {path}: {exc}") from exc
+
+
+def validate_metadata(model_name, root, config, names):
+    """Reject a supplied sidecar if its labels/preprocessing disagree with the app."""
+    path = (root / "checkpoints" / MODELS[model_name]).with_suffix(".meta.json")
+    if not path.is_file():
+        return
+    try:
+        meta = json.loads(path.read_text(encoding="utf-8"))
+        if meta.get("labels") != list(names):
+            raise InferenceError(f"Metadata {path}: thứ tự nhãn khác class_mapping.json.")
+        if meta.get("preprocessing") != config["preprocessing"]:
+            raise InferenceError(f"Metadata {path}: preprocessing khác config hiện tại.")
+    except InferenceError:
+        raise
+    except (OSError, ValueError, TypeError, AttributeError) as exc:
+        raise InferenceError(f"Metadata {path} không hợp lệ: {exc}") from exc
+
+
+@lru_cache(maxsize=4)
+def _cached_model(model_name, root, device, modified_ns):
+    """Reuse loaded weights; modification time invalidates the cache."""
+    return load_model(model_name, root, device)
+
+
+def resolve_device(device="auto"):
+    if device == "cpu":
+        return "cpu"
+    if device not in ("auto", "cuda"):
+        raise InferenceError(f"Thiết bị không hỗ trợ: {device}")
+    try:
+        import torch
+        available = torch.cuda.is_available()
+    except ImportError as exc:
+        raise InferenceError(f"Thiếu PyTorch: {exc}") from exc
+    if device == "cuda" and not available:
+        raise InferenceError("CUDA chưa khả dụng trên máy này.")
+    return "cuda" if available else "cpu"
 
 
 def load_transform(model_name, config):
@@ -132,10 +188,24 @@ def predict(image, model, transform, names, device="cpu"):
         raise InferenceError(f"Không thể suy luận: {exc}") from exc
 
 
-def predict_bytes(data, model_name, root=ROOT, device="cpu"):
-    image = read_image(data)
+def predict_image(image, model_name, root=ROOT, device="cpu"):
+    if model_name not in MODELS:
+        raise InferenceError(f"Mô hình không hỗ trợ: {model_name}")
+    device = resolve_device(device) if device != "cpu" else "cpu"
     names = class_names(root)
     config = load_config(model_name, root)
+    validate_metadata(model_name, root, config, names)
     transform = load_transform(model_name, config)
-    model = load_model(model_name, root, device)
+    checkpoint = root / "checkpoints" / MODELS[model_name]
+    if not checkpoint.is_file():
+        raise InferenceError(f"Thiếu checkpoint {checkpoint}; chỉ dùng file do nhóm xác nhận.")
+    try:
+        modified_ns = checkpoint.stat().st_mtime_ns
+    except OSError as exc:
+        raise InferenceError(f"Không đọc được checkpoint {checkpoint}: {exc}") from exc
+    model = _cached_model(model_name, root, device, modified_ns)
     return predict(image, model, transform, names, device)
+
+
+def predict_bytes(data, model_name, root=ROOT, device="cpu"):
+    return predict_image(read_image(data), model_name, root, device)
