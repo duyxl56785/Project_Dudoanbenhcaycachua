@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="510" viewBox="0 0 960 510">
+<rect width="960" height="510" fill="#ffffff"/>
+<text x="36" y="42" font-family="Arial,sans-serif" font-size="23" font-weight="700" fill="#1b2430">PlantVillage - 6,502 selected tomato-leaf images</text>
+<text x="36" y="66" font-family="Arial,sans-serif" font-size="13" fill="#566">Dataset split from NV1 verified manifest (2026-10-23)</text>
+<line x1="78" y1="95" x2="78" y2="395" stroke="#222" stroke-width="1.5"/>
+<line x1="78" y1="395" x2="925" y2="395" stroke="#222" stroke-width="1.5"/>
+<line x1="78" y1="395.0" x2="925" y2="395.0" stroke="#e8ecf0"/><text x="68" y="400.0" text-anchor="end" font-family="Arial" font-size="13">0</text>
+<line x1="78" y1="326.8" x2="925" y2="326.8" stroke="#e8ecf0"/><text x="68" y="331.8" text-anchor="end" font-family="Arial" font-size="13">500</text>
+<line x1="78" y1="258.6" x2="925" y2="258.6" stroke="#e8ecf0"/><text x="68" y="263.6" text-anchor="end" font-family="Arial" font-size="13">1000</text>
+<line x1="78" y1="190.5" x2="925" y2="190.5" stroke="#e8ecf0"/><text x="68" y="195.5" text-anchor="end" font-family="Arial" font-size="13">1500</text>
+<line x1="78" y1="122.3" x2="925" y2="122.3" stroke="#e8ecf0"/><text x="68" y="127.3" text-anchor="end" font-family="Arial" font-size="13">2000</text>
+<rect x="140" y="266.27" width="92" height="128.73" fill="#3e81b7"/>
+<rect x="140" y="233.55" width="92" height="32.73" fill="#79a5c9"/>
+<rect x="140" y="188.55" width="92" height="45.00" fill="#c1d4e6"/>
+<text x="186" y="179.5" font-family="Arial" font-size="14" font-weight="700" text-anchor="middle">1514</text><text x="186" y="419" font-family="Arial" font-size="13" text-anchor="middle">Healthy</text>
+<rect x="335" y="308.82" width="92" height="86.18" fill="#3e81b7"/>
+<rect x="335" y="287.95" width="92" height="20.86" fill="#79a5c9"/>
+<rect x="335" y="258.64" width="92" height="29.32" fill="#c1d4e6"/>
+<text x="381" y="249.6" font-family="Arial" font-size="14" font-weight="700" text-anchor="middle">1000</text><text x="381" y="419" font-family="Arial" font-size="13" text-anchor="middle">Early Blight</text>
+<rect x="530" y="233.00" width="92" height="162.00" fill="#3e81b7"/>
+<rect x="530" y="192.36" width="92" height="40.64" fill="#79a5c9"/>
+<rect x="530" y="141.23" width="92" height="51.14" fill="#c1d4e6"/>
+<text x="576" y="132.2" font-family="Arial" font-size="14" font-weight="700" text-anchor="middle">1861</text><text x="576" y="419" font-family="Arial" font-size="13" text-anchor="middle">Late Blight</text>
+<rect x="725" y="210.77" width="92" height="184.23" fill="#3e81b7"/>
+<rect x="725" y="164.41" width="92" height="46.36" fill="#79a5c9"/>
+<rect x="725" y="104.95" width="92" height="59.45" fill="#c1d4e6"/>
+<text x="771" y="96.0" font-family="Arial" font-size="14" font-weight="700" text-anchor="middle">2127</text><text x="771" y="419" font-family="Arial" font-size="13" text-anchor="middle">Bacterial Spot</text>
+<text x="132" y="458" font-family="Arial" font-size="13">Train: 4,115</text><rect x="105" y="446" width="16" height="16" fill="#3e81b7"/><text x="333" y="458" font-family="Arial" font-size="13">Val: 1,031</text><rect x="307" y="446" width="16" height="16" fill="#79a5c9"/><text x="510" y="458" font-family="Arial" font-size="13">Test: 1,356</text><rect x="484" y="446" width="16" height="16" fill="#c1d4e6"/><text x="36" y="486" font-family="Arial" font-size="11" fill="#555">Source: data/dataset_manifest.csv. No artificial image multiplication.</text></svg>
