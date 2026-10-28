@@ -21,26 +21,34 @@ choice = st.radio("Mô hình", ("CNN", "ResNet18", "So sánh cả hai"), horizon
 device_choice = st.selectbox("Thiết bị suy luận", ("Tự động", "CPU", "CUDA"))
 device = {"Tự động": "auto", "CPU": "cpu", "CUDA": "cuda"}[device_choice]
 upload = st.file_uploader("Ảnh JPG/PNG (tối đa 10 MiB)", type=["jpg", "jpeg", "png"])
+image = None
+upload_error = False
 if upload is not None:
     data = upload.getvalue()
     if len(data) > MAX_IMAGE_BYTES:
         st.error("Ảnh vượt giới hạn 10 MiB.")
+        upload_error = True
     else:
         try:
             image = read_image(data)
-            names = class_names()
             st.image(image, caption="Ảnh đã tải", width="stretch")
-            selected = ("cnn", "resnet18") if choice == "So sánh cả hai" else (choice.lower(),)
-            if st.button("Dự đoán bệnh", type="primary"):
-                for model_name in selected:
-                    st.subheader("CNN" if model_name == "cnn" else "ResNet18")
-                    try:
-                        result = predict_image(image, model_name, device=device)
-                        st.write(f"Dự đoán: **{result['top_label']}**")
-                        st.table({"Lớp": names, "Xác suất softmax": [f"{result['probabilities'][name]:.2%}" for name in names]})
-                        st.bar_chart({"Lớp": list(names), "Xác suất": [result["probabilities"][name] for name in names]}, x="Lớp", y="Xác suất", horizontal=True)
-                        st.caption(f"Forward pass: {result['forward_ms']:.2f} ms trên {device_choice}; không gồm tải mô hình, đọc ảnh hoặc tiền xử lý.")
-                    except InferenceError as exc:
-                        st.error(str(exc))
         except InferenceError as exc:
             st.error(str(exc))
+            upload_error = True
+
+if st.button("Dự đoán bệnh", type="primary"):
+    if upload is None:
+        st.error("Vui lòng tải ảnh JPG hoặc PNG trước khi dự đoán.")
+    elif not upload_error and image is not None:
+        names = class_names()
+        selected = ("cnn", "resnet18") if choice == "So sánh cả hai" else (choice.lower(),)
+        for model_name in selected:
+            st.subheader("CNN" if model_name == "cnn" else "ResNet18")
+            try:
+                result = predict_image(image, model_name, device=device)
+                st.write(f"Dự đoán: **{result['top_label']}**")
+                st.table({"Lớp": names, "Xác suất softmax": [f"{result['probabilities'][name]:.2%}" for name in names]})
+                st.bar_chart({"Lớp": list(names), "Xác suất": [result["probabilities"][name] for name in names]}, x="Lớp", y="Xác suất", horizontal=True)
+                st.caption(f"Forward pass: {result['forward_ms']:.2f} ms trên {device_choice}; không gồm tải mô hình, đọc ảnh hoặc tiền xử lý.")
+            except InferenceError as exc:
+                st.error(str(exc))

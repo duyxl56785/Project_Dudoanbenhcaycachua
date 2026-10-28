@@ -4,6 +4,7 @@ build_val_transform(model_name, config). Checkpoints are plain state_dicts.
 import io
 import json
 import math
+import pickle
 import time
 from functools import lru_cache
 from importlib import import_module
@@ -48,7 +49,7 @@ def read_image(data):
     except InferenceError:
         raise
     except (OSError, ValueError, UnidentifiedImageError, Image.DecompressionBombError) as exc:
-        raise InferenceError(f"Không đọc được ảnh JPEG/PNG: {exc}") from exc
+        raise InferenceError("Không đọc được nội dung ảnh JPEG/PNG hợp lệ.") from exc
 
 
 def load_config(model_name, root=ROOT):
@@ -107,7 +108,7 @@ def load_model(model_name, root=ROOT, device="cpu", *, factory=None):
         return model.to(device).eval()
     except InferenceError:
         raise
-    except (ImportError, AttributeError, RuntimeError, ValueError, TypeError, OSError) as exc:
+    except (ImportError, AttributeError, RuntimeError, ValueError, TypeError, OSError, EOFError, pickle.UnpicklingError) as exc:
         raise InferenceError(f"Không tải được checkpoint {path}: {exc}") from exc
 
 
