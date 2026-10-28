@@ -14,12 +14,12 @@ data:
   test_split: data/splits/test.csv     # chỉ dùng để đánh giá cuối
 
 preprocessing:              # Val/Test: tiền xử lý tất định
-  image_size: 224
-  normalize_mean: [0.485, 0.456, 0.406]
-  normalize_std: [0.229, 0.224, 0.225]
+  image_size: null
+  normalize_mean: null
+  normalize_std: null
 
 augmentation:               # CHỈ áp dụng cho Train; lấy từ src/data/transforms.py của NV1
-  train: {random_horizontal_flip: true, random_vertical_flip: true, rotation_degrees: 15, color_jitter: 0.1}
+  train: null
 
 training:
   seed: null
@@ -33,8 +33,8 @@ training:
   early_stopping_patience: null
 
 checkpoint:
-  monitor: val_macro_f1             # phải là chỉ số trên Validation, không dùng Test
-  mode: max
+  monitor: null             # phải là chỉ số trên Validation, không dùng Test
+  mode: null
   path: checkpoints/cnn_best.pt
 
 output:
