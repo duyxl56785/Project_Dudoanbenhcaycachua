@@ -153,6 +153,12 @@ NV5 có thể dùng phần mô tả chức năng, cách chạy, giới hạn và
 
 Workflow `.github/workflows/nv4-demo-ci.yml` chỉ chạy khi PR có head `feature/nv4-demo` và thay đổi file NV4. Nó chạy `compileall` và `pytest tests -q` trên CPU với checkout sạch, không cần ảnh dataset, checkpoint hay GPU. Kiểm thử cục bộ trên checkout sạch đạt **34 passed, 19 subtests passed**; trạng thái GitHub Actions phải kiểm tra riêng sau mỗi push.
 
+### Kiểm thử liên nhánh ngày 29/10/2026
+
+Trong worktree tạm từ `main`, NV4 lần lượt ghép head PR #10 (NV1), #9 (NV2), #7 (NV3), #1 (NV4) và #11 (NV5), **không merge vào `main` hoặc branch thành viên**. Cả năm phép merge đều không xung đột. PR #10 chỉ sửa phần trực quan hóa và test dữ liệu, không đổi `src/data/dataset.py` hay `src/data/transforms.py`; trên bản ghép, `scripts.check_dataset --data-root <data/raw thật>` đạt với split 4.115/1.031/1.356. CNN checkpoint PR #9 strict-load và `demo.check_consistency --model cnn` đạt `max |delta|=0` trên ảnh Bacterial Spot thật. Streamlit bản ghép đã upload hai ảnh thật và một ảnh hỏng, dự đoán CNN đúng Bacterial Spot/Healthy, ghi lỗi ảnh hỏng riêng, xuất CSV, hiển thị dashboard 2 ảnh/2 lượt thành công/1 lỗi và thông báo ResNet18 thiếu checkpoint trong chế độ so sánh. [Ảnh kiểm thử tích hợp thật](../demo/screenshots/integration_cnn_resnet_missing_20261029.jpg).
+
+**Lỗi test liên nhánh cần NV5/NV2 xử lý trước khi merge chung:** PR #11 thêm `tests/__init__.py`, còn ba test PR #9 import `nv2_helpers` như module gốc. Vì vậy `python -m pytest tests -q` trên bản ghép dừng ở collection với ba `ModuleNotFoundError: nv2_helpers`. Khi tạm bỏ `tests/__init__.py` trong worktree kiểm thử, lệnh chuẩn đạt **79 passed, 1 skipped, 19 subtests passed**; khi giữ file đó và đặt `PYTHONPATH=tests`, cũng đạt cùng kết quả. File của NV5 đã được khôi phục trong worktree tạm. NV5 có thể bỏ `tests/__init__.py` nếu không cần package `tests`, hoặc NV2 đổi ba import sang `from tests.nv2_helpers import ...`. Đây là lỗi tương thích test, không phải lỗi inference; NV4 không sửa file NV2/NV5 trên branch của mình.
+
 ## Lỗi thường gặp và cách khắc phục
 
 | Thông báo | Nguyên nhân | Cách xử lý |
