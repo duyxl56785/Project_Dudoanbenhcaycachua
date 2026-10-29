@@ -1,0 +1,21 @@
+{
+  "source": "NV2 PR #9 description and results/cnn/cnn_metrics.json at refs/remotes/origin/pr-9-head",
+  "source_commit": "b0b6fe34f5e9137dbb61061dad8dc04e6647f779",
+  "split": "test",
+  "n_samples": 1356,
+  "checkpoint": "checkpoints/cnn_best.pt (path recorded by NV2; not copied into NV5 branch)",
+  "checkpoint_epoch": 24,
+  "checkpoint_val_macro_f1": 0.9768359520571911,
+  "device": "cuda",
+  "accuracy": 0.9697640117994101,
+  "macro_precision": 0.9654164799550266,
+  "macro_recall": 0.9647012820761487,
+  "macro_f1": 0.9650338128761278,
+  "per_class": {
+    "Healthy": {"precision": 0.9850299401197605, "recall": 0.996969696969697, "f1": 0.9909638554216867, "support": 330},
+    "Early Blight": {"precision": 0.9339622641509434, "recall": 0.9209302325581395, "f1": 0.927400468384075, "support": 215},
+    "Late Blight": {"precision": 0.9496021220159151, "recall": 0.9546666666666667, "f1": 0.9521276595744681, "support": 375},
+    "Bacterial Spot": {"precision": 0.9930715935334873, "recall": 0.9862385321100917, "f1": 0.9896432681242808, "support": 436}
+  },
+  "confusion_matrix": [[329, 0, 1, 0], [0, 198, 14, 3], [5, 12, 358, 0], [0, 2, 4, 430]]
+}

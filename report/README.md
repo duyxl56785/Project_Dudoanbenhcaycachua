@@ -15,6 +15,8 @@ trước khi có nguồn sẽ vi phạm quy tắc không dùng số liệu giả
 6. Kết luận, hạn chế, hướng phát triển và tài liệu tham khảo.
 7. Phụ lục: lệnh chạy, phiên bản môi trường, câu hỏi bảo vệ.
 
-Sau Gate 3, chạy `python -m scripts.evaluate_models ...`, đối chiếu số liệu
-giữa `comparison.csv`, `analysis.md`, báo cáo và slide rồi mới xuất bản Word/PDF
+Hiện đã có khung slide NV5 và bảng CNN từ artifact bàn giao của NV2; ResNet18
+được ghi `pending` cho tới khi NV3 bàn giao metrics thật. Sau Gate 3, chạy
+`python -m scripts.evaluate_models ...`, đối chiếu số liệu giữa
+`comparison.csv`, `analysis.md`, báo cáo và slide rồi mới xuất bản Word/PDF
 hoặc PowerPoint.
