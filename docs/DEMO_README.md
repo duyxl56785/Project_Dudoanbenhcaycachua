@@ -64,6 +64,8 @@ Val/Test và demo dùng pipeline tất định từ `build_val_transform(model_n
 - **CNN tự xây dựng:** `build_model(num_classes=4)`, checkpoint thật PR #9, đã strict-load và suy luận CPU thành công.
 - **ResNet18:** source PR #7 có `build_model(num_classes=4)` nhưng chưa có checkpoint fine-tuned. Demo chỉ báo thiếu checkpoint, tuyệt đối không chạy trọng số ngẫu nhiên như kết quả thật.
 
+Để kiểm tra consistency CNN trong bản tích hợp tạm từ PR #9, cần lấy đồng bộ `src/models/cnn.py`, `src/cnn_training.py`, `scripts/infer_cnn.py`, `configs/cnn.yaml`, `checkpoints/cnn_best.pt` và `checkpoints/cnn_best.meta.json`. Riêng `src/cnn_training.py` là dependency của script NV2; thiếu file này sẽ gây `ModuleNotFoundError` dù API NV4 có thể strict-load checkpoint. Lần kiểm tra lại ngày 29/10/2026 với đúng bộ file trên và ảnh Bacterial Spot thật đạt `cnn: PASS; top-1=Bacterial Spot; max |delta|=0` trên CPU, SHA-256 checkpoint vẫn là `d33c95bb...f473a377390de1f`.
+
 ## Chuẩn bị checkpoint
 
 Mỗi mô hình cần ba thành phần đồng bộ: kiến trúc `build_model(4)`, YAML preprocessing và cặp `checkpoints/<model>_best.pt` + `<model>_best.meta.json`. File `.pt` phải là plain tensor `state_dict`; app dùng `torch.load(..., map_location=device, weights_only=True)` và `load_state_dict(strict=True)`. Metadata phải chứa đúng bốn nhãn theo mapping chung và preprocessing giống YAML. Chỉ sử dụng checkpoint được chọn bằng `val_macro_f1`, không chọn bằng Test.
@@ -139,6 +141,17 @@ Các ảnh dưới đây được chụp trực tiếp từ phiên Streamlit ki�
 ![ResNet18 báo thiếu checkpoint thật](../demo/screenshots/resnet18_missing_checkpoint.jpg)
 
 NV5 có thể dùng phần mô tả chức năng, cách chạy, giới hạn và ảnh bằng chứng ở đây cho báo cáo. PlantVillage chủ yếu là ảnh trong điều kiện kiểm soát; ảnh cây/bệnh khác vẫn bị ép vào một trong bốn lớp. Không dùng demo để khẳng định chẩn đoán chắc chắn hay phát hiện sớm.
+
+### Bàn giao dùng ngay cho NV5
+
+| Nội dung | Nguồn kiểm chứng | Cách sử dụng trong báo cáo |
+|---|---|---|
+| Giao diện CNN, đa ảnh, lỗi, lịch sử, dashboard | Ảnh thật trong `demo/screenshots/` và bảng kiểm thử trình duyệt ở trên | Minh họa luồng sử dụng và xử lý lỗi; không gọi ảnh demo là phép đánh giá Test toàn tập. |
+| CNN Test Accuracy 0,969764; macro-F1 0,965034 | Checkpoint/metrics PR #9, phép đánh giá lại 1.356 ảnh đã ghi ở trên | Ghi rõ nguồn PR #9 và kết quả NV4 tái lập; NV5 có phép đối chiếu độc lập ở PR #11. |
+| ResNet18 | PR #7 chỉ có mã kiến trúc, chưa có checkpoint fine-tuned | Để trạng thái chờ; không lập bảng so sánh định lượng hoặc gắn ảnh thiếu checkpoint thành kết quả mô hình. |
+| Video | `docs/DEMO_SCRIPT_NV4.md` là kịch bản; hiện chưa có tệp video | Có thể dùng ảnh chụp thật; chưa ghi “đã quay video”. |
+
+Workflow `.github/workflows/nv4-demo-ci.yml` chỉ chạy khi PR có head `feature/nv4-demo` và thay đổi file NV4. Nó chạy `compileall` và `pytest tests -q` trên CPU với checkout sạch, không cần ảnh dataset, checkpoint hay GPU. Kiểm thử cục bộ trên checkout sạch đạt **34 passed, 19 subtests passed**; trạng thái GitHub Actions phải kiểm tra riêng sau mỗi push.
 
 ## Lỗi thường gặp và cách khắc phục
 
