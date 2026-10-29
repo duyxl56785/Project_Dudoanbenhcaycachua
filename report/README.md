@@ -20,3 +20,7 @@ Hiện đã có khung slide NV5 và bảng CNN từ artifact bàn giao của NV2
 `python -m scripts.evaluate_models ...`, đối chiếu số liệu giữa
 `comparison.csv`, `analysis.md`, báo cáo và slide rồi mới xuất bản Word/PDF
 hoặc PowerPoint.
+
+Khung nội dung có thể điền vào báo cáo cuối kỳ nằm ở
+[`bao_cao_nv5_framework.md`](bao_cao_nv5_framework.md), gồm giới thiệu, dataset,
+phương pháp, quy trình thí nghiệm, CNN, đánh giá, hạn chế và nguồn truy vết.
