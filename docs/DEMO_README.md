@@ -1,8 +1,8 @@
 # Demo Streamlit – NV4 Nguyễn Minh Duy
 
-## Trạng thái ngày 28/10/2026
+## Trạng thái ngày 29/10/2026
 
-Giao diện và API suy luận đã triển khai trên `feature/nv4-demo`; **Gate 4 chưa nghiệm thu**. PR [NV1 #8](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/pull/8) đã merge vào `main`. Dataset thật và checkpoint CNN của PR [NV2 #9](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/pull/9) đã được NV4 kiểm tra trong một bản tích hợp tạm trên CPU; PR #9 vẫn mở, chưa có review và chưa merge. PR [NV3 #7](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/pull/7) đã được NV2 approve, nhưng chưa merge và chưa có checkpoint ResNet18 đã fine-tune. Vì vậy nhánh NV4 chưa chứa kiến trúc/checkpoint thật của hai mô hình và chế độ so sánh hai mô hình chưa thể nghiệm thu.
+Giao diện và API suy luận đã triển khai trên `feature/nv4-demo`; **Gate 4 chưa nghiệm thu**. PR [NV1 #8](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/pull/8) đã merge vào `main`. Dataset thật và checkpoint CNN của PR [NV2 #9](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/pull/9) đã được NV4 kiểm tra trong một bản tích hợp tạm trên CPU; PR #9 đã được NV5 approve nhưng vẫn mở và chưa merge. PR [NV3 #7](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/pull/7) đã được reviewer approve, nhưng chưa merge và chưa có checkpoint ResNet18 đã fine-tune. Vì vậy nhánh NV4 chưa chứa kiến trúc/checkpoint thật của hai mô hình và chế độ so sánh hai mô hình chưa thể nghiệm thu.
 
 ## Giới thiệu và luồng hoạt động
 
@@ -74,7 +74,7 @@ Mỗi mô hình cần ba thành phần đồng bộ: kiến trúc `build_model(4
 
 Upload tối đa 8 ảnh JPEG/PNG, mỗi ảnh tối đa **10 MiB**, xem trước, chọn CNN/ResNet18/so sánh cả hai trong sidebar, chọn thiết bị Tự động/CPU/CUDA rồi bấm **Dự đoán bệnh**. App hiển thị top-1, bảng và biểu đồ softmax bốn lớp theo thứ tự `configs/class_mapping.json` cho từng ảnh. Thời gian hiển thị chỉ đo forward pass, loại trừ tải mô hình, đọc ảnh và tiền xử lý; CUDA được đồng bộ trước và sau. Cache chỉ dùng lại mô hình khi file checkpoint không đổi. Softmax **không phải độ chắc chắn đã hiệu chỉnh**.
 
-App kiểm tra nội dung ảnh, ảnh hỏng, giới hạn dung lượng, config/metadata, checkpoint và đầu ra logits. Khi thiếu checkpoint, app báo trước khi dự đoán; lỗi một mô hình không ngăn hiển thị kết quả mô hình còn lại trong chế độ so sánh. Chỉ đặt checkpoint do nhóm xác nhận tại `checkpoints/`. Checkpoint CNN hiện nằm trên nhánh NV2 và chưa được chép/commit vào NV4 trong khi PR #9 còn chờ review.
+App kiểm tra nội dung ảnh, ảnh hỏng, giới hạn dung lượng, config/metadata, checkpoint và đầu ra logits. Khi thiếu checkpoint, app báo trước khi dự đoán; lỗi một mô hình không ngăn hiển thị kết quả mô hình còn lại trong chế độ so sánh. Chỉ đặt checkpoint do nhóm xác nhận tại `checkpoints/`. Checkpoint CNN hiện nằm trên nhánh NV2; PR #9 đã có approval nhưng chưa merge, nên checkpoint chưa được chép/commit vào NV4.
 
 Nếu chưa tải ảnh mà bấm **Dự đoán bệnh**, app yêu cầu tải JPG/PNG. Khi thay ảnh hoặc đổi mô hình, kết quả cũ được xóa sau khi lần rerun hoàn tất. Xác suất hiển thị là softmax tương đối giữa đúng bốn lớp đã học, không phải độ tin cậy đã hiệu chỉnh hay xác suất chẩn đoán ngoài thực địa.
 
