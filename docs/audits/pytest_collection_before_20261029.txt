@@ -1,0 +1,38 @@
+
+=================================== ERRORS ====================================
+_______________ ERROR collecting tests/test_nv2_cnn_training.py _______________
+ImportError while importing test module 'D:\\CMC Uni\\5 Ky Dong\\H\u1ecdc M\xe1y\\Project_Dudoanbenhcaycachua\\Project_Dudoanbenhcaycachua\\.nv4_repro\\tests\\test_nv2_cnn_training.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\importlib\\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\\test_nv2_cnn_training.py:9: in <module>
+    from nv2_helpers import NAMES, synthetic_loader
+E   ModuleNotFoundError: No module named 'nv2_helpers'
+________________ ERROR collecting tests/test_nv2_eval_infer.py ________________
+ImportError while importing test module 'D:\\CMC Uni\\5 Ky Dong\\H\u1ecdc M\xe1y\\Project_Dudoanbenhcaycachua\\Project_Dudoanbenhcaycachua\\.nv4_repro\\tests\\test_nv2_eval_infer.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\importlib\\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\\test_nv2_eval_infer.py:6: in <module>
+    from nv2_helpers import NAMES, simple_transform, synthetic_loader
+E   ModuleNotFoundError: No module named 'nv2_helpers'
+________________ ERROR collecting tests/test_nv2_train_cnn.py _________________
+ImportError while importing test module 'D:\\CMC Uni\\5 Ky Dong\\H\u1ecdc M\xe1y\\Project_Dudoanbenhcaycachua\\Project_Dudoanbenhcaycachua\\.nv4_repro\\tests\\test_nv2_train_cnn.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\importlib\\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\\test_nv2_train_cnn.py:8: in <module>
+    from nv2_helpers import NAMES, load_yaml, synthetic_loader
+E   ModuleNotFoundError: No module named 'nv2_helpers'
+=========================== short test summary info ===========================
+ERROR tests/test_nv2_cnn_training.py
+ERROR tests/test_nv2_eval_infer.py
+ERROR tests/test_nv2_train_cnn.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 3 errors during collection !!!!!!!!!!!!!!!!!!!
+3 errors in 12.30s

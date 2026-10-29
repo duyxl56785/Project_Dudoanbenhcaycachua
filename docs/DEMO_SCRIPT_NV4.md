@@ -79,3 +79,12 @@ Thời lượng gợi ý: 4–6 phút. Chỉ quay khi đang dùng checkpoint nh�
 - Sau khi NV3 bàn giao checkpoint thật, quay bổ sung ResNet18 và chế độ so sánh; trước đó phải nói rõ đang thiếu checkpoint.
 
 **Trạng thái:** chưa có video được ghi hoặc bàn giao; các ảnh chụp trình duyệt thật nằm trong `demo/screenshots/`.
+
+## Hướng dẫn quay video CNN thật cho NV5
+
+1. Tạo môi trường theo `docs/DEMO_README.md`; dùng đồng bộ mã, YAML, checkpoint và metadata CNN từ PR #9. Đối chiếu SHA-256 `cnn_best.pt` với `d33c95bbe15e82fa83f1fd954136ebfff6e1cbba1a86fe40af473a377390de1f` trước khi quay. Chạy `streamlit run demo/app.py` từ gốc dự án.
+2. Mở demo trong một cửa sổ trình duyệt riêng. Trong phần mềm quay, chọn **Window Capture / quay cửa sổ ứng dụng** cho đúng cửa sổ này, không chọn toàn màn hình. Quay thử vài giây rồi xem lại để chắc chắn khung hình chỉ chứa demo và chữ đọc được; tắt thông báo cá nhân.
+3. Dùng ảnh thật trong `data/raw/` nhưng không đưa nguyên dataset vào video. Quay liên tục thao tác upload, preview, chọn CNN, dự đoán và bảng bốn xác suất. Sau đó thêm ảnh hỏng, mở lịch sử, tải CSV, xem dashboard, rồi chọn chế độ so sánh để ghi rõ ResNet18 chưa có checkpoint. Giữ nguyên mọi kết quả thật, kể cả dự đoán sai.
+4. Kiểm tra file MP4 sau khi dừng: hình và tiếng (nếu thuyết minh), tên bệnh, bốn xác suất, thông báo ảnh hỏng và trạng thái ResNet18 phải xem được. Chỉ đánh dấu video hoàn thành trong Issue khi tệp đã được mở và đối chiếu. Không tuyên bố đã chạy ResNet18 trước khi NV3 bàn giao checkpoint thật.
+
+NV4 đã thử khả năng quay màn hình ngày 29/10/2026 nhưng chế độ ghi desktop thu cả ứng dụng ngoài dự án, nên không dùng bản quay đó làm bằng chứng. Ảnh trình duyệt thật và kịch bản hiện có đủ để NV5 dựng phần CNN; video thật vẫn chưa được bàn giao.
