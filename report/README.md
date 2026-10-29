@@ -24,3 +24,9 @@ hoặc PowerPoint.
 Khung nội dung có thể điền vào báo cáo cuối kỳ nằm ở
 [`bao_cao_nv5_framework.md`](bao_cao_nv5_framework.md), gồm giới thiệu, dataset,
 phương pháp, quy trình thí nghiệm, CNN, đánh giá, hạn chế và nguồn truy vết.
+
+Repository chỉ có hướng dẫn cấu trúc trong tài liệu bàn giao, chưa có file mẫu
+Word/PPTX chính thức do trường xác nhận. Vì vậy bản này cung cấp nội dung nguồn,
+không tự nhận là đúng quy cách nộp cuối kỳ. Outline slide 12 trang nằm ở
+[`slide_outline_nv5.md`](slide_outline_nv5.md); checklist nghiệm thu nằm ở
+[`NV5_ACCEPTANCE_CHECKLIST.md`](NV5_ACCEPTANCE_CHECKLIST.md).
