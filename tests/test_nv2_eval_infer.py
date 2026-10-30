@@ -3,7 +3,7 @@ Không phải kết quả phân loại thật."""
 import pytest
 from PIL import Image
 
-from nv2_helpers import NAMES, simple_transform, synthetic_loader
+from tests.nv2_helpers import NAMES, simple_transform, synthetic_loader
 from scripts.eval_cnn import evaluate
 from scripts.infer_cnn import predict_file
 from src.models.cnn import build_model

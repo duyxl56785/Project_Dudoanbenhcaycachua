@@ -5,7 +5,7 @@ import json
 
 import pytest
 
-from nv2_helpers import NAMES, load_yaml, synthetic_loader
+from tests.nv2_helpers import NAMES, load_yaml, synthetic_loader
 from scripts.train_cnn import plot_curves, train
 from src.models.cnn import build_model
 

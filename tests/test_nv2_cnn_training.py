@@ -6,7 +6,7 @@ import pytest
 import torch
 from torch import nn
 
-from nv2_helpers import NAMES, synthetic_loader
+from tests.nv2_helpers import NAMES, synthetic_loader
 from src.cnn_training import (EarlyStopping, compute_metrics, load_checkpoint, load_class_names,
                               run_epoch, save_checkpoint, set_seed)
 from src.models.cnn import build_model
