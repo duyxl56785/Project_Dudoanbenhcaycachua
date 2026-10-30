@@ -1,6 +1,10 @@
 # Demo Streamlit – NV4 Nguyễn Minh Duy
 
-## Trạng thái ngày 29/10/2026
+## Trạng thái mới nhất: 30/10/2026
+
+NV3 đã công bố [gói bàn giao ResNet18 trên PR #7](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/pull/7), gồm checkpoint fine-tuned, metadata, config, metrics và log. NV4 đã tải gói thật, đối chiếu SHA-256 và kiểm thử cục bộ cùng checkpoint CNN của PR #9. Hai PR vẫn chưa được merge; các tệp mô hình/checkpoint của NV2 và NV3 trong working tree NV4 chỉ là **bản tích hợp cục bộ, chưa stage hoặc push**. Để chạy trên máy khác cần lấy đúng các tệp bàn giao từ hai PR. Kết quả kiểm thử mới ở mục cuối tài liệu; những câu “ResNet18 chưa có checkpoint” trong nhật ký phía dưới mô tả trạng thái các ngày trước.
+
+## Nhật ký trạng thái ngày 29/10/2026
 
 Giao diện và API suy luận đã triển khai trên `feature/nv4-demo`; **Gate 4 chưa nghiệm thu**. PR [NV1 #8](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/pull/8) đã merge vào `main`. Dataset thật và checkpoint CNN của PR [NV2 #9](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/pull/9) đã được NV4 kiểm tra trong một bản tích hợp tạm trên CPU; PR #9 đã được NV5 approve nhưng vẫn mở và chưa merge. PR [NV3 #7](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/pull/7) đã được reviewer approve, nhưng chưa merge và chưa có checkpoint ResNet18 đã fine-tune. Vì vậy nhánh NV4 chưa chứa kiến trúc/checkpoint thật của hai mô hình và chế độ so sánh hai mô hình chưa thể nghiệm thu.
 
@@ -189,6 +193,22 @@ Từ repo gốc (hoặc worktree cục bộ nếu chưa có server), dùng Pytho
 ## Nghiệm thu VI.4
 
 - [x] App khởi động trong `.venv` dựng từ `requirements.txt`; trình duyệt đã tự động upload/xem trước ảnh thật, chọn CNN, dự đoán và hiển thị đủ bốn xác suất.
-- [ ] Load cả hai checkpoint thật: CNN đã đạt trong bản tích hợp tạm; ResNet18 chưa có checkpoint.
-- [ ] Mapping, preprocessing và kết quả script khớp: CNN đã đối chiếu thật; ResNet18 còn chờ checkpoint.
+- [x] Load cả hai checkpoint thật trên CPU trong bản tích hợp cục bộ; checkpoint vẫn thuộc PR #9 và gói bàn giao PR #7, chưa merge vào nhánh NV4.
+- [x] Mapping, preprocessing và kết quả script khớp trên ảnh Bacterial Spot thật với cả CNN và ResNet18; xem kết quả kiểm thử ngày 30/10 bên dưới.
 - [x] UI xử lý ảnh lỗi, thiếu checkpoint và hiển thị hạn chế; ảnh hỏng và ResNet18 thiếu checkpoint đã được xác minh trực tiếp trong trình duyệt.
+
+### Tích hợp checkpoint ResNet18 thật ngày 30/10/2026
+
+- Nguồn: [PR NV3 #7](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/pull/7), gói `NV3_ResNet18_HANDOFF_20261030.zip` tại [Google Drive do NV3 công bố](https://drive.google.com/file/d/153DOn8zLCiIhnydLoPNDcht3X0EFhKuR/view). Branch NV3 HEAD lúc kiểm tra: `e8b0e6fe326de78c11d0993ceb8a55ef4abeb8e0`. PR/Issue #4 vẫn cần quy trình review/merge của nhóm.
+- Checkpoint trong ZIP: `checkpoints/resnet18_best.pt`, 44.794.251 byte; SHA-256 tính độc lập **`61d44ba8ac02ee57c44cbd3835aaac2c657c97924735fea743a60df5f5fdf9e2`**, trùng `CHECKPOINT_SHA256.txt` và PR #7. Sidecar xác nhận `stage=fine_tuning`, epoch 9, Validation macro-F1 **0,9808585369**, `val_loss=0,0483145519`, ImageNet `IMAGENET1K_V1` làm điểm khởi tạo. Số liệu Test trong gói do NV3 báo: 1.356 ảnh, Accuracy **0,9867256637**, macro-F1 **0,9839779476**; NV4 chưa chạy lại toàn bộ Test cho ResNet18.
+- NV4 lấy đúng `src/models/resnet18.py`, `src/resnet18_workflow.py`, `scripts/infer_resnet18.py`, `configs/resnet18.yaml` từ branch NV3 và cặp checkpoint/metadata từ ZIP vào working tree cục bộ. Không merge PR, không sửa branch NV3, không commit trọng số hoặc mã NV3 vào PR #1. `torch.load(weights_only=True)` và `load_state_dict(strict=True)` thành công trên CPU; model `eval()`, tensor `[1,3,224,224]`, logits `[1,4]`. Thứ tự nhãn đúng `Healthy`, `Early Blight`, `Late Blight`, `Bacterial Spot`; Val/Test transform là resize cạnh ngắn 256, center crop 224, ImageNet mean/std.
+- Bốn ảnh thật, mỗi lớp một ảnh: `000146ff...259.1.JPG` Healthy → Healthy (**99,9775%**); `0012b9d2...8389.JPG` Early Blight → Early Blight (**99,9882%**); `0003faa8...4946.JPG` Late Blight → Late Blight (**99,3301%**); `00416648...3110.JPG` Bacterial Spot → Bacterial Spot (**67,1089%**). Chi tiết xác suất theo thứ tự bốn nhãn cho ảnh Bacterial Spot: **0,0783% / 25,5758% / 7,2370% / 67,1089%**. Đây là kiểm thử mẫu, không phải phép đo accuracy toàn tập.
+- `python -m demo.check_consistency "data/raw/raw/color/Tomato___Bacterial_spot/00416648-be6e-4bd4-bc8d-82f43f8a7240___GCREC_Bact.Sp 3110.JPG" --model both`: CNN **PASS**, ResNet18 **PASS**, `max |delta|=0` cho cả hai. `python -m pytest -q`: **34 passed, 19 subtests passed**. `compileall` và `git diff --check` đạt.
+- Streamlit mở được trên `http://127.0.0.1:8501/`; giao diện báo cả hai checkpoint sẵn có và xem trước hai ảnh thật. Trình duyệt đã chọn ResNet18, dự đoán ảnh Bacterial Spot **Bacterial Spot 67,11%** và ảnh Healthy **Healthy 99,98%**, mỗi ảnh có đủ bốn xác suất. Chế độ so sánh chạy CNN và ResNet18 song song trên hai ảnh, không có lỗi. [Ảnh ResNet18 thật](../demo/screenshots/resnet18_real_20261030.jpg) và [ảnh so sánh thật](../demo/screenshots/cnn_resnet18_compare_20261030.jpg). Các ảnh cũ có thông báo thiếu checkpoint chỉ phản ánh thời điểm trước NV3 bàn giao.
+
+Lệnh chạy sau khi lấy đúng bộ tệp của hai PR:
+
+```powershell
+.venv\Scripts\python.exe -m streamlit run demo/app.py --server.port 8501
+.venv\Scripts\python.exe -m demo.check_consistency "data/raw/raw/color/Tomato___Bacterial_spot/00416648-be6e-4bd4-bc8d-82f43f8a7240___GCREC_Bact.Sp 3110.JPG" --model both
+```
