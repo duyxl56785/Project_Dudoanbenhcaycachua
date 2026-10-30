@@ -159,6 +159,14 @@ Trong worktree tạm từ `main`, NV4 lần lượt ghép head PR #10 (NV1), #9 
 
 **Cập nhật 30/10/2026 — blocker test liên nhánh đã được NV2 sửa:** Bản ghép trước đó dừng ở ba lỗi `ModuleNotFoundError: nv2_helpers` vì PR #11 thêm `tests/__init__.py`, còn ba test NV2 import helper ở cấp gốc. NV2 đã đẩy commit `5d363f5` trên PR #9, đổi cả ba import thành `from tests.nv2_helpers import ...`. NV4 ghép lại head mới của PR #10/#9/#7/#1/#11 từ `main`, không áp dụng patch thử và không đặt `PYTHONPATH`; lệnh chuẩn `python -m pytest tests -q` đạt **79 passed, 1 skipped, 19 subtests passed**. [Traceback lịch sử và đối chiếu bản sửa](audits/NV4_INTEGRATION_PYTEST_20261029.md). Chỉ cần review/merge theo quy trình nhóm; không còn blocker collection này trên bản ghép hiện tại.
 
+### Chạy CNN thật cục bộ trước khi PR #9 merge (30/10/2026)
+
+NV4 tạo worktree cục bộ `../cnn_demo_local` từ head `feature/nv4-demo`, rồi lấy riêng sáu tệp đồng bộ của PR #9 (`src/models/cnn.py`, `src/cnn_training.py`, `scripts/infer_cnn.py`, `configs/cnn.yaml`, `checkpoints/cnn_best.pt`, `checkpoints/cnn_best.meta.json`) vào worktree này. Không merge PR #9, không thay branch NV2 và không commit checkpoint lên branch NV4. Worktree gốc `feature/nv4-demo` vẫn giữ nguyên; chỉ chạy app từ `../cnn_demo_local` cho đến khi PR #9 được tích hợp chính thức.
+
+Checkpoint cục bộ có SHA-256 `d33c95bbe15e82fa83f1fd954136ebfff6e1cbba1a86fe40af473a377390de1f` (1.571.893 byte). `torch.load(weights_only=True)` + `load_state_dict(strict=True)` trên CPU đạt; model ở chế độ `eval()`. RGB và `build_val_transform('cnn', config)` tạo tensor `[1,3,224,224]`; logits `[1,4]` hữu hạn, tổng bốn xác suất xấp xỉ 1. Metadata và mapping khớp thứ tự `Healthy`, `Early Blight`, `Late Blight`, `Bacterial Spot`. Trên bốn ảnh dataset thật, Bacterial Spot/Healthy/Late Blight được dự đoán đúng; mẫu Early Blight đã thử bị nhầm Late Blight (58,16%), giữ nguyên kết quả. `python -m demo.check_consistency <ảnh Bacterial Spot> --model cnn` đạt `max |delta|=0`.
+
+Từ `../cnn_demo_local`, dùng Python của `.venv` dự án để chạy `python -m streamlit run demo/app.py --server.port=8501`. Ngày 30/10, ứng dụng tại `http://127.0.0.1:8501` trả health `200 ok`, sidebar báo CNN có checkpoint. Trình duyệt upload thêm ảnh Bacterial Spot thật, preview và dự đoán đúng **Bacterial Spot 96,95%** với đủ bốn xác suất; lịch sử, dashboard, tải CSV và thông báo thiếu checkpoint ResNet18 đã kiểm tra. [Ảnh chụp trình duyệt thật](../demo/screenshots/cnn_local_checkpoint_20261030.jpg). Bộ test NV4 tại worktree này đạt **34 passed, 19 subtests passed**; `compileall` và `git diff --check` đạt.
+
 ## Lỗi thường gặp và cách khắc phục
 
 | Thông báo | Nguyên nhân | Cách xử lý |
