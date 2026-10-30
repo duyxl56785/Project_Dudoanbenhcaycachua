@@ -26,3 +26,7 @@ Ba file dùng `from nv2_helpers import ...`, trong khi helper thật nằm ở `
 | `python -m pytest tests -q` | 79 passed, 1 skipped, 19 subtests passed; 16 cảnh báo deprecation từ matplotlib/numpy |
 
 Các phép kiểm thử đều dùng cùng Python 3.12 và `.venv` của dự án. Patch chỉ có trong worktree kiểm thử tạm; PR #9 và #11 vẫn cần chủ sở hữu phối hợp trước khi merge chung.
+
+## Cập nhật 30/10/2026: NV2 đã sửa trên PR #9
+
+NV2 đẩy commit `5d363f5`, đổi ba import tại các dòng nêu trên sang `from tests.nv2_helpers import ...`. NV4 tạo lại worktree từ `origin/main`, ghép head mới PR #10/#9/#7/#1/#11 và chạy **lệnh chuẩn không có patch thử hoặc `PYTHONPATH`**: `python -m pytest tests -q` đạt **79 passed, 1 skipped, 19 subtests passed** (16 cảnh báo deprecation từ matplotlib/numpy). Cả năm phép merge vẫn sạch. Bản patch bỏ `tests/__init__.py` ở trên chỉ còn là bằng chứng phương án thử ban đầu, **không cần áp dụng**. Lỗi collection đã được giải quyết trên bản ghép hiện tại; PR #9 và #11 vẫn cần review/merge theo quy trình nhóm.
