@@ -4,8 +4,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const skillDir = "C:/Users/PC/.codex/plugins/cache/openai-primary-runtime/presentations/26.1025.11240/skills/presentations";
-const candidate = path.join(root, "report", "deliverables", "slides_nhom_tomato_template.pptx");
-const finalPath = path.join(root, "report", "deliverables", "slides_nhom_tomato_template_final.pptx");
+const candidate = path.join(root, ".report_build", "slides_nhom_tomato_draft_nv5.pptx");
+const finalPath = path.join(root, "report", "deliverables", "slides_nhom_tomato_draft_nv5.pptx");
 const staging = path.join(root, ".codex-finalizer");
 await fs.mkdir(staging, { recursive: true });
 const { finalizePresentation } = await import(pathToFileURL(path.join(skillDir, "container_tools/artifact_tool_utils.mjs")).href);
@@ -20,6 +20,6 @@ const result = await finalizePresentation({
   requiredNativeTableOwnerSlides: [],
   fontPolicy: { basis: "design", families: ["Aptos", "Aptos Display"] },
   verifyArtifactToolImport: true,
-  receiptPath: path.join(staging, "slides_nhom_tomato_template.validation.json"),
+  receiptPath: path.join(staging, "slides_nhom_tomato_draft_nv5.validation.json"),
 });
 console.log(JSON.stringify(result, null, 2));

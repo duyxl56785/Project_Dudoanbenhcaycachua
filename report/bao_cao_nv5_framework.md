@@ -65,11 +65,14 @@ từng lớp, seed và bằng chứng loại trùng/leakage trong bản cuối.
 
 ### 2.2. CNN tự xây dựng
 
-CNN do NV2 phụ trách, học từ đầu và chọn checkpoint bằng Validation. NV5 không
-thay đổi code train hay kiến trúc; chỉ kiểm tra prediction CSV, metrics JSON,
-mapping, split và confusion matrix đã bàn giao. **TODO:** điền mô tả lớp/optimizer/
-loss/hyperparameter từ `docs/CNN_README.md` và metadata checkpoint khi nhóm chốt
-bản báo cáo.
+CNN do NV2 phụ trách, học từ đầu và chọn checkpoint bằng Validation. Artifact
+PR #9 mô tả bốn khối Conv–BatchNorm–ReLU–MaxPool (số kênh 32 đến 256), Global
+Average Pooling, Dropout 0,3 và lớp Linear bốn đầu ra. Cấu hình E1 có learning
+rate 3e-4 được chọn bằng Validation; checkpoint epoch 24 đạt Validation
+macro-F1 0,9768359521. NV5 không đổi code train hay chọn lại checkpoint, chỉ
+kiểm tra prediction CSV, metrics JSON, mapping, split và confusion matrix đã
+bàn giao. **TODO bản cuối:** chỉ điền optimizer/loss, batch size, thời gian và
+số tham số khi metadata NV2 xác nhận đầy đủ.
 
 ### 2.3. ResNet18 Transfer Learning
 
@@ -145,9 +148,12 @@ nếu metadata chưa được chủ mô hình bàn giao.
 
 ### 3.5. Demo
 
-NV4 chịu trách nhiệm mô tả UI Streamlit, API suy luận và ảnh minh họa. **TODO:**
-nhóm chèn ảnh màn hình/đường dẫn demo đã được NV4 xác nhận, cùng phiên bản
-checkpoint thực tế dùng trong demo; không dùng ảnh mock để kết luận hiệu năng.
+NV4 chịu trách nhiệm mô tả UI Streamlit, API suy luận và ảnh minh họa. PR #1
+đã ghi nhận CNN strict-load trên CPU và `demo.check_consistency` đạt
+`max |delta| = 0` với checkpoint CNN thật; đó là bằng chứng luồng suy luận,
+không thay thế metric Test. **TODO:** nhóm chèn ảnh/video đã được NV4 xác nhận,
+lệnh chạy và checkpoint/hash thực tế dùng trong demo. Demo ResNet18 vẫn chờ
+checkpoint fine-tuned từ NV3.
 
 ## PHẦN IV. KẾT LUẬN
 

@@ -140,34 +140,57 @@ def _validate_score(value: Any, key: str, source: Path) -> float:
     return number
 
 
+def _validate_count(value: Any, key: str, source: Path, *, allow_zero: bool = True) -> int:
+    """Đọc một số đếm nguyên, không âm từ artifact do chủ model bàn giao."""
+    if isinstance(value, bool):
+        raise ValueError(f"{key} phải là số nguyên trong {source}")
+    try:
+        number = int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{key} phải là số nguyên trong {source}") from exc
+    if str(value).strip() not in {str(number), f"+{number}"} if isinstance(value, str) else False:
+        raise ValueError(f"{key} phải là số nguyên trong {source}")
+    if number < 0 or (not allow_zero and number == 0):
+        qualifier = "dương" if not allow_zero else "không âm"
+        raise ValueError(f"{key} phải là số {qualifier} trong {source}")
+    return number
+
+
 def metrics_from_json(path: Path, mapping: dict[int, str]) -> dict[str, Any]:
     if not path.is_file():
         raise FileNotFoundError(f"Không tìm thấy metrics JSON: {path}")
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         raise ValueError(f"Metrics phải là object: {path}")
-    missing = [key for key in SCORE_KEYS if key not in data]
+    missing = [key for key in (*SCORE_KEYS, "n_samples") if key not in data]
     if missing:
         raise ValueError(f"Metrics thiếu trường {missing} trong {path}")
     per_class = data.get("per_class")
     if not isinstance(per_class, dict):
         raise ValueError(f"Metrics thiếu per_class trong {path}")
-    result = {"n_samples": int(data["n_samples"]) if data.get("n_samples") is not None else "",
+    result = {"n_samples": _validate_count(data["n_samples"], "n_samples", path, allow_zero=False),
               **{key: _validate_score(data[key], key, path) for key in SCORE_KEYS},
               "per_class": {}, "confusion_matrix": data.get("confusion_matrix"),
               "metadata": {**data, "_metadata_file": str(path)}}
     for _, class_name in mapping.items():
         values = per_class.get(class_name)
-        if not isinstance(values, dict) or "f1" not in values:
+        if not isinstance(values, dict) or any(metric not in values for metric in ("precision", "recall", "f1", "support")):
             raise ValueError(f"Metrics thiếu per_class[{class_name!r}] trong {path}")
         result["per_class"][class_name] = {metric: _validate_score(values[metric], metric, path)
                                             for metric in ("precision", "recall", "f1")}
-        result["per_class"][class_name]["support"] = int(values.get("support", 0))
+        result["per_class"][class_name]["support"] = _validate_count(values["support"], f"support[{class_name}]", path)
+    if sum(values["support"] for values in result["per_class"].values()) != result["n_samples"]:
+        raise ValueError(f"Tổng support không khớp n_samples trong {path}")
     matrix = result["confusion_matrix"]
     if matrix is not None:
         if not isinstance(matrix, list) or len(matrix) != len(mapping) or any(not isinstance(row, list) or len(row) != len(mapping) for row in matrix):
             raise ValueError(f"confusion_matrix sai kích thước trong {path}")
-        result["confusion_matrix"] = [[int(value) for value in row] for row in matrix]
+        result["confusion_matrix"] = [[_validate_count(value, "confusion_matrix", path) for value in row] for row in matrix]
+        if sum(sum(row) for row in result["confusion_matrix"]) != result["n_samples"]:
+            raise ValueError(f"Tổng confusion_matrix không khớp n_samples trong {path}")
+        for index, class_name in mapping.items():
+            if sum(result["confusion_matrix"][index]) != result["per_class"][class_name]["support"]:
+                raise ValueError(f"Hàng confusion_matrix của {class_name} không khớp support trong {path}")
     return result
 
 
@@ -267,6 +290,13 @@ def comparison_row(name: str, split: str, metrics: dict[str, Any] | None, metada
                 "train_seconds": _metadata_value(metadata, "train_seconds", "training_seconds"),
                 "inference_seconds": _metadata_value(metadata, "inference_seconds", "test_seconds"),
                 "device": _metadata_value(metadata, "device"), "checkpoint": _metadata_value(metadata, "checkpoint"),
+                "checkpoint_epoch": _metadata_value(metadata, "checkpoint_epoch", "epoch"),
+                "checkpoint_val_macro_f1": _metadata_value(metadata, "checkpoint_val_macro_f1", "val_macro_f1"),
+                "checkpoint_val_loss": _metadata_value(metadata, "checkpoint_val_loss", "val_loss"),
+                "seed": _metadata_value(metadata, "seed"),
+                "python_version": _metadata_value(metadata, "python_version"),
+                "torch_version": _metadata_value(metadata, "torch_version"),
+                "torchvision_version": _metadata_value(metadata, "torchvision_version"),
                 "metadata_file": _metadata_value(metadata, "_metadata_file")})
     for class_name in (metrics or {}).get("per_class", {}):
         row[f"{class_name}_f1"] = metrics["per_class"][class_name]["f1"]

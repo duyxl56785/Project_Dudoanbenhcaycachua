@@ -70,6 +70,45 @@ class EvaluateModelsTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "thiếu trường"):
                 metrics_from_json(incomplete, MAPPING)
 
+    def test_metrics_json_checks_sample_support_and_confusion_matrix(self):
+        with tempfile.TemporaryDirectory(dir=Path(__file__).parents[1]) as directory:
+            path = Path(directory) / "metrics.json"
+            write_metrics(path)
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            payload["n_samples"] = 5
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "Tổng support"):
+                metrics_from_json(path, MAPPING)
+
+            payload["n_samples"] = 4
+            payload["confusion_matrix"][0][0] = 2
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "Tổng confusion_matrix"):
+                metrics_from_json(path, MAPPING)
+
+    def test_comparison_carries_only_handed_over_checkpoint_metadata(self):
+        with tempfile.TemporaryDirectory(dir=Path(__file__).parents[1]) as directory:
+            root = Path(directory)
+            metrics = root / "cnn_metrics.json"
+            write_metrics(metrics)
+            payload = json.loads(metrics.read_text(encoding="utf-8"))
+            payload.update({"checkpoint": "checkpoints/cnn_best.pt", "checkpoint_epoch": 24,
+                            "checkpoint_val_macro_f1": 0.97, "device": "cuda", "seed": 42})
+            metrics.write_text(json.dumps(payload), encoding="utf-8")
+            args = type("Args", (), {
+                "class_mapping": str(Path(__file__).parents[1] / "configs" / "class_mapping.json"),
+                "cnn_predictions": None, "cnn_metrics": str(metrics), "resnet18_predictions": None,
+                "resnet18_metrics": None, "split": "test", "output_dir": str(root / "results"),
+            })()
+            with patch("scripts.evaluate_models.plot_confusion"):
+                run(args)
+            with (root / "results" / "comparison.csv").open(encoding="utf-8") as stream:
+                row = next(csv.DictReader(stream))
+            self.assertEqual(row["checkpoint_epoch"], "24")
+            self.assertEqual(row["checkpoint_val_macro_f1"], "0.97")
+            self.assertEqual(row["seed"], "42")
+            self.assertEqual(row["torch_version"], "")
+
     def test_prediction_and_reported_metrics_must_match(self):
         with tempfile.TemporaryDirectory(dir=Path(__file__).parents[1]) as directory:
             root = Path(directory)
