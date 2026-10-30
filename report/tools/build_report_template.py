@@ -9,8 +9,8 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
 
-ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "report" / "bao_cao_nhom_tomato_template.docx"
+ROOT = Path(__file__).resolve().parents[2]
+OUT = ROOT / "report" / "deliverables" / "bao_cao_nhom_tomato_template.docx"
 
 
 def shade(cell, fill):

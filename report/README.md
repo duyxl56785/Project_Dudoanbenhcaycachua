@@ -5,6 +5,13 @@ bàn giao đủ artifact. Hiện repository chưa có checkpoint, manifest Test 
 metrics thật, nên chưa tạo `.docx`/`.pptx` có số liệu. Việc tạo các tệp đó
 trước khi có nguồn sẽ vi phạm quy tắc không dùng số liệu giả.
 
+## Thư mục
+
+- `deliverables/`: các tệp nộp hoặc tệp trình chiếu (`.pptx`, `.docx`).
+- `tools/`: script tạo các tệp trong `deliverables/`; không đặt lẫn với code mô
+  hình, dữ liệu hay script đánh giá.
+- Thư mục hiện tại: nội dung Markdown, checklist và tài liệu nguồn NV5.
+
 ## Cấu trúc đề xuất
 
 1. Mở đầu và mục tiêu bài toán.

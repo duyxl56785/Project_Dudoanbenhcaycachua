@@ -2,10 +2,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const skillDir = "C:/Users/PC/.codex/plugins/cache/openai-primary-runtime/presentations/26.1025.11240/skills/presentations";
-const candidate = path.join(root, "report", "slides_nhom_tomato_template.pptx");
-const finalPath = path.join(root, "report", "slides_nhom_tomato_template_final.pptx");
+const candidate = path.join(root, "report", "deliverables", "slides_nhom_tomato_template.pptx");
+const finalPath = path.join(root, "report", "deliverables", "slides_nhom_tomato_template_final.pptx");
 const staging = path.join(root, ".codex-finalizer");
 await fs.mkdir(staging, { recursive: true });
 const { finalizePresentation } = await import(pathToFileURL(path.join(skillDir, "container_tools/artifact_tool_utils.mjs")).href);

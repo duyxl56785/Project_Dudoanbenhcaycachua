@@ -3,8 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Presentation, PresentationFile } from "file:///C:/Users/PC/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/@oai/artifact-tool/dist/artifact_tool.mjs";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const outDir = path.join(root, "report");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+const outDir = path.join(root, "report", "deliverables");
 const previewDir = path.join(root, ".pptx_render");
 await fs.mkdir(previewDir, { recursive: true });
 

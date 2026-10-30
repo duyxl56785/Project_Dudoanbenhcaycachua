@@ -3,8 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Presentation, PresentationFile } from "file:///C:/Users/PC/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/@oai/artifact-tool/dist/artifact_tool.mjs";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const output = path.join(root, "report", "bao_cao_cong_viec_nv5.pptx");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+const output = path.join(root, "report", "deliverables", "bao_cao_cong_viec_nv5.pptx");
 const preview = path.join(root, ".nv5_slide_preview.png");
 
 const deck = Presentation.create({ slideSize: { width: 1280, height: 720 } });
