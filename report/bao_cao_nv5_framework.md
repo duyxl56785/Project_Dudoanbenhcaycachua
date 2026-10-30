@@ -27,8 +27,9 @@ năng phát hiện bệnh mới chớm.
 Phạm vi gồm bốn lớp `Healthy`, `Early Blight`, `Late Blight`, `Bacterial Spot`.
 Câu hỏi chính là: (i) quy trình dữ liệu có giữ được split dùng chung không, (ii)
 CNN và ResNet18 đạt metric nào trên Test chung, và (iii) cặp lớp nào gây lỗi
-nhiều nhất. Câu trả lời so sánh ResNet18 vẫn **PENDING** cho tới khi NV3 bàn giao
-đủ artifact.
+nhiều nhất. NV5 đã kiểm tra hai prediction CSV cùng 1.356 sample ID sau khi
+chuẩn hóa tiền tố path Colab/Windows; kết quả so sánh dưới đây dùng artifact đã
+được tải, kiểm hash checkpoint và tính lại metric.
 
 ## PHẦN I. TỔNG QUAN
 
@@ -77,9 +78,13 @@ số tham số khi metadata NV2 xác nhận đầy đủ.
 ### 2.3. ResNet18 Transfer Learning
 
 ResNet18 do NV3 phụ trách, gồm feature extraction và fine-tuning theo Validation.
-Tại HEAD hiện tại, PR #7 chưa có checkpoint fine-tuned, prediction CSV hoặc
-metrics Test thật. Vì vậy mục kết quả ResNet18, số tham số, thời gian và confusion
-matrix đều ghi **PENDING – chờ NV3 bàn giao**.
+Gói bàn giao PR #7 có checkpoint fine-tuned, metadata, CSV Test, metrics,
+confusion matrix, log và training curve. NV5 tải ZIP, kiểm SHA-256 checkpoint
+`61d44ba8ac02ee57c44cbd3835aaac2c657c97924735fea743a60df5f5fdf9e2`, rồi
+đối chiếu hai CSV trên cùng Test. Checkpoint selected stage `fine_tuning`, epoch
+9, Validation macro-F1 `0,980859`; ResNet18 có 11.178.564 tham số, trong đó
+8.395.780 tham số trainable ở stage chọn. Artifact không bàn giao thời gian train
+hoặc inference nên các trường đó để trống.
 
 ### 2.4. Quy tắc không dùng Test để chọn model
 
@@ -113,7 +118,7 @@ số mẫu metadata và consistency giữa metrics JSON với prediction CSV. Đ
 `results/comparison.csv`, `results/analysis.md` và confusion matrix khi có
 artifact tương ứng.
 
-### 3.2. Kết quả CNN đã kiểm chứng
+### 3.2. Kết quả Test đã kiểm chứng
 
 Artifact NV2 trong PR #9 ghi nhận 1.356 ảnh Test. NV5 đã chạy lại script với
 prediction CSV thật và metrics JSON; các metric khớp trong sai số dưới `1e-6`:
@@ -130,6 +135,19 @@ F1 từng lớp: Healthy `0,990964`, Early Blight `0,927400`, Late Blight
 `0,952128`, Bacterial Spot `0,989643`. Confusion matrix chi tiết và nguồn
 metrics nằm trong `results/analysis.md` và `results/cnn_metrics_nv2_handoff.json`.
 
+| Chỉ số | ResNet18 |
+|---|---:|
+| Accuracy | 0,986726 |
+| Macro Precision | 0,985348 |
+| Macro Recall | 0,982732 |
+| Macro F1 | 0,983978 |
+| Số ảnh Test | 1.356 |
+
+F1 ResNet18 theo lớp: Healthy `0,993958`, Early Blight `0,962264`, Late Blight
+`0,985430`, Bacterial Spot `0,994259`. Đây là kết quả NV5 tính lại từ prediction
+CSV của gói NV3 và đối chiếu metrics JSON sau khi adapter chuyển
+`classification_report` sang schema NV5; không phải số chép tay từ PR.
+
 ### 3.3. Phân tích lỗi CNN
 
 CNN có 1.315 dự đoán đúng và 41 lỗi, tương đương khoảng 3,02%. Hai hướng nhầm
@@ -139,12 +157,20 @@ hiện có. Các lỗi còn lại gồm Late Blight → Healthy (5), Bacterial S
 Blight (4) và Early Blight → Bacterial Spot (3), cùng các cặp nhỏ hơn trong ma
 trận.
 
+ResNet18 đúng 1.338/1.356 ảnh và sai 18 ảnh. Cặp nhầm nhiều nhất vẫn là Early
+Blight → Late Blight (6 ảnh); Early Blight → Healthy và Late Blight → Early
+Blight có 3 ảnh mỗi hướng. So với CNN, ResNet18 cao hơn `0,016962` Accuracy và
+`0,018944` macro-F1 trên cùng Test. ImageNet pretraining rồi fine-tuning là giải
+thích kỹ thuật hợp lý cho chênh lệch, nhưng không chứng minh quan hệ nhân quả;
+cần nhiều seed và dữ liệu thực địa để khẳng định độ ổn định.
+
 ### 3.4. Bảng so sánh hai mô hình
 
-`results/comparison.csv` hiện có CNN ở trạng thái `computed`, ResNet18 ở trạng
-thái `pending`. Không kết luận mô hình nào tốt hơn khi ResNet18 chưa có prediction
-Test trên cùng sample ID. Số tham số và thời gian train/inference cũng để trống
-nếu metadata chưa được chủ mô hình bàn giao.
+`results/comparison.csv` hiện có hai dòng `computed`. CNN có 389.924 tham số,
+1.118,7 giây train trong run E1 trên RTX 3050 theo run_info NV2; ResNet18 có
+11.178.564 tổng tham số và 8.395.780 tham số trainable theo artifact NV3. Thời
+gian train/inference ResNet18 không được bàn giao nên để trống. Các nguồn, hash
+checkpoint, phiên bản môi trường và Validation score nằm trong hai JSON handoff.
 
 ### 3.5. Demo
 
@@ -152,17 +178,18 @@ NV4 chịu trách nhiệm mô tả UI Streamlit, API suy luận và ảnh minh h
 đã ghi nhận CNN strict-load trên CPU và `demo.check_consistency` đạt
 `max |delta| = 0` với checkpoint CNN thật; đó là bằng chứng luồng suy luận,
 không thay thế metric Test. **TODO:** nhóm chèn ảnh/video đã được NV4 xác nhận,
-lệnh chạy và checkpoint/hash thực tế dùng trong demo. Demo ResNet18 vẫn chờ
-checkpoint fine-tuned từ NV3.
+lệnh chạy và checkpoint/hash thực tế dùng trong demo. Sau bàn giao NV3, PR #1
+ghi nhận ResNet18 strict-load CPU, `demo.check_consistency --model both` có
+`max |delta| = 0` và tái hiện metric Test; ảnh/video minh họa cuối vẫn cần NV4
+xác nhận trước khi nộp.
 
 ## PHẦN IV. KẾT LUẬN
 
-Trong artifact đã kiểm chứng, CNN đạt Macro-F1 `0,965034` trên 1.356 ảnh Test.
-Kết quả cho thấy nhóm lỗi chính nằm giữa Early Blight và Late Blight. Đây là
-kết quả của một checkpoint đã được NV2 chọn trước bằng Validation, không phải
-kết luận lựa chọn lại trên Test. Kết luận so sánh CNN–ResNet18 được để **PENDING**
-cho đến khi NV3 bàn giao đầy đủ metrics, prediction CSV, checkpoint metadata và
-confusion matrix.
+Trong artifact đã kiểm chứng, ResNet18 đạt Macro-F1 `0,983978` trên 1.356 ảnh
+Test, cao hơn CNN `0,965034` trên cùng sample ID/ground truth. Cả hai checkpoint
+được chủ mô hình chọn bằng Validation trước khi Test; NV5 không dùng Test để chọn
+lại. Lỗi của hai model vẫn tập trung ở Early Blight/Late Blight. Kết luận này chỉ
+áp dụng cho artifact PlantVillage hiện có.
 
 ### Hạn chế
 
@@ -170,14 +197,16 @@ confusion matrix.
   cho ảnh ngoài thực địa.
 - Chỉ có bốn lớp; ảnh cây khác hoặc bệnh ngoài mapping vẫn bị ép vào một nhãn.
 - Chưa có tập riêng cho bệnh mới chớm, nên không tuyên bố “phát hiện sớm”.
-- Chưa có đủ artifact ResNet18 để so sánh công bằng.
-- Chưa có gói ảnh đúng/sai đã được NV2 bàn giao để minh họa lỗi theo từng mẫu.
+- Chưa có thí nghiệm nhiều seed hoặc kiểm định ngoài miền để khẳng định chênh
+  lệch CNN–ResNet18 ổn định.
+- Chưa có gói ảnh lỗi CNN có nguồn truy vết nằm trong repository NV5 để chèn vào
+  báo cáo; chỉ thêm ảnh khi NV2 bàn giao file/link chính thức.
 
 ### Hướng phát triển
 
-Nhận artifact ResNet18 và chạy lại cùng giao thức; bổ sung calibration, nhiều
-seed, kiểm định ngoài miền và dữ liệu thực địa; kiểm thử demo end-to-end bằng
-checkpoint thật; sau đó cập nhật đồng thời code, bảng, báo cáo và slide.
+Bổ sung calibration, nhiều seed, kiểm định ngoài miền và dữ liệu thực địa; hoàn
+tất ảnh/video demo end-to-end bằng checkpoint thật; sau đó nhóm trưởng kiểm tra
+lại bảng, báo cáo và slide trước khi nộp.
 
 ## TÀI LIỆU THAM KHẢO
 
@@ -201,6 +230,7 @@ checkpoint thật; sau đó cập nhật đồng thời code, bảng, báo cáo 
 - Bảng: `results/comparison.csv`.
 - Phân tích: `results/analysis.md`.
 - Metrics CNN handoff: `results/cnn_metrics_nv2_handoff.json`.
+- Metrics ResNet18 handoff: `results/resnet18_metrics_nv3_handoff.json`.
 - Test NV5: `tests/test_nv5_evaluate_models.py`.
-- **PENDING NV3:** `resnet18_metrics.json`, `resnet18_test_predictions.csv`,
-  checkpoint/hash, split/seed, device, số tham số, thời gian và confusion matrix.
+- ZIP nguồn và checkpoint nhị phân ResNet18 không được commit vào branch NV5;
+  link nguồn và hash checkpoint được ghi trong JSON handoff.

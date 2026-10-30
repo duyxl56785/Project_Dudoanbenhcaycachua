@@ -58,6 +58,14 @@ class EvaluateModelsTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Ground truth"):
             validate_same_test_set(first, [{"id": "a", "true": 0}, {"id": "b", "true": 2}])
 
+    def test_path_ids_match_across_windows_and_colab_roots(self):
+        with tempfile.TemporaryDirectory(dir=Path(__file__).parents[1]) as directory:
+            root = Path(directory)
+            cnn = root / "cnn.csv"; resnet = root / "resnet.csv"
+            write_predictions(cnn, [{"path": r"data\raw\raw\color\Tomato___Healthy\a.jpg", "true": 0, "pred": 0}])
+            write_predictions(resnet, [{"path": "/content/run/data/raw/raw/color/Tomato___Healthy/a.jpg", "true": 0, "pred": 0}])
+            validate_same_test_set(load_predictions(cnn, MAPPING, "test"), load_predictions(resnet, MAPPING, "test"))
+
     def test_metrics_json_schema_and_missing_fields(self):
         with tempfile.TemporaryDirectory(dir=Path(__file__).parents[1]) as directory:
             metrics = Path(directory) / "metrics.json"
@@ -79,6 +87,20 @@ class EvaluateModelsTests(unittest.TestCase):
             path.write_text(json.dumps(payload), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "Tổng support"):
                 metrics_from_json(path, MAPPING)
+
+    def test_nv3_classification_report_schema_is_adapted_without_new_metrics(self):
+        with tempfile.TemporaryDirectory(dir=Path(__file__).parents[1]) as directory:
+            path = Path(directory) / "resnet18_metrics.json"
+            classes = {name: {"precision": 0.75, "recall": 0.75, "f1-score": 0.75, "support": 1.0}
+                       for name in MAPPING.values()}
+            payload = {"accuracy": 0.75, "classification_report": {**classes, "macro avg": {
+                "precision": 0.75, "recall": 0.75, "f1-score": 0.75, "support": 4.0}},
+                "confusion_matrix": [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]}
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            result = metrics_from_json(path, MAPPING)
+            self.assertEqual(result["n_samples"], 4)
+            self.assertEqual(result["macro_f1"], 0.75)
+            self.assertEqual(result["per_class"]["Healthy"]["support"], 1)
 
             payload["n_samples"] = 4
             payload["confusion_matrix"][0][0] = 2

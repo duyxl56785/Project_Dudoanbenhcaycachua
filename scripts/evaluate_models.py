@@ -76,6 +76,17 @@ def normalize_label(value: Any, mapping: dict[int, str], source: Path) -> int:
     return index
 
 
+def canonical_sample_id(value: Any, *, is_path: bool) -> str:
+    """Chuẩn hóa path giữa máy local, Windows và Colab mà không đổi sample ID khác."""
+    sample_id = str(value).strip()
+    if not is_path:
+        return sample_id
+    normalized = sample_id.replace("\\", "/")
+    marker = "/raw/color/"
+    position = normalized.casefold().find(marker)
+    return normalized[position + len(marker):] if position >= 0 else normalized
+
+
 def load_predictions(path: Path, mapping: dict[int, str], expected_split: str | None = None) -> list[dict[str, Any]]:
     if not path.is_file():
         raise FileNotFoundError(f"Không tìm thấy prediction CSV: {path}")
@@ -90,7 +101,8 @@ def load_predictions(path: Path, mapping: dict[int, str], expected_split: str | 
         split_column = next((lookup[name] for name in SPLIT_COLUMNS if name in lookup), None)
         rows, seen = [], set()
         for row_number, row in enumerate(reader, start=2):
-            sample_id = str(row[id_column]).strip() if id_column and row.get(id_column) is not None else str(row_number - 2)
+            sample_id = (canonical_sample_id(row[id_column], is_path=id_column.strip().lower() in {"path", "image_path", "filename"})
+                         if id_column and row.get(id_column) is not None else str(row_number - 2))
             if not sample_id:
                 raise ValueError(f"Mẫu rỗng ở dòng {row_number} trong {path}")
             if sample_id in seen:
@@ -126,7 +138,7 @@ def load_metadata(predictions_path: Path | None, explicit_path: Path | None) -> 
     data = json.loads(candidate.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         raise ValueError(f"Metadata phải là object: {candidate}")
-    data["_metadata_file"] = str(candidate)
+    data["_metadata_file"] = candidate.as_posix()
     return data
 
 
@@ -162,6 +174,7 @@ def metrics_from_json(path: Path, mapping: dict[int, str]) -> dict[str, Any]:
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         raise ValueError(f"Metrics phải là object: {path}")
+    data = adapt_classification_report(data, mapping, path)
     missing = [key for key in (*SCORE_KEYS, "n_samples") if key not in data]
     if missing:
         raise ValueError(f"Metrics thiếu trường {missing} trong {path}")
@@ -171,7 +184,7 @@ def metrics_from_json(path: Path, mapping: dict[int, str]) -> dict[str, Any]:
     result = {"n_samples": _validate_count(data["n_samples"], "n_samples", path, allow_zero=False),
               **{key: _validate_score(data[key], key, path) for key in SCORE_KEYS},
               "per_class": {}, "confusion_matrix": data.get("confusion_matrix"),
-              "metadata": {**data, "_metadata_file": str(path)}}
+              "metadata": {**data, "_metadata_file": path.as_posix()}}
     for _, class_name in mapping.items():
         values = per_class.get(class_name)
         if not isinstance(values, dict) or any(metric not in values for metric in ("precision", "recall", "f1", "support")):
@@ -192,6 +205,37 @@ def metrics_from_json(path: Path, mapping: dict[int, str]) -> dict[str, Any]:
             if sum(result["confusion_matrix"][index]) != result["per_class"][class_name]["support"]:
                 raise ValueError(f"Hàng confusion_matrix của {class_name} không khớp support trong {path}")
     return result
+
+
+def adapt_classification_report(data: dict[str, Any], mapping: dict[int, str], source: Path) -> dict[str, Any]:
+    """Chuyển JSON sklearn classification_report của NV3 sang schema NV5.
+
+    Adapter chỉ suy ra các trường từ cùng artifact: macro avg, support và F1
+    từng lớp. Không thêm checkpoint, thời gian hay metric chưa được bàn giao.
+    """
+    if "per_class" in data:
+        return data
+    report = data.get("classification_report")
+    if not isinstance(report, dict):
+        return data
+    macro = report.get("macro avg")
+    if not isinstance(macro, dict):
+        raise ValueError(f"classification_report thiếu macro avg trong {source}")
+    adapted = dict(data)
+    adapted["n_samples"] = macro.get("support")
+    adapted["macro_precision"] = macro.get("precision")
+    adapted["macro_recall"] = macro.get("recall")
+    adapted["macro_f1"] = macro.get("f1-score")
+    adapted["per_class"] = {}
+    for class_name in mapping.values():
+        values = report.get(class_name)
+        if not isinstance(values, dict):
+            raise ValueError(f"classification_report thiếu lớp {class_name!r} trong {source}")
+        adapted["per_class"][class_name] = {
+            "precision": values.get("precision"), "recall": values.get("recall"),
+            "f1": values.get("f1-score"), "support": values.get("support"),
+        }
+    return adapted
 
 
 def evaluate(rows: list[dict[str, Any]], mapping: dict[int, str]) -> dict[str, Any]:
@@ -314,7 +358,11 @@ def write_analysis(path: Path, mapping: dict[int, str], split: str, metrics_by_m
     lines = ["# Phân tích đánh giá NV5", "", f"- Split: `{split}`; Test chỉ được dùng sau khi chốt checkpoint bằng Validation.", f"- Tạo lúc: `{datetime.now(timezone.utc).isoformat()}`.", f"- Python: `{platform.python_version()}`.", f"- Mapping: `{', '.join(mapping.values())}`.", "", "## Nguồn truy vết", ""]
     for model in metrics_by_model:
         source = files.get(model)
-        lines.append(f"- **{model}**: `{source}`" if source else f"- **{model}**: chưa bàn giao artifact, trạng thái `pending`.")
+        provenance = metadata_by_model[model].get("source")
+        if provenance:
+            lines.append(f"- **{model}**: {provenance}")
+        else:
+            lines.append(f"- **{model}**: `{source.as_posix()}`" if source else f"- **{model}**: chưa bàn giao artifact, trạng thái `pending`.")
         if metadata_by_model[model].get("_metadata_file"):
             lines.append(f"  - metadata: `{metadata_by_model[model]['_metadata_file']}`")
     lines += ["", "## Kết quả", "", "| Mô hình | Trạng thái | Số mẫu | Accuracy | Macro Precision | Macro Recall | Macro F1 |", "|---|---|---:|---:|---:|---:|---:|"]
@@ -326,16 +374,29 @@ def write_analysis(path: Path, mapping: dict[int, str], split: str, metrics_by_m
     if available:
         best = max(available, key=lambda name: available[name]["macro_f1"])
         lines += ["", f"Macro F1 cao nhất trong các artifact hiện có: **{best}** ({available[best]['macro_f1']:.4f}). Đây không phải quyết định chọn lại checkpoint."]
-    pair_counts: Counter[tuple[str, str]] = Counter()
-    for metrics in available.values():
-        matrix = metrics.get("confusion_matrix")
-        if matrix:
-            for i, row in enumerate(matrix):
-                for j, value in enumerate(row):
-                    if i != j: pair_counts[(mapping[i], mapping[j])] += int(value)
+    if cnn := metrics_by_model.get("CNN"):
+        if resnet := metrics_by_model.get("ResNet18"):
+            lines += ["", "## So sánh CNN và ResNet18", "",
+                      f"- ResNet18 cao hơn CNN **{resnet['accuracy'] - cnn['accuracy']:.4f} Accuracy** và **{resnet['macro_f1'] - cnn['macro_f1']:.4f} macro-F1** trên cùng {cnn['n_samples']} mẫu Test.",
+                      "- Cả hai checkpoint đã được chủ mô hình chọn bằng Validation trước khi Test. Chênh lệch này mô tả artifact hiện có, không chứng minh quan hệ nhân quả hay thay thế kiểm định nhiều seed/ảnh thực địa.",
+                      "- ResNet18 dùng ImageNet pretraining rồi fine-tuning; đây là một giải thích kỹ thuật hợp lý cho kết quả cao hơn CNN học từ đầu, nhưng cần thí nghiệm lặp để khẳng định."]
     lines += ["", "## Cặp lớp dễ nhầm", ""]
-    lines.extend([f"- {actual} → {predicted}: {count} mẫu" for (actual, predicted), count in pair_counts.most_common() if count][:10] or ["- Chưa có đủ confusion matrix để phân tích."])
-    lines += ["", "## Hạn chế và dữ liệu thiếu", "", "- PlantVillage là dữ liệu có kiểm soát; không suy rộng trực tiếp ra ảnh ngoài thực địa.", "- Ảnh ngoài bốn lớp vẫn bị ép vào một nhãn; chưa có đánh giá bệnh mới chớm.", "- ResNet18 chỉ được ghi nhận khi NV3 bàn giao metrics/predictions thật; không tạo số liệu thay thế.", "- Không dùng Test để chọn hyperparameter hoặc checkpoint.", ""]
+    for model, metrics in available.items():
+        matrix = metrics.get("confusion_matrix")
+        if not matrix:
+            lines.append(f"### {model}\n\n- Chưa có confusion matrix để phân tích.\n")
+            continue
+        correct = sum(matrix[index][index] for index in range(len(mapping)))
+        errors = metrics["n_samples"] - correct
+        pairs: Counter[tuple[str, str]] = Counter()
+        for i, row in enumerate(matrix):
+            for j, value in enumerate(row):
+                if i != j and value:
+                    pairs[(mapping[i], mapping[j])] += int(value)
+        lines += [f"### {model}", "", f"- Đúng {correct}/{metrics['n_samples']}; sai {errors} ảnh."]
+        lines.extend([f"- {actual} → {predicted}: {count} mẫu" for (actual, predicted), count in pairs.most_common(5)] or ["- Không có lỗi ngoài đường chéo."])
+        lines.append("")
+    lines += ["## Hạn chế", "", "- PlantVillage là dữ liệu có kiểm soát; không suy rộng trực tiếp ra ảnh ngoài thực địa.", "- Ảnh ngoài bốn lớp vẫn bị ép vào một nhãn; chưa có đánh giá bệnh mới chớm.", "- Chưa có thí nghiệm nhiều seed hoặc tập kiểm định ngoài miền để đo độ ổn định chênh lệch CNN–ResNet18.", "- Không dùng Test để chọn hyperparameter hoặc checkpoint.", ""]
     path.write_text("\n".join(lines), encoding="utf-8")
 
 

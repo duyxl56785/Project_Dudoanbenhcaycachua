@@ -2,7 +2,8 @@
 
 Đây là nội dung nguồn để dàn vào PowerPoint theo mẫu CMC sau khi nhóm xác nhận
 font, màu, logo và thời lượng. Các số liệu dưới đây chỉ dùng artifact đã kiểm
-chứng; ô `PENDING` không được thay bằng số ước lượng.
+chứng. ResNet18 đã được NV5 nhận từ ZIP bàn giao PR #7, kiểm hash checkpoint và
+tính lại từ prediction CSV; thời gian ResNet18 vẫn để trống vì artifact không có.
 
 ## Slide 1 — Tên đề tài
 
@@ -56,7 +57,8 @@ không chọn hyperparameter trên Test.
 | Học từ đầu | Backbone pretrained |
 | NV2 phụ trách | NV3 phụ trách |
 | Chọn bằng Validation | Feature extraction/fine-tuning bằng Validation |
-| Kết quả Test đã có | **PENDING** metrics/checkpoint thật |
+| Accuracy / Macro-F1 Test | 0,969764 / 0,965034 | 0,986726 / 0,983978 |
+| Checkpoint chọn bằng Validation | epoch 24 | fine-tuning, epoch 9 |
 
 **Ghi chú nói:** Không điền kiến trúc/hyperparameter chưa có trong artifact chủ
 mô hình.
@@ -75,33 +77,35 @@ số tham số/thời gian nếu metadata có.
 python -m scripts.evaluate_models --cnn-metrics results/cnn_metrics_nv2_handoff.json --output-dir results
 ```
 
-## Slide 7 — Kết quả CNN trên Test
+## Slide 7 — Kết quả Test hai mô hình
 
-| Chỉ số | CNN |
-|---|---:|
-| Số ảnh | 1.356 |
-| Accuracy | 0,969764 |
-| Macro Precision | 0,965416 |
-| Macro Recall | 0,964701 |
-| Macro F1 | 0,965034 |
+| Chỉ số | CNN | ResNet18 |
+|---|---:|---:|
+| Số ảnh | 1.356 | 1.356 |
+| Accuracy | 0,969764 | 0,986726 |
+| Macro Precision | 0,965416 | 0,985348 |
+| Macro Recall | 0,964701 | 0,982732 |
+| Macro F1 | 0,965034 | 0,983978 |
 
-**Nguồn:** `results/cnn_metrics_nv2_handoff.json`, PR #9; đã chạy lại với
-prediction CSV thật, sai khác dưới `1e-6`.
+**Nguồn:** hai JSON handoff và prediction CSV thật của PR #9/ZIP PR #7; NV5
+đã đối chiếu metric dưới sai số `1e-6`.
 
-**Ghi chú nói:** Đây là kết quả của checkpoint đã chốt bằng Validation.
+**Ghi chú nói:** Cả hai checkpoint đã chốt bằng Validation, không dùng Test để
+chọn lại model.
 
 ## Slide 8 — F1 từng lớp và confusion matrix
 
-| Lớp | F1 |
-|---|---:|
-| Healthy | 0,990964 |
-| Early Blight | 0,927400 |
-| Late Blight | 0,952128 |
-| Bacterial Spot | 0,989643 |
+| Lớp | CNN F1 | ResNet18 F1 |
+|---|---:|---:|
+| Healthy | 0,990964 | 0,993958 |
+| Early Blight | 0,927400 | 0,962264 |
+| Late Blight | 0,952128 | 0,985430 |
+| Bacterial Spot | 0,989643 | 0,994259 |
 
-**Hình:** Chèn `results/cnn_confusion_matrix.svg` hoặc PNG khi có matplotlib.
+**Hình:** Chèn `results/cnn_confusion_matrix.svg` và
+`results/resnet18_confusion_matrix.svg`.
 
-**Ghi chú nói:** Tổng đường chéo 1.315/1.356; 41 lỗi.
+**Ghi chú nói:** CNN đúng 1.315/1.356, ResNet18 đúng 1.338/1.356.
 
 ## Slide 9 — Phân tích lỗi
 
@@ -115,24 +119,25 @@ prediction CSV thật, sai khác dưới `1e-6`.
 **Ghi chú nói:** Đây là phân tích từ confusion matrix; chưa có ảnh minh họa
 đúng/sai do NV2 chưa bàn giao gói ảnh.
 
-## Slide 10 — Bảng so sánh và trạng thái ResNet18
+## Slide 10 — Bảng so sánh hai mô hình
 
 **Trên slide:**
 
 | Model | Accuracy | Macro F1 | Trạng thái |
 |---|---:|---:|---|
 | CNN | 0,969764 | 0,965034 | computed |
-| ResNet18 | — | — | **PENDING** |
+| ResNet18 | 0,986726 | 0,983978 | computed |
 
-**Chỗ chèn sau:** prediction CSV, metrics JSON, checkpoint/hash, số tham số,
-thời gian, confusion matrix của NV3.
+**Metadata:** CNN 389.924 tham số, train 1.118,7 giây; ResNet18 11.178.564 tham
+số, 8.395.780 trainable. Thời gian ResNet18 chưa bàn giao, để trống.
 
-**Ghi chú nói:** Chưa kết luận mô hình tốt hơn khi thiếu Test artifact ResNet18.
+**Ghi chú nói:** ResNet18 cao hơn CNN 0,016962 Accuracy và 0,018944 macro-F1.
+ImageNet pretraining/fine-tuning là diễn giải hợp lý, không phải kết luận nhân quả.
 
 ## Slide 11 — Demo, hạn chế và ứng dụng
 
-**Demo:** Chèn ảnh màn hình/lệnh chạy đã được NV4 xác nhận; ghi rõ checkpoint
-thực tế dùng trong demo.
+**Demo:** NV4 ghi nhận strict-load CPU, `demo.check_consistency --model both`
+PASS với `max |delta| = 0`; chèn ảnh/video NV4 đã xác nhận khi đóng gói cuối.
 
 **Hạn chế:** PlantVillage có điều kiện kiểm soát; ảnh ngoài bốn lớp bị ép nhãn;
 chưa có dữ liệu bệnh mới chớm; chưa đủ cơ sở triển khai ngoài thực địa.
@@ -142,9 +147,8 @@ Test hoặc chẩn đoán nông học.
 
 ## Slide 12 — Kết luận và bàn giao
 
-**Trên slide:** CNN đã được kiểm định trên 1.356 ảnh; lỗi tập trung ở Early/Late
-Blight; ResNet18 chờ NV3; cần cập nhật đồng thời code, bảng, báo cáo, slide và
-demo sau khi đủ artifact.
+**Trên slide:** ResNet18 đạt macro-F1 0,983978, cao hơn CNN 0,965034 trên 1.356
+ảnh Test; lỗi vẫn tập trung Early/Late Blight; kết quả chỉ đại diện PlantVillage.
 
 **Checklist nói:** Không dùng Test chọn model; mọi số liệu có nguồn; nhóm trưởng
 review trước merge.
@@ -156,5 +160,5 @@ PR #7/#9/#11.
 
 - Mỗi hình ghi chú thích, nguồn file và ngày/commit nếu có.
 - Không chụp hoặc chèn ảnh dataset mới nếu chưa được NV1/NV2 bàn giao.
-- Khi NV3 bàn giao, chạy lại script với hai prediction CSV rồi thay toàn bộ ô
-  `PENDING` từ cùng một `comparison.csv`; không sửa tay từng slide.
+- Khi có artifact mới, chạy lại script với hai prediction CSV rồi cập nhật toàn
+  bộ số từ cùng một `comparison.csv`; không sửa tay từng slide.

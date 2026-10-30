@@ -42,6 +42,11 @@ Các trường `checkpoint`, `checkpoint_epoch`, `checkpoint_val_macro_f1`,
 PyTorch/torchvision chỉ được đưa vào bảng nếu NV2/NV3 đã ghi. Trường còn thiếu
 để trống, không được điền số minh họa.
 
+Adapter NV5 cũng nhận JSON theo `classification_report` của scikit-learn do NV3
+bàn giao: lấy `macro avg` và bốn lớp để chuyển sang schema nội bộ. Adapter kiểm
+tra support, confusion matrix và metric từ prediction CSV; không suy ra thêm
+thời gian, checkpoint hoặc số liệu chưa có trong artifact.
+
 ## Chạy
 
 ```bash
@@ -61,6 +66,23 @@ python -m scripts.evaluate_models \
 
 Khi đồng thời có prediction CSV và JSON, script tính lại metric từ CSV và từ
 chối kết quả nếu Accuracy, macro metrics hoặc F1 từng lớp khác quá `1e-6`.
+
+Với gói NV3 đã tải và kiểm SHA-256 checkpoint, dùng prediction CSV trong ZIP
+và metadata handoff được version hóa trong branch NV5:
+
+```bash
+python -m scripts.evaluate_models \
+  --cnn-predictions <thu_muc_nv2>/results/cnn/cnn_test_predictions.csv \
+  --cnn-metrics results/cnn_metrics_nv2_handoff.json \
+  --resnet18-predictions <thu_muc_nv3>/results/resnet18_test_predictions.csv \
+  --resnet18-metrics results/resnet18_metrics_nv3_handoff.json \
+  --output-dir results
+```
+
+Khi cột định danh là `path`, script chuẩn hóa dấu phân cách và tiền tố trước
+`raw/color/`. Điều này chỉ loại khác biệt vị trí file giữa Colab và Windows;
+script vẫn từ chối nếu suffix path hoặc ground truth khác nhau, hoặc có sample
+ID trùng.
 
 Đầu ra gồm:
 

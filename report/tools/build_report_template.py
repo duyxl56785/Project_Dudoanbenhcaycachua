@@ -10,7 +10,7 @@ from docx.shared import Inches, Pt, RGBColor
 
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / "report" / "deliverables" / "bao_cao_nhom_tomato_draft_nv5.docx"
+OUT = ROOT / "report" / "deliverables" / "bao_cao_nhom_tomato_two_models_nv5.docx"
 
 
 def shade(cell, fill):
@@ -86,7 +86,7 @@ subtitle.add_run("\nTrường Đại học CMC | Nhóm 4 | Bản dự thảo c�
 doc.add_paragraph()
 intro = doc.add_paragraph()
 intro.add_run("Mục đích. ").bold = True
-intro.add_run("CNN đã có kết quả Test được NV5 đối chiếu từ prediction CSV và metrics JSON. ResNet18 chưa có checkpoint, prediction CSV hoặc metrics Test thật nên mọi kết luận so sánh hai mô hình vẫn PENDING.")
+intro.add_run("NV5 đã đối chiếu CNN và ResNet18 từ prediction CSV cùng Test split, kiểm hash checkpoint ResNet18 và ghi nguồn metadata. Kết quả chỉ áp dụng cho artifact PlantVillage hiện có.")
 
 doc.add_heading("Mở đầu", level=1)
 doc.add_paragraph("Đề tài phân loại ảnh lá cà chua vào bốn lớp Healthy, Early Blight, Late Blight và Bacterial Spot. Nhóm đánh giá CNN học từ đầu và ResNet18 Transfer Learning trên cùng Test split, đồng thời cung cấp demo Streamlit.")
@@ -105,24 +105,24 @@ doc.add_paragraph("Bộ dữ liệu PlantVillage trong pipeline chung có 6.502 
 doc.add_heading("2.2 CNN tự xây dựng", level=2)
 doc.add_paragraph("NV2 huấn luyện CNN từ đầu cho bốn lớp. Artifact PR #9 mô tả bốn khối Conv–BatchNorm–ReLU–MaxPool với số kênh 32 đến 256, Global Average Pooling, Dropout 0,3 và lớp Linear 4 đầu ra. Cấu hình được chọn theo Validation là E1 với learning rate 3e-4; checkpoint epoch 24 có Validation macro-F1 0,976836. NV5 chỉ dùng artifact đã chốt này để kiểm định Test.")
 doc.add_heading("2.3 ResNet18 và Transfer Learning", level=2)
-doc.add_paragraph("PR #7 hiện có source pipeline ResNet18 nhưng chưa bàn giao checkpoint fine-tuned, metadata, prediction CSV hoặc metrics Test. Phần weights, feature extraction, fine-tuning, thông số và kết quả được giữ PENDING cho đến khi NV3 cung cấp artifact có thể truy vết.")
+doc.add_paragraph("NV3 bàn giao checkpoint ResNet18 fine-tuned, metadata, prediction CSV Test, metrics, log và curve qua ZIP trong PR #7. NV5 kiểm SHA-256 checkpoint 61d44ba8ac02ee57c44cbd3835aaac2c657c97924735fea743a60df5f5fdf9e2. Stage fine-tuning, epoch 9, được chọn bằng Validation macro-F1 0,980859; ResNet18 dùng ImageNet pretraining và fine-tuning layer4.")
 doc.add_heading("2.4 Demo", level=2)
-doc.add_paragraph("NV4 đã kiểm chứng demo Streamlit với checkpoint CNN thật, strict-load CPU và kiểm tra consistency có max |delta| = 0. Demo ResNet18 chưa thể xác nhận vì thiếu checkpoint NV3. Ảnh/video demo cuối và lệnh chạy đã xác nhận cần được NV4 bàn giao trước khi chốt báo cáo.")
+doc.add_paragraph("NV4 đã kiểm chứng demo Streamlit với cả checkpoint CNN và ResNet18 thật: strict-load CPU, demo.check_consistency --model both PASS với max |delta| = 0 và metric ResNet18 Test tái hiện trên CPU. Ảnh/video demo cuối cần NV4 xác nhận trước khi chốt báo cáo.")
 
 doc.add_heading("Phần III Thực nghiệm và đánh giá", level=1)
 doc.add_heading("3.1 Giao thức đánh giá", level=2)
 doc.add_paragraph("NV5 dùng scripts/evaluate_models.py để kiểm tra hai prediction CSV có cùng sample ID và ground truth. Test chỉ được dùng sau khi checkpoint đã được chọn bằng Validation.")
-add_table(doc, ["Mô hình", "Split", "Số mẫu", "Accuracy", "Macro F1", "Nguồn"], [["CNN", "Test", "1.356", "0,969764", "0,965034", "results/cnn_metrics_nv2_handoff.json; PR #9"], ["ResNet18", "Test", "PENDING", "PENDING", "PENDING", "Chờ artifact NV3"]])
+add_table(doc, ["Mô hình", "Split", "Số mẫu", "Accuracy", "Macro F1", "Nguồn"], [["CNN", "Test", "1.356", "0,969764", "0,965034", "results/cnn_metrics_nv2_handoff.json; PR #9"], ["ResNet18", "Test", "1.356", "0,986726", "0,983978", "results/resnet18_metrics_nv3_handoff.json; PR #7"]])
 doc.add_heading("3.2 Bảng so sánh", level=2)
-doc.add_paragraph("NV5 chạy scripts/evaluate_models.py với prediction CSV CNN thật và metrics JSON của NV2. Accuracy, macro Precision 0,965416, macro Recall 0,964701, macro F1 0,965034 và F1 từng lớp khớp trong sai số dưới 1e-6. comparison.csv chỉ có CNN computed; ResNet18 pending nên chưa kết luận mô hình nào tốt hơn.")
-add_table(doc, ["Lớp", "F1 CNN", "Support Test"], [["Healthy", "0,990964", "330"], ["Early Blight", "0,927400", "215"], ["Late Blight", "0,952128", "375"], ["Bacterial Spot", "0,989643", "436"]])
+doc.add_paragraph("NV5 chạy scripts/evaluate_models.py với hai prediction CSV thật. Hai model có cùng 1.356 sample ID và ground truth sau khi chuẩn hóa tiền tố path Colab/Windows. ResNet18 cao hơn CNN 0,016962 Accuracy và 0,018944 macro-F1; đây là mô tả artifact, không phải chọn lại model trên Test.")
+add_table(doc, ["Lớp", "F1 CNN", "F1 ResNet18", "Support Test"], [["Healthy", "0,990964", "0,993958", "330"], ["Early Blight", "0,927400", "0,962264", "215"], ["Late Blight", "0,952128", "0,985430", "375"], ["Bacterial Spot", "0,989643", "0,994259", "436"]])
 doc.add_heading("3.3 Ma trận nhầm lẫn và phân tích lỗi", level=2)
-doc.add_paragraph("CNN đúng 1.315/1.356 ảnh và sai 41 ảnh. Early Blight → Late Blight có 14 lỗi, Late Blight → Early Blight có 12 lỗi; hai hướng này chiếm 26/41 lỗi, khoảng 63,4%. Các lỗi đáng chú ý tiếp theo là Late Blight → Healthy (5) và Bacterial Spot → Late Blight (4). Confusion matrix CNN nằm tại results/cnn_confusion_matrix.svg. Chưa có confusion matrix ResNet18 hoặc gói ảnh đúng/sai được bàn giao.")
+doc.add_paragraph("CNN đúng 1.315/1.356 ảnh, ResNet18 đúng 1.338/1.356 ảnh. CNN nhầm nhiều nhất Early Blight → Late Blight (14) và Late Blight → Early Blight (12). ResNet18 giảm lỗi xuống 18 ảnh; lỗi nhiều nhất vẫn Early Blight → Late Blight (6). ImageNet pretraining và fine-tuning là diễn giải hợp lý cho kết quả cao hơn, nhưng cần nhiều seed và Test ngoài miền để khẳng định.")
 doc.add_heading("3.4 Điều kiện đo", level=2)
-add_table(doc, ["Trường", "Giá trị"], [["Checkpoint CNN", "checkpoints/cnn_best.pt, epoch 24"], ["Thiết bị Test CNN", "cuda (theo metadata NV2)"], ["Python/PyTorch", "Chưa được ghi trong metrics handoff NV5"], ["Số tham số và thời gian", "Chưa bàn giao, để trống thay vì suy diễn"], ["ResNet18", "PENDING checkpoint, metadata và Test artifact"]])
+add_table(doc, ["Trường", "Giá trị"], [["CNN", "389.924 tham số; train 1.118,7 giây; RTX 3050"], ["ResNet18", "11.178.564 tham số; 8.395.780 trainable; Tesla T4"], ["Checkpoint ResNet18", "fine-tuning epoch 9; SHA-256 đã kiểm"], ["Python/PyTorch", "CNN 3.12.10/2.14.1; ResNet18 3.13.16/2.11.0"], ["Thời gian ResNet18", "Không có artifact, để trống"]])
 
 doc.add_heading("Phần IV Kết luận và giới hạn", level=1)
-doc.add_paragraph("CNN đã được kiểm chứng độc lập trên 1.356 ảnh Test với macro-F1 0,965034. Lỗi tập trung ở Early Blight và Late Blight. Chưa thể kết luận CNN hay ResNet18 phù hợp hơn vì ResNet18 chưa có artifact Test trên cùng sample ID. Bản này chưa phải báo cáo cuối cho đến khi nhóm cập nhật kết quả ResNet18, demo và mẫu nộp được xác nhận.")
+doc.add_paragraph("ResNet18 đạt macro-F1 0,983978, cao hơn CNN 0,965034 trên cùng 1.356 ảnh Test. Lỗi vẫn tập trung ở Early Blight và Late Blight. Cả hai checkpoint đã chọn bằng Validation; kết luận chỉ áp dụng PlantVillage và bản này chưa phải báo cáo nộp cuối nếu chưa có mẫu CMC chính thức, ảnh/video demo được nhóm xác nhận.")
 for item in ["PlantVillage có điều kiện chụp được kiểm soát.", "Mô hình chỉ phân loại bốn lớp và có thể ép ảnh ngoài miền vào một lớp.", "Chưa có thí nghiệm độc lập về phát hiện bệnh mới chớm."]:
     add_bullet(doc, item)
 
@@ -135,10 +135,10 @@ for reference in [
 ]:
     doc.add_paragraph(reference)
 doc.add_heading("Phụ lục", level=1)
-doc.add_paragraph("Lệnh tái tạo bảng CNN: python -m scripts.evaluate_models --cnn-metrics results/cnn_metrics_nv2_handoff.json --output-dir results. Khi NV3 bàn giao prediction CSV, chạy script với cả hai CSV và metrics JSON; chỉ sau đó cập nhật comparison.csv, analysis.md, Word và slide từ cùng một đầu ra. Bộ 20 câu hỏi phản biện nằm tại docs/NV5_DEFENSE_QA.md.")
+doc.add_paragraph("Lệnh tái tạo bảng: xem docs/NV5_EVALUATION.md, dùng prediction CSV CNN/ResNet18 đã bàn giao cùng hai JSON handoff. Cập nhật comparison.csv, analysis.md, Word và slide từ cùng một đầu ra. Bộ 20 câu hỏi phản biện nằm tại docs/NV5_DEFENSE_QA.md.")
 
 footer = section.footer.paragraphs[0]
 footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-footer.add_run("Bản dự thảo NV5 – CNN đã kiểm chứng, ResNet18 PENDING").font.size = Pt(9)
+footer.add_run("Bản dự thảo NV5 – hai mô hình đã kiểm chứng trên Test chung").font.size = Pt(9)
 doc.save(OUT)
 print(OUT)
