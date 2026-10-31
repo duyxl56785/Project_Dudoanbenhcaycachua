@@ -15,7 +15,11 @@ import matplotlib.pyplot as plt
 import yaml
 from PIL import Image
 
-from src.data.transforms import build_train_transform
+from src.data.transforms import (
+    IMAGENET_MEAN,
+    IMAGENET_STD,
+    build_train_transform,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 NAMES = ["Healthy", "Early Blight", "Late Blight", "Bacterial Spot"]
@@ -51,7 +55,9 @@ def run(data_root: Path, figures_dir: Path):
         im = original.convert("RGB")
     # Show non-normalized augmentations to keep human-readable colors.
     from torchvision import transforms
-    mean, std = config["preprocessing"]["normalize_mean"], config["preprocessing"]["normalize_std"]
+    preprocessing = config.get("preprocessing") or {}
+    mean = preprocessing.get("normalize_mean") or IMAGENET_MEAN
+    std = preprocessing.get("normalize_std") or IMAGENET_STD
     invert = transforms.Normalize(
         mean=[-m/s for m, s in zip(mean, std)],
         std=[1/s for s in std],
