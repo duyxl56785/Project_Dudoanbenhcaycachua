@@ -1,0 +1,4 @@
+run_name,thay_doi,best_epoch,epochs_run,best_val_macro_f1,best_val_accuracy,best_val_loss,train_loss_at_best,train_accuracy_at_best,thoi_gian_train_s,git_commit
+baseline,"cấu hình gốc (lr 1e-3, có augmentation)",22,29,0.969,0.9728,0.0823,0.1458,0.9446,1487.5,b0b6fe3
+e1_lr3e-4,learning rate 3e-4,24,31,0.9768,0.9806,0.0647,0.1182,0.9597,1118.7,b0b6fe3
+e2_no_aug,tắt augmentation Train,11,18,0.9615,0.9651,0.1074,0.1441,0.9485,434.4,b0b6fe3
