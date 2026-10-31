@@ -61,8 +61,8 @@ không để lớp nhiều mẫu lấn át hoàn toàn lớp ít mẫu.
 Pipeline gồm manifest → mapping → transform → DataLoader → model → prediction
 CSV → đánh giá NV5. Theo bàn giao NV1/PR #8, dataset có 6.502 ảnh: Train 4.115,
 Validation 1.031 và Test 1.356. Train có thể augmentation; Validation/Test phải
-dùng tiền xử lý tất định. **TODO:** nhóm xác nhận phiên bản manifest, thống kê
-từng lớp, seed và bằng chứng loại trùng/leakage trong bản cuối.
+dùng tiền xử lý tất định. Bảng truy vết số liệu, artifact và commit nằm tại
+`report/RESULTS_TRACEABILITY.md`.
 
 ### 2.2. CNN tự xây dựng
 
@@ -174,14 +174,12 @@ checkpoint, phiên bản môi trường và Validation score nằm trong hai JSO
 
 ### 3.5. Demo
 
-NV4 chịu trách nhiệm mô tả UI Streamlit, API suy luận và ảnh minh họa. PR #1
-đã ghi nhận CNN strict-load trên CPU và `demo.check_consistency` đạt
-`max |delta| = 0` với checkpoint CNN thật; đó là bằng chứng luồng suy luận,
-không thay thế metric Test. **TODO:** nhóm chèn ảnh/video đã được NV4 xác nhận,
-lệnh chạy và checkpoint/hash thực tế dùng trong demo. Sau bàn giao NV3, PR #1
-ghi nhận ResNet18 strict-load CPU, `demo.check_consistency --model both` có
-`max |delta| = 0` và tái hiện metric Test; ảnh/video minh họa cuối vẫn cần NV4
-xác nhận trước khi nộp.
+NV4 chịu trách nhiệm UI Streamlit và API suy luận. PR #1 đã ghi nhận CNN và
+ResNet18 strict-load trên CPU; `demo.check_consistency --model both` đạt
+`max |delta| = 0`. NV5 đã đưa nguyên vẹn ba ảnh chụp có nguồn từ NV4 commit
+`2406b12` vào `report/assets/nv4_demo/`: CNN, ResNet18 và chế độ so sánh trên
+cùng một ảnh Test Bacterial Spot. Đây là bằng chứng luồng sử dụng, không thay
+thế metric Test toàn tập. Video demo chưa được bàn giao.
 
 ## PHẦN IV. KẾT LUẬN
 
@@ -199,8 +197,9 @@ lại. Lỗi của hai model vẫn tập trung ở Early Blight/Late Blight. K�
 - Chưa có tập riêng cho bệnh mới chớm, nên không tuyên bố “phát hiện sớm”.
 - Chưa có thí nghiệm nhiều seed hoặc kiểm định ngoài miền để khẳng định chênh
   lệch CNN–ResNet18 ổn định.
-- Chưa có gói ảnh lỗi CNN có nguồn truy vết nằm trong repository NV5 để chèn vào
-  báo cáo; chỉ thêm ảnh khi NV2 bàn giao file/link chính thức.
+- Chưa có ảnh chụp riêng cho một dự đoán sai có nhãn thật hiển thị. Báo cáo giữ
+  nguyên ranh giới bằng chứng: ảnh demo minh họa lượt dự đoán đúng, còn lỗi lấy
+  từ prediction CSV và confusion matrix.
 
 ### Hướng phát triển
 
@@ -222,7 +221,7 @@ lại bảng, báo cáo và slide trước khi nộp.
    https://pytorch.org/vision/stable/models/generated/torchvision.models.resnet18.html.
 5. Tài liệu nội bộ của nhóm: `docs/PHAN_CONG.md`,
    `docs/BAN_GIAO_NHIEM_VU_NHOM_HOC_MAY_CA_CHUA_23-10-2026.txt`, Issue #6,
-   PR #7 và PR #9.
+  PR #7, PR #9, PR #11 và `report/RESULTS_TRACEABILITY.md`.
 
 ## PHỤ LỤC A. Bàn giao và truy vết
 

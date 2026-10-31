@@ -16,7 +16,9 @@
 - [x] Bộ kiểm thử NV5 và bộ câu hỏi bảo vệ được cập nhật.
 - [x] Có artifact ResNet18 thật: checkpoint/hash, metadata, prediction CSV,
   metrics, confusion matrix, log và curve từ ZIP PR #7.
-- [ ] Có ảnh đúng/sai Test và ảnh demo đã được NV2/NV4 xác nhận.
+- [x] Có ảnh demo CNN, ResNet18 và chế độ so sánh có nguồn NV4 commit
+  `2406b12`, được lưu nguyên vẹn tại `report/assets/nv4_demo/`.
+- [ ] Có ảnh chụp một dự đoán sai kèm nhãn thật; chưa có file/link bàn giao.
 - [ ] Nhóm trưởng xác nhận mẫu Word/PPTX, người trình bày và bản cuối.
 
 ## B. Đối chiếu một nguồn sự thật
@@ -31,7 +33,7 @@
 | Phân tích | `results/analysis.md` | Matrix, tổng lỗi, cặp lớp khớp metrics |
 | Báo cáo | `report/bao_cao_nv5_framework.md` | Chỉ dùng số đã có nguồn; TODO/PENDING rõ |
 | Slide | `report/slide_outline_nv5.md` | Số và trạng thái khớp bảng/report |
-| Demo | artifact NV4 | Kiểm tra checkpoint, mapping, lệnh chạy, ảnh minh họa |
+| Demo | `report/assets/nv4_demo/` và NV4 commit `2406b12` | Kiểm tra checkpoint, mapping, lệnh chạy, nguồn ảnh minh họa |
 
 ## C. Artifact NV3 đã bàn giao
 

@@ -12,4 +12,6 @@ giá vào đây.
   đã kiểm chứng; các ô ResNet18 giữ trạng thái `PENDING`.
 - `bao_cao_nhom_tomato_two_models_nv5.docx` và
   `slides_nhom_tomato_two_models_nv5.pptx` có kết quả CNN/ResNet18 đã kiểm chứng
-  trên cùng Test; chưa thay thế mẫu nộp CMC chính thức.
+  trên cùng Test. Bản cập nhật có bảng so sánh, biểu đồ Macro-F1, confusion
+  matrix và ảnh demo Streamlit có nguồn NV4; chưa thay thế mẫu nộp CMC chính
+  thức. Đối chiếu nguồn tại `../RESULTS_TRACEABILITY.md`.

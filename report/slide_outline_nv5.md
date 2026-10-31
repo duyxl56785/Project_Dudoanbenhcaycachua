@@ -116,8 +116,9 @@ chọn lại model.
 - Hai chiều cộng 26/41 lỗi ≈ 63,4%.
 - Các lỗi tiếp theo: Late Blight → Healthy (5), Bacterial Spot → Late Blight (4).
 
-**Ghi chú nói:** Đây là phân tích từ confusion matrix; chưa có ảnh minh họa
-đúng/sai do NV2 chưa bàn giao gói ảnh.
+**Ghi chú nói:** Đây là phân tích từ confusion matrix. NV5 có ảnh demo đúng từ
+NV4; chưa có ảnh chụp riêng cho một dự đoán sai kèm nhãn thật nên không tự gắn
+nhãn lại ảnh.
 
 ## Slide 10 — Bảng so sánh hai mô hình
 
@@ -137,7 +138,9 @@ ImageNet pretraining/fine-tuning là diễn giải hợp lý, không phải kế
 ## Slide 11 — Demo, hạn chế và ứng dụng
 
 **Demo:** NV4 ghi nhận strict-load CPU, `demo.check_consistency --model both`
-PASS với `max |delta| = 0`; chèn ảnh/video NV4 đã xác nhận khi đóng gói cuối.
+PASS với `max |delta| = 0`; chèn ảnh thật
+`report/assets/nv4_demo/cnn_resnet18_compare_20261030.jpg`, nguồn NV4 commit
+`2406b12`. Video demo chưa bàn giao.
 
 **Hạn chế:** PlantVillage có điều kiện kiểm soát; ảnh ngoài bốn lớp bị ép nhãn;
 chưa có dữ liệu bệnh mới chớm; chưa đủ cơ sở triển khai ngoài thực địa.
@@ -162,3 +165,5 @@ PR #7/#9/#11.
 - Không chụp hoặc chèn ảnh dataset mới nếu chưa được NV1/NV2 bàn giao.
 - Khi có artifact mới, chạy lại script với hai prediction CSV rồi cập nhật toàn
   bộ số từ cùng một `comparison.csv`; không sửa tay từng slide.
+- Đối chiếu từng số liệu và ảnh với `report/RESULTS_TRACEABILITY.md` trước khi
+  gửi nhóm review.

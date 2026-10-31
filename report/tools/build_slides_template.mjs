@@ -6,6 +6,7 @@ import { Presentation, PresentationFile } from "file:///C:/Users/PC/.cache/codex
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const outDir = path.join(root, ".report_build");
 const previewDir = path.join(root, ".pptx_render");
+const assetsDir = path.join(root, "report", "assets");
 await fs.mkdir(outDir, { recursive: true });
 await fs.mkdir(previewDir, { recursive: true });
 
@@ -22,6 +23,19 @@ function box(slide, text, x, y, w, h, style = {}) {
   shape.text = text;
   shape.text.style = { fontSize: style.size ?? 22, color: style.color ?? colors.ink, bold: style.bold ?? false, fontFamily: "Aptos" };
   return shape;
+}
+
+async function addJpeg(slide, relativePath, alt, position) {
+  const imagePath = path.join(assetsDir, relativePath);
+  const bytes = await fs.readFile(imagePath);
+  slide.images.add({
+    blob: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+    contentType: "image/jpeg",
+    alt,
+    fit: "contain",
+    position,
+    geometry: "rect",
+  });
 }
 
 function slideBase(title, kicker = "NHẬN DIỆN BỆNH LÁ CÀ CHUA") {
@@ -69,10 +83,42 @@ box(slide, "results/comparison.csv\nresults/analysis.md\nHai confusion matrix\nP
 
 slide = slideBase("Kết quả so sánh");
 box(slide, "Test chung 1.356 ảnh · Artifact CNN PR #9 đã đối chiếu dưới 1e-6", 86, 190, 1000, 44, { size: 22, color: colors.muted, bold: true });
-box(slide, "CNN", 100, 300, 250, 38, { size: 24, color: colors.blue, bold: true });
-box(slide, "Accuracy: 0,969764\nMacro F1: 0,965034\n389.924 tham số · train 1.118,7 giây", 100, 350, 440, 130, { size: 21 });
-box(slide, "ResNet18", 650, 300, 300, 38, { size: 24, color: colors.blue, bold: true });
-box(slide, "Accuracy: 0,986726\nMacro F1: 0,983978\n11.178.564 tham số · 8.395.780 trainable", 650, 350, 470, 130, { size: 21 });
+const resultTable = slide.tables.add({
+  rows: 3,
+  columns: 5,
+  left: 86,
+  top: 245,
+  width: 1090,
+  height: 135,
+  values: [
+    ["Mô hình", "Accuracy", "Macro F1", "Đúng/Test", "Tham số"],
+    ["CNN", "96,9764%", "96,5034%", "1.315/1.356", "389.924"],
+    ["ResNet18", "98,6726%", "98,3978%", "1.338/1.356", "11.178.564"],
+  ],
+});
+resultTable.styleOptions = { headerRow: true, bandedRows: true };
+resultTable.cells.block({ row: 0, column: 0, rowCount: 1, columnCount: 5 }).assign({
+  fill: colors.navy,
+  textStyle: { color: colors.white, bold: true, fontSize: 17, fontFamily: "Aptos" },
+});
+resultTable.cells.block({ row: 1, column: 0, rowCount: 2, columnCount: 5 }).assign({
+  textStyle: { color: colors.ink, fontSize: 16, fontFamily: "Aptos" },
+  fill: colors.pale,
+});
+resultTable.borders.assign({ style: "solid", fill: "#D9D9D9", width: 1 });
+slide.charts.add("bar", {
+  position: { left: 260, top: 415, width: 760, height: 205 },
+  title: "Macro F1 trên Test",
+  titleTextStyle: { fontSize: 18, bold: true, fill: colors.ink },
+  categories: ["CNN", "ResNet18"],
+  // Biểu đồ hiển thị làm tròn 0,1 điểm phần trăm; bảng phía trên giữ số đã kiểm chứng đầy đủ.
+  series: [{ name: "Macro F1", values: [0.965, 0.984], fill: colors.blue }],
+  barOptions: { direction: "column", grouping: "clustered", gapWidth: 70 },
+  hasLegend: false,
+  xAxis: { textStyle: { fontSize: 15, fill: colors.ink }, line: { style: "solid", fill: "#D9D9D9", width: 1 } },
+  yAxis: { min: 0.94, max: 1.0, majorUnit: 0.02, numberFormatCode: "0%", textStyle: { fontSize: 12, fill: colors.muted }, majorGridlines: { style: "solid", fill: "#D9D9D9", width: 1 } },
+  dataLabels: { showValue: true, position: "outEnd", numberFormatCode: "0.00%", textStyle: { fontSize: 13, fill: colors.ink, bold: true } },
+});
 
 slide = slideBase("Phân tích nhầm lẫn");
 box(slide, "CNN confusion matrix\nH: 329  0  1  0\nE: 0  198  14  3\nL: 5  12  358  0\nB: 0  2  4  430", 86, 190, 470, 200, { size: 20, color: colors.ink, bold: true });
@@ -80,11 +126,16 @@ box(slide, "ResNet18 confusion matrix\nH: 329  0  1  0\nE: 3  204  6  2\nL: 0  3
 box(slide, "Lỗi: CNN 41 ảnh · ResNet18 18 ảnh; Early Blight → Late Blight còn khó nhất", 86, 470, 1050, 40, { size: 21, color: colors.blue, bold: true });
 box(slide, "H = Healthy · E = Early Blight · L = Late Blight · B = Bacterial Spot", 86, 530, 1050, 35, { size: 17, color: colors.muted });
 
-slide = slideBase("Demo và giới hạn");
-box(slide, "Demo", 86, 185, 280, 32, { size: 25, color: colors.blue, bold: true });
-box(slide, "Streamlit: upload, CNN, ResNet18, so sánh\nCả hai strict-load CPU; --model both: max |delta| = 0\nẢnh/video cuối: chờ NV4 xác nhận", 86, 235, 530, 150, { size: 20 });
-box(slide, "Giới hạn", 700, 185, 280, 32, { size: 25, color: colors.blue, bold: true });
-box(slide, "Không thay thế chuyên gia.\nẢnh ngoài miền có thể bị ép vào một lớp.\nChưa chứng minh phát hiện sớm.", 700, 235, 420, 150, { size: 22 });
+slide = slideBase("Demo Streamlit với hai checkpoint thật");
+await addJpeg(
+  slide,
+  path.join("nv4_demo", "cnn_resnet18_compare_20261030.jpg"),
+  "Ảnh chụp Streamlit NV4 so sánh CNN và ResNet18 trên cùng một ảnh Bacterial Spot",
+  { left: 86, top: 165, width: 690, height: 390 },
+);
+box(slide, "Kết quả trên một ảnh Test", 825, 180, 330, 32, { size: 23, color: colors.blue, bold: true });
+box(slide, "CNN: Bacterial Spot 96,95%\nResNet18: Bacterial Spot 67,11%\nCả hai strict-load CPU\n--model both: max |delta| = 0", 825, 230, 330, 180, { size: 19 });
+box(slide, "Nguồn: ảnh chụp NV4, commit 2406b12. Đây là minh họa giao diện, không phải Accuracy toàn tập. Video chưa bàn giao.", 86, 585, 1070, 45, { size: 15, color: colors.muted });
 
 slide = slideBase("Kết luận và hướng phát triển");
 box(slide, "Kết luận", 86, 185, 280, 32, { size: 25, color: colors.blue, bold: true });
