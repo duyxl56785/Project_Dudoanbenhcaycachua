@@ -1,15 +1,152 @@
-"""Ứng dụng demo Streamlit: tải ảnh lá cà chua và dự đoán tình trạng lá.
+"""Streamlit presentation for the group's verified tomato leaf classifiers."""
+import sys
+import hashlib
+from pathlib import Path
 
-Phụ trách: NV4 - Nguyễn Minh Duy.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+try:
+    import streamlit as st
+except ImportError as exc:
+    raise SystemExit("Thiếu Streamlit. Cài đặt bằng pip install -r requirements.txt") from exc
 
-Việc cần làm (mục VI tài liệu bàn giao):
-- Giao diện: giới thiệu, upload JPG/PNG, preview ảnh, chọn một mô hình
-  hoặc so sánh cả hai.
-- Gọi src/inference.py; hiển thị top-1, xác suất 4 lớp, thời gian suy luận
-  nếu đo đúng.
-- MOCK (nếu dùng để thử giao diện) phải ghi nhãn rõ và gỡ bỏ trước nghiệm thu.
-- Xử lý upload sai định dạng, ảnh lỗi, file quá lớn, thiếu checkpoint,
-  lỗi phụ thuộc mà không crash ứng dụng.
-- Thông báo hạn chế: chỉ phân loại 4 lớp đã học, không thay thế chuyên gia
-  nông nghiệp.
-"""
+from demo.session import MAX_UPLOADS, MODEL_LABELS, append_history, dashboard, export_csv, predict_uploads, selected_models
+from src.inference import InferenceError, MAX_IMAGE_BYTES, MODELS, ROOT, class_names, predict_image, read_image
+
+st.set_page_config(page_title="Dự đoán bệnh lá cà chua", page_icon="🍅", layout="wide")
+st.markdown("""<style>
+    .block-container {max-width: 1200px; padding-top: 2rem;}
+    [data-testid="stMetric"] {background: rgba(72, 150, 95, 0.13); border: 1px solid rgba(72, 150, 95, 0.35);
+      border-radius: 12px; padding: 1rem;}
+    @media (max-width: 640px) {.block-container {padding: 1rem .75rem;}}
+</style>""", unsafe_allow_html=True)
+
+if "nv4_history" not in st.session_state:
+    st.session_state.nv4_history = []
+if "nv4_results" not in st.session_state:
+    st.session_state.nv4_results = []
+
+with st.sidebar:
+    st.header("Thiết lập")
+    choice = st.radio("Mô hình", ("CNN", "ResNet18", "So sánh cả hai"))
+    device_choice = st.selectbox("Thiết bị suy luận", ("Tự động", "CPU", "CUDA"))
+    device = {"Tự động": "auto", "CPU": "cpu", "CUDA": "cuda"}[device_choice]
+    st.divider()
+    st.subheader("Trạng thái mô hình")
+    for model, filename in MODELS.items():
+        if (ROOT / "checkpoints" / filename).is_file():
+            st.success(f"{MODEL_LABELS[model]}: có checkpoint")
+        else:
+            st.warning(f"{MODEL_LABELS[model]}: chưa sẵn sàng ({filename})")
+
+st.title("🍅 Dự đoán bệnh lá cà chua")
+st.write("Tải tối đa tám ảnh để xem kết quả CNN, ResNet18 hoặc so sánh hai mô hình trên cùng ảnh.")
+st.info("Chỉ phân loại bốn lớp đã học. PlantVillage chủ yếu là ảnh trong điều kiện kiểm soát. Softmax chưa được hiệu chỉnh và kết quả không thay thế chuyên gia nông nghiệp.")
+tab_predict, tab_history, tab_dashboard = st.tabs(("Dự đoán", "Lịch sử phiên", "Thống kê phiên"))
+
+with tab_predict:
+    st.subheader("Tải ảnh")
+    uploads = st.file_uploader("Ảnh JPG, JPEG hoặc PNG; tối đa 10 MiB mỗi ảnh", type=("jpg", "jpeg", "png"), accept_multiple_files=True)
+    selection = (choice, device, tuple((upload.name, hashlib.sha256(upload.getvalue()).hexdigest()) for upload in uploads))
+    if st.session_state.get("nv4_selection") != selection:
+        st.session_state.nv4_results = []
+        st.session_state.nv4_selection = selection
+    if len(uploads) > MAX_UPLOADS:
+        st.error(f"Chỉ tải tối đa {MAX_UPLOADS} ảnh mỗi lượt. Hãy bỏ bớt ảnh trước khi dự đoán.")
+    elif uploads:
+        st.caption(f"Đã chọn {len(uploads)}/{MAX_UPLOADS} ảnh")
+        for upload in uploads:
+            st.write(f"• {upload.name}")
+        with st.expander("Xem trước ảnh", expanded=True):
+            columns = st.columns(2)
+            for index, upload in enumerate(uploads):
+                with columns[index % 2]:
+                    try:
+                        if upload.size > MAX_IMAGE_BYTES:
+                            raise InferenceError("Ảnh vượt giới hạn 10 MiB.")
+                        st.image(read_image(upload.getvalue()), caption=upload.name, width="stretch")
+                    except InferenceError as exc:
+                        st.error(f"{upload.name}: {exc}")
+    if st.button("Dự đoán bệnh", type="primary", disabled=len(uploads) > MAX_UPLOADS):
+        st.session_state.nv4_results = []
+        if not uploads:
+            st.error("Vui lòng tải ít nhất một ảnh JPG hoặc PNG trước khi dự đoán.")
+        else:
+            progress = st.progress(0, text="Đang xử lý ảnh...")
+            items, records = [], []
+            for index, upload in enumerate(uploads, 1):
+                batch_items, batch_records = predict_uploads([upload], selected_models(choice), predict_image, device=device)
+                items.extend(batch_items)
+                records.extend(batch_records)
+                progress.progress(index / len(uploads), text=f"Đã xử lý {index}/{len(uploads)} ảnh")
+            progress.empty()
+            st.session_state.nv4_results = items
+            st.session_state.nv4_history = append_history(st.session_state.nv4_history, records)
+    if st.session_state.nv4_results:
+        st.subheader("Kết quả lượt này")
+        for item in st.session_state.nv4_results:
+            with st.container(border=True):
+                st.markdown(f"#### {item['name']}")
+                if "image" in item["errors"]:
+                    st.error(item["errors"]["image"])
+                    continue
+                columns = st.columns(len(selected_models(choice)))
+                for column, model in zip(columns, selected_models(choice)):
+                    with column:
+                        st.markdown(f"**{MODEL_LABELS[model]}**")
+                        if model in item["errors"]:
+                            message = item["errors"][model]
+                            if message.startswith("Thiếu checkpoint"):
+                                message = f"{MODEL_LABELS[model]} chưa sẵn sàng: thiếu checkpoint được nhóm xác nhận."
+                            st.warning(message)
+                        elif model in item["results"]:
+                            result = item["results"][model]
+                            st.success(f"Dự đoán: {result['top_label']}")
+                            st.table({"Lớp": list(result["probabilities"]), "Xác suất": [f"{value:.2%}" for value in result["probabilities"].values()]})
+                            st.bar_chart({"Lớp": list(result["probabilities"]), "Xác suất": list(result["probabilities"].values())}, x="Lớp", y="Xác suất", horizontal=True)
+                            st.caption(f"Forward pass: {result['forward_ms']:.2f} ms")
+    elif uploads:
+        st.caption("Nhấn Dự đoán bệnh để xem kết quả cho các ảnh đã chọn.")
+
+with tab_history:
+    records = st.session_state.nv4_history
+    st.caption("Chỉ lưu tên ảnh và kết quả trong phiên trình duyệt; không lưu nội dung ảnh vào lịch sử.")
+    if records:
+        names = class_names()
+        st.dataframe([{"Thời gian": row["predicted_at"], "Ảnh": row["image_name"], "Mô hình": row["model"],
+                       "Trạng thái": row.get("status", "Thành công"), "Nhãn": row["top_label"],
+                       "Top-1": f'{row["top_probability"]:.2%}' if row.get("top_probability") is not None else "—"}
+                      for row in records], width="stretch", hide_index=True)
+        selected_index = st.selectbox("Xem lại kết quả", range(len(records)), format_func=lambda index: f'{records[index]["image_name"]} · {records[index]["model"]} · {records[index]["predicted_at"]}')
+        selected = records[selected_index]
+        if selected.get("status", "Thành công") == "Lỗi":
+            st.error(selected["error"])
+        else:
+            st.write(f"**{selected['top_label']}** · {selected['top_probability']:.2%}")
+            st.table({"Lớp": names, "Xác suất": [f'{selected["probabilities"][name]:.2%}' for name in names]})
+        st.download_button("Tải kết quả CSV", export_csv(records, names), file_name="du_doan_la_ca_chua.csv", mime="text/csv")
+        if st.button("Xóa lịch sử"):
+            st.session_state.nv4_history = []
+            st.session_state.nv4_results = []
+            st.rerun()
+    else:
+        st.write("Chưa có dự đoán trong phiên này.")
+
+with tab_dashboard:
+    names = class_names()
+    model_filter = st.selectbox("Lọc theo mô hình", ("Tất cả", "CNN", "ResNet18"))
+    summary = dashboard(st.session_state.nv4_history, names, None if model_filter == "Tất cả" else model_filter)
+    metrics = st.columns(4)
+    metrics[0].metric("Ảnh đã dự đoán", summary["images"])
+    metrics[1].metric("Lượt suy luận", summary["predictions"])
+    metrics[2].metric("Lượt lỗi", summary["errors"])
+    metrics[3].metric("Forward trung bình", f'{summary["mean_forward_ms"]:.2f} ms' if summary["mean_forward_ms"] is not None else "—")
+    if not st.session_state.nv4_history:
+        st.info("Chưa có dữ liệu trong phiên. Hãy dự đoán ảnh để xem thống kê.")
+    left, right = st.columns(2)
+    with left:
+        st.subheader("Lượt theo mô hình")
+        st.bar_chart({"Mô hình": list(summary["by_model"]), "Lượt": list(summary["by_model"].values())}, x="Mô hình", y="Lượt")
+    with right:
+        st.subheader("Nhãn được dự đoán")
+        st.bar_chart({"Nhãn": list(summary["by_label"]), "Lượt": list(summary["by_label"].values())}, x="Nhãn", y="Lượt")
+    st.caption("Đây là thống kê nhãn mô hình dự đoán trong phiên, không phải tỷ lệ bệnh thực tế trong vườn.")
