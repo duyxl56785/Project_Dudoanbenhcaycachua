@@ -12,6 +12,7 @@ slide hai mô hình phải đối chiếu với bảng này; không làm tròn n
 | Checkpoint ResNet18 | SHA-256 `61d44ba8...f5fdf9e2`, epoch 9, Validation macro-F1 0,980859 | ZIP bàn giao tại [PR #7](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/pull/7) | NV5 tải ZIP và kiểm SHA-256 ngày 30/10/2026. |
 | Confusion matrix và F1 từng lớp | Hai ma trận, bốn F1/lớp | `results/comparison.csv`, `results/cnn_confusion_matrix.svg`, `results/resnet18_confusion_matrix.svg` | Sinh từ prediction CSV cùng Test. |
 | Minh chứng demo | CNN, ResNet18 và chế độ compare trên ảnh thật | [NV4 commit 2406b12](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/commit/2406b12a383eb5a388774442fe0b364b7e713831) | Ảnh được sao chép nguyên vẹn vào `report/assets/nv4_demo/`; không dùng làm accuracy toàn tập. |
+| Kiểm thử tích hợp liên nhóm | 86 passed, 1 skipped, 19 subtests passed | [NV4 retest 01/11/2026](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/blob/b309e08d872b5711f4179cbb760682fb4166fb3d/docs/audits/NV4_RESNET18_RETEST_20261101.md) | TV4 ghép cục bộ PR #9, #7, #1 và PR #11 tại `d4b2697`; đây là kết quả TV4 bàn giao, không phải lần chạy lại của NV5. |
 
 ## Quy tắc cập nhật
 
