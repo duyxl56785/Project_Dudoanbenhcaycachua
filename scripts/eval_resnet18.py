@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 from pathlib import Path
 
@@ -19,6 +20,11 @@ from src.resnet18_workflow import (REPO_ROOT, ManifestDataset, calculate_metrics
 
 def run(config_path: Path, data_root: Path, checkpoint_path: Path | None = None) -> dict:
     config = read_config(config_path)
+    results_dir = REPO_ROOT / config["output"]["results_dir"]
+    outputs = [results_dir / name for name in (
+        "resnet18_metrics.json", "resnet18_test_predictions.csv", "resnet18_confusion_matrix.png")]
+    if any(output.exists() for output in outputs):
+        raise FileExistsError("Existing evaluation results are preserved; configure a new results_dir")
     labels = read_labels(REPO_ROOT / config["data"]["class_mapping"])
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     path = checkpoint_path or REPO_ROOT / config["checkpoint"]["path"]
@@ -36,14 +42,24 @@ def run(config_path: Path, data_root: Path, checkpoint_path: Path | None = None)
             y_pred.extend(logits.argmax(1).cpu().tolist())
     metrics = calculate_metrics(y_true, y_pred, labels)
     metrics["stage"] = metadata["stage"]
-    results_dir = REPO_ROOT / config["output"]["results_dir"]
+    with path.open("rb") as stream:
+        checkpoint_sha256 = hashlib.file_digest(stream, "sha256").hexdigest()
+    metrics.update({"split": "test", "checkpoint": str(path), "checkpoint_sha256": checkpoint_sha256,
+                    "preprocessing": config["preprocessing"], "labels": labels,
+                    "evaluation_device": str(device)})
+    # Only copy provenance actually present in the delivered checkpoint sidecar.
+    for source, target in (("epoch", "checkpoint_epoch"),
+                           ("best_val_macro_f1", "checkpoint_val_macro_f1"),
+                           ("val_loss", "checkpoint_val_loss"), ("seed", "seed")):
+        if source in metadata:
+            metrics[target] = metadata[source]
     results_dir.mkdir(parents=True, exist_ok=True)
     (results_dir / "resnet18_metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
     with (results_dir / "resnet18_test_predictions.csv").open("w", newline="", encoding="utf-8") as stream:
         writer = csv.writer(stream)
-        writer.writerow(["path", "true_label", "predicted_label"])
+        writer.writerow(["path", "true_label", "predicted_label", "split"])
         for (image_path, _), actual, pred in zip(dataset.samples, y_true, y_pred):
-            writer.writerow([str(image_path), actual, pred])
+            writer.writerow([str(image_path), actual, pred, "test"])
     fig, ax = plt.subplots(figsize=(7, 6))
     ax.imshow(metrics["confusion_matrix"], cmap="Blues")
     ax.set_xticks(range(4), labels=labels, rotation=30, ha="right")

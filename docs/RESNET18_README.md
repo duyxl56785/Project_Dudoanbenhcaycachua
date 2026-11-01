@@ -2,6 +2,10 @@
 
 **Phạm vi:** ResNet18 pretrained (ImageNet-1K V1), 4 tình trạng lá cà chua. Chủ nhiệm NV3 phụ trách mô hình; không thay đổi split/nhãn của NV1, CNN của NV2, app của NV4 hay phần tổng hợp NV5.
 
+**Cập nhật 01/11/2026:** Kết quả train và gói bàn giao đã có; xem [handoff cập nhật](NV3_HANDOFF_20261030.md) và [kiểm tra tích hợp trên môi trường cloud](NV3_INTEGRATION_20261101.md). Các checklist/log cũ bên dưới phản ánh thời điểm trước bàn giao. NV4/NV5 đã ghi bằng chứng tiếp nhận trên nhánh riêng; phiên cloud này chưa tải được checkpoint do proxy từ chối Drive.
+
+Đánh giá mới xuất schema metrics NV5 cùng SHA-256 checkpoint và cột CSV `split=test`, vẫn giữ các trường legacy. Script từ chối ghi đè kết quả đã tồn tại. Để tái lập có chủ đích, sao chép YAML vào vị trí cục bộ riêng và đặt `output.results_dir` đến thư mục mới; không sửa hoặc ghi đè gói thực nghiệm đã bàn giao. Không cần train lại để kiểm tra tích hợp.
+
 **Trạng thái:** Đã sửa theo review PR #7: factory offline, checkpoint thuần + metadata JSON, dùng chung API NV1. Nhánh NV3 cần tích hợp NV1 PR #8 trước khi chạy luồng dữ liệu. **Chưa có huấn luyện thực nghiệm, checkpoint pretrained đã fine-tune hoặc kết quả Accuracy/F1 thực tế.** Không dùng test giả để báo cáo độ chính xác.
 
 ## Cấu trúc

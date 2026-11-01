@@ -69,6 +69,32 @@ def test_metrics_four_class_shape():
     metrics = calculate_metrics([0, 1, 2, 3], [0, 1, 3, 3], ["Healthy", "Early Blight", "Late Blight", "Bacterial Spot"])
     assert metrics["accuracy"] == 0.75
     assert len(metrics["confusion_matrix"]) == 4
+    assert metrics["n_samples"] == 4
+    assert metrics["macro_precision"] == pytest.approx(0.625)
+    assert metrics["macro_recall"] == pytest.approx(0.75)
+    assert metrics["per_class"]["Bacterial Spot"] == {
+        "precision": 0.5, "recall": 1.0, "f1": pytest.approx(2 / 3), "support": 1}
+    assert sum(row["support"] for row in metrics["per_class"].values()) == 4
+
+
+@pytest.mark.parametrize("filename", ["resnet18_metrics.json", "resnet18_test_predictions.csv",
+                                     "resnet18_confusion_matrix.png"])
+def test_evaluation_preserves_existing_artifacts_before_loading_checkpoint(tmp_path, filename):
+    from pathlib import Path
+    import yaml
+    from scripts.eval_resnet18 import run
+    root = Path(__file__).resolve().parents[1]
+    config = read_config(root / "configs/resnet18.yaml")
+    config["output"]["results_dir"] = str(tmp_path / "results")
+    config["checkpoint"]["path"] = str(tmp_path / "absent.pt")
+    result = tmp_path / "results" / filename
+    result.parent.mkdir()
+    result.write_bytes(b"existing artifact must survive")
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(yaml.safe_dump(config))
+    with pytest.raises(FileExistsError, match="preserved"):
+        run(config_path, tmp_path)
+    assert result.read_bytes() == b"existing artifact must survive"
 
 
 def test_head_backprop_checkpoint_round_trip(tmp_path):
@@ -215,6 +241,17 @@ def test_synthetic_two_stage_train_eval_infer(tmp_path, monkeypatch, shared_nv1)
     assert (tmp_path / "delivery.pt").read_bytes() == before
     metrics = evaluate(config_path, tmp_path)
     assert len(metrics["confusion_matrix"]) == 4
+    import hashlib
+    assert metrics["checkpoint_sha256"] == hashlib.sha256(before).hexdigest()
+    assert metrics["n_samples"] == 4 and metrics["split"] == "test"
+    predictions_path = tmp_path / "results/resnet18_test_predictions.csv"
+    saved_outputs = {p: p.read_bytes() for p in (predictions_path, tmp_path / "results/resnet18_metrics.json")}
+    rows = list(csv.DictReader(predictions_path.open()))
+    assert len(rows) == 4 and {row["split"] for row in rows} == {"test"}
+    with pytest.raises(FileExistsError, match="preserved"):
+        evaluate(config_path, tmp_path)
+    for path, original in saved_outputs.items():
+        assert path.read_bytes() == original
     prediction = infer(tmp_path / "raw/color/Tomato___healthy/test.png", config_path)
     assert list(prediction["scores"]) == read_labels(root / "configs/class_mapping.json")
     assert sum(prediction["scores"].values()) == pytest.approx(1.0)

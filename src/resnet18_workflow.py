@@ -126,10 +126,17 @@ def load_checkpoint(path: Path, config: dict, labels: list[str], device: torch.d
 def calculate_metrics(y_true: list[int], y_pred: list[int], labels: list[str]) -> dict:
     if not y_true:
         raise ValueError("No predictions to evaluate")
-    return {"accuracy": float(accuracy_score(y_true, y_pred)),
+    report = classification_report(y_true, y_pred, labels=list(range(4)),
+                                   target_names=labels, zero_division=0, output_dict=True)
+    return {"n_samples": len(y_true),
+            "macro_precision": float(report["macro avg"]["precision"]),
+            "macro_recall": float(report["macro avg"]["recall"]),
+            "per_class": {name: {"precision": report[name]["precision"], "recall": report[name]["recall"],
+                                  "f1": report[name]["f1-score"], "support": int(report[name]["support"])}
+                          for name in labels},
+            "accuracy": float(accuracy_score(y_true, y_pred)),
             "macro_f1": float(f1_score(y_true, y_pred, labels=list(range(4)), average="macro", zero_division=0)),
-            "classification_report": classification_report(y_true, y_pred, labels=list(range(4)),
-                                                         target_names=labels, zero_division=0, output_dict=True),
+            "classification_report": report,
             "confusion_matrix": confusion_matrix(y_true, y_pred, labels=list(range(4))).tolist()}
 
 
