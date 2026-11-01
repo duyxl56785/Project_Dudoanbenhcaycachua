@@ -1,5 +1,9 @@
 # Demo Streamlit – NV4 Nguyễn Minh Duy
 
+## Kiểm thử lại HEAD NV3 ngày 01/11/2026
+
+Sau commit NV3 `2e10e6a`, NV4 ghép HEAD mới của PR #9/#7/#1 trên worktree tạm từ `main`, xác minh lại checkpoint ResNet18 thật, script/API, ba chế độ Streamlit và toàn bộ test; sau đó kiểm tra thêm PR #11. [Báo cáo, xác suất từng lớp, kết quả test và ảnh chụp thật](audits/NV4_RESNET18_RETEST_20261101.md). Bản ghép đạt **76 passed, 1 skipped, 19 subtests**; thêm NV5 đạt **86 passed, 1 skipped, 19 subtests**. Các PR vẫn cần review/merge và kiểm thử lại trên `main`; phần dưới giữ nhật ký những lần kiểm thử trước.
+
 ## Trạng thái mới nhất: 30/10/2026
 
 NV3 đã công bố [gói bàn giao ResNet18 trên PR #7](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/pull/7), gồm checkpoint fine-tuned, metadata, config, metrics và log. NV4 đã tải gói thật, đối chiếu SHA-256 và kiểm thử cục bộ cùng checkpoint CNN của PR #9. Hai PR vẫn chưa được merge; các tệp mô hình/checkpoint của NV2 và NV3 trong working tree NV4 chỉ là **bản tích hợp cục bộ, chưa stage hoặc push**. Để chạy trên máy khác cần lấy đúng các tệp bàn giao từ hai PR. Kết quả kiểm thử mới ở mục cuối tài liệu; những câu “ResNet18 chưa có checkpoint” trong nhật ký phía dưới mô tả trạng thái các ngày trước.
