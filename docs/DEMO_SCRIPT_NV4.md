@@ -1,6 +1,6 @@
 # Kịch bản video demo NV4 – Nguyễn Minh Duy
 
-Thời lượng gợi ý: 4–6 phút. Chỉ quay khi đang dùng checkpoint nhóm xác nhận; không gọi ResNet18 là đã hoạt động nếu chưa có checkpoint fine-tuned.
+Thời lượng gợi ý: 4–6 phút. Quay trên bản tích hợp có cả checkpoint CNN và ResNet18 thật đã xác minh SHA-256; nêu rõ đây là bản ghép cục bộ nếu PR #7/#9 chưa merge vào `main`. Không trình bày ảnh chụp cũ có thông báo thiếu checkpoint như trạng thái hiện tại.
 
 ## 1. Mở đầu
 
@@ -38,53 +38,53 @@ Thời lượng gợi ý: 4–6 phút. Chỉ quay khi đang dùng checkpoint nh�
 
 **Lời nói:** “Giao diện và script dùng chung `src/inference.py`. Ảnh đi qua transform Val/Test của NV1, mô hình được dựng bằng `build_model(num_classes=4)`, checkpoint plain state_dict được strict-load, rồi logits bốn lớp được chuyển thành softmax. Metadata bắt buộc phải khớp nhãn và preprocessing.”
 
-## 7. Demo ảnh không hợp lệ
+## 7. Demo ResNet18 và so sánh hai mô hình
 
-**Màn hình:** tải hai ảnh thật thuộc lớp Bacterial Spot và Healthy cùng file TXT đổi tên thành `corrupt.jpg`; bấm **Dự đoán bệnh**.
+**Màn hình:** giữ ảnh Bacterial Spot, chọn ResNet18 và bấm **Dự đoán bệnh**; sau đó chọn **So sánh cả hai** và chạy lại cùng ảnh. Giữ bảng và biểu đồ bốn xác suất của mỗi mô hình trong khung hình.
 
-**Lời nói:** “Hai ảnh thật được xử lý độc lập; một ảnh trả về Bacterial Spot, ảnh còn lại Healthy. File hỏng được báo lỗi riêng nên không làm dừng hai kết quả thật. File rỗng, GIF và file quá 10 MiB cũng bị chặn.”
+**Lời nói:** “Checkpoint ResNet18 fine-tuned của NV3 đã được xác minh và nạp nghiêm ngặt trên CPU. Trên ảnh này, ResNet18 dự đoán Bacterial Spot khoảng 67,11%; CNN dự đoán cùng nhãn khoảng 96,95%. Hai bảng xác suất thể hiện đầu ra riêng của từng mô hình. Đây là ví dụ minh họa, không phải phép đánh giá độ chính xác toàn tập.”
 
-## 8. Lịch sử, CSV và dashboard
+## 8. Demo nhiều ảnh và ảnh không hợp lệ
 
-**Màn hình:** mở tab **Lịch sử phiên**, chọn lần lượt một kết quả thành công và lượt lỗi, bấm **Tải kết quả CSV**; mở file trong Excel nếu có. Sang **Thống kê phiên**, quan sát hai ảnh thành công và một lượt lỗi; thử bộ lọc mô hình, quay lại lịch sử và bấm **Xóa lịch sử**.
+**Màn hình:** trong chế độ so sánh, tải hai ảnh thật thuộc lớp Bacterial Spot và Healthy cùng file TXT đổi tên thành `corrupt.jpg`; bấm **Dự đoán bệnh**. Quay rõ hai ảnh hợp lệ có kết quả CNN/ResNet18 riêng và ảnh hỏng có lỗi riêng.
+
+**Lời nói:** “Hai ảnh thật được xử lý độc lập; một ảnh trả về Bacterial Spot, ảnh còn lại Healthy ở cả hai mô hình. File hỏng được báo lỗi riêng nên không làm dừng các kết quả thật. File rỗng, GIF và file quá 10 MiB cũng bị chặn.”
+
+## 9. Lịch sử, CSV và dashboard
+
+**Màn hình:** mở tab **Lịch sử phiên**, chọn lần lượt một kết quả CNN, một kết quả ResNet18 và lượt lỗi; bấm **Tải kết quả CSV** và mở file nếu có. Sang **Thống kê phiên**, chỉ rõ tổng ảnh, lượt theo mô hình và lượt lỗi; thử bộ lọc mô hình. Chỉ xóa lịch sử sau khi quay đủ bằng chứng.
 
 **Lời nói:** “Lịch sử chỉ giữ tên ảnh, thời điểm và kết quả trong phiên, tối đa 200 bản ghi; không lưu nội dung ảnh. CSV UTF-8 BOM chứa trạng thái và xác suất của bốn lớp, còn lượt lỗi để trống xác suất. Dashboard đếm lượt thành công, lượt lỗi, nhãn mô hình dự đoán và thời gian forward đo thật. Đây không phải tỷ lệ bệnh thực tế ngoài vườn.”
-
-## 9. Trạng thái ResNet18
-
-**Màn hình:** tải lại ảnh thật, chọn ResNet18 rồi bấm dự đoán; sau đó chọn **So sánh cả hai**.
-
-**Lời nói:** “Hiện NV3 chưa bàn giao checkpoint ResNet18 fine-tuned. Ứng dụng báo rõ thiếu checkpoint và tuyệt đối không dùng trọng số ngẫu nhiên để tạo kết quả giả. Ở chế độ so sánh, CNN vẫn chạy bình thường còn lỗi ResNet18 được hiển thị riêng.”
 
 ## 10. Kết quả kiểm thử
 
 **Màn hình:** mở bảng kiểm thử trong `docs/DEMO_README.md`.
 
-**Lời nói:** “Bộ test tự động hiện có 34 test và 19 subtests đều đạt. Trình duyệt đã kiểm tra đủ bốn lớp. Ba ảnh được dự đoán đúng; ảnh Early Blight đầu tiên bị nhầm thành Late Blight với 58,16% so với 41,74%. Nhóm ghi nhận nguyên kết quả này vì báo cáo Test của CNN cũng cho thấy nhầm lẫn chính giữa hai lớp bệnh này.”
+**Lời nói:** “Bản ghép HEAD PR #9/#7/#1 mới nhất đã đạt 76 test, 1 skip và 19 subtests; ghép thêm PR #11 đạt 86 test, 1 skip và 19 subtests. Script và API cho cả CNN/ResNet18 khớp xác suất trên cùng ảnh. ResNet18 đánh giá lại 1.356 ảnh Test đạt Accuracy khoảng 98,67% và macro-F1 khoảng 98,40%. CNN và ResNet18 có xác suất khác nhau trên cùng ảnh; nhóm giữ nguyên kết quả thật.”
 
 ## 11. Giới hạn và kết luận
 
 **Màn hình:** quay lại phần cảnh báo đầu trang.
 
-**Lời nói:** “Hệ thống chỉ biết bốn lớp đã học, dữ liệu PlantVillage chủ yếu ở điều kiện kiểm soát và kết quả không thay thế chuyên gia. Phần độc lập của NV4 và tích hợp CNN thật đã được kiểm chứng. Gate 4 vẫn chờ checkpoint ResNet18 fine-tuned, metadata và kết quả Validation từ NV3. Em xin cảm ơn.”
+**Lời nói:** “Hệ thống chỉ biết bốn lớp đã học, dữ liệu PlantVillage chủ yếu ở điều kiện kiểm soát và kết quả không thay thế chuyên gia. Cả CNN và ResNet18 đã được kiểm thử bằng checkpoint thật trong bản tích hợp cục bộ. Trước nghiệm thu cuối, nhóm còn review, merge các PR và kiểm thử lại từ main. Em xin cảm ơn.”
 
 ## Checklist trước khi quay
 
-- Dùng đúng branch/commit đã review và checkpoint có hash xác nhận.
+- Dùng đúng HEAD PR #9/#7/#1 đã ghi trong báo cáo kiểm thử; checkpoint CNN SHA-256 `d33c95bb...f473a377390de1f`, ResNet18 SHA-256 `61d44ba8...f5f5fdf9e2`.
 - Tắt thông báo cá nhân, không quay đường dẫn chứa thông tin nhạy cảm.
 - Chuẩn bị sẵn một ảnh thật, một file hỏng và cửa sổ README.
-- Quay rõ preview, tên bệnh, đủ bốn xác suất, biểu đồ và thông báo lỗi.
+- Quay rõ preview, tên bệnh, đủ bốn xác suất và biểu đồ của cả CNN lẫn ResNet18, chế độ so sánh, cùng thông báo lỗi.
 - Quay lịch sử có cả lượt lỗi, tải CSV, dashboard và thao tác xóa lịch sử.
 - Không cắt ghép để thay đổi nhãn hoặc xác suất; nếu dự đoán sai, giữ nguyên và giải thích.
-- Sau khi NV3 bàn giao checkpoint thật, quay bổ sung ResNet18 và chế độ so sánh; trước đó phải nói rõ đang thiếu checkpoint.
+- Kiểm tra file video đã ghi bằng cách mở lại, nghe/nhìn toàn bộ các đoạn chính và ghi thời lượng, dung lượng, đường dẫn bàn giao. Chỉ đánh dấu video hoàn thành khi có file thật đã xem lại.
 
-**Trạng thái:** chưa có video được ghi hoặc bàn giao; các ảnh chụp trình duyệt thật nằm trong `demo/screenshots/`.
+**Trạng thái 01/11/2026:** chưa có video được ghi hoặc bàn giao; các ảnh chụp trình duyệt thật của cả hai mô hình nằm trong `demo/screenshots/`. Máy có FFmpeg với `gdigrab`, nhưng phiên điều khiển trình duyệt hiện không khởi tạo được để quay trọn luồng thao tác; không tạo video từ ảnh tĩnh hoặc tuyên bố đã quay.
 
-## Hướng dẫn quay video CNN thật cho NV5
+## Hướng dẫn quay video hai mô hình thật cho NV5
 
-1. Tạo môi trường theo `docs/DEMO_README.md`; dùng đồng bộ mã, YAML, checkpoint và metadata CNN từ PR #9. Đối chiếu SHA-256 `cnn_best.pt` với `d33c95bbe15e82fa83f1fd954136ebfff6e1cbba1a86fe40af473a377390de1f` trước khi quay. Chạy `streamlit run demo/app.py` từ gốc dự án.
+1. Tạo môi trường theo `docs/DEMO_README.md`; dùng đồng bộ mã/YAML/checkpoint/metadata CNN từ PR #9 và ResNet18 từ PR #7. Đối chiếu SHA-256 CNN `d33c95bbe15e82fa83f1fd954136ebfff6e1cbba1a86fe40af473a377390de1f`, ResNet18 `61d44ba8ac02ee57c44cbd3835aaac2c657c97924735fea743a60df5f5fdf9e2` trước khi quay. Chạy `python -m streamlit run demo/app.py` từ gốc bản tích hợp.
 2. Mở demo trong một cửa sổ trình duyệt riêng. Trong phần mềm quay, chọn **Window Capture / quay cửa sổ ứng dụng** cho đúng cửa sổ này, không chọn toàn màn hình. Quay thử vài giây rồi xem lại để chắc chắn khung hình chỉ chứa demo và chữ đọc được; tắt thông báo cá nhân.
-3. Dùng ảnh thật trong `data/raw/` nhưng không đưa nguyên dataset vào video. Quay liên tục thao tác upload, preview, chọn CNN, dự đoán và bảng bốn xác suất. Sau đó thêm ảnh hỏng, mở lịch sử, tải CSV, xem dashboard, rồi chọn chế độ so sánh để ghi rõ ResNet18 chưa có checkpoint. Giữ nguyên mọi kết quả thật, kể cả dự đoán sai.
-4. Kiểm tra file MP4 sau khi dừng: hình và tiếng (nếu thuyết minh), tên bệnh, bốn xác suất, thông báo ảnh hỏng và trạng thái ResNet18 phải xem được. Chỉ đánh dấu video hoàn thành trong Issue khi tệp đã được mở và đối chiếu. Không tuyên bố đã chạy ResNet18 trước khi NV3 bàn giao checkpoint thật.
+3. Dùng ảnh thật trong `data/raw/` nhưng không đưa nguyên dataset vào video. Quay liên tục thao tác upload, preview, CNN, ResNet18, so sánh hai mô hình, từng bảng bốn xác suất, thêm ảnh Healthy và ảnh hỏng, xem lịch sử, tải CSV và xem Dashboard. Giữ nguyên mọi kết quả thật, kể cả dự đoán sai.
+4. Kiểm tra file MP4 sau khi dừng: hình và tiếng (nếu thuyết minh), tên bệnh, bốn xác suất mỗi mô hình, thông báo ảnh hỏng, lịch sử, CSV và Dashboard phải xem được. Chỉ đánh dấu video hoàn thành trong Issue khi tệp đã được mở và đối chiếu.
 
-NV4 đã thử khả năng quay màn hình ngày 29/10/2026 nhưng chế độ ghi desktop thu cả ứng dụng ngoài dự án, nên không dùng bản quay đó làm bằng chứng. Ảnh trình duyệt thật và kịch bản hiện có đủ để NV5 dựng phần CNN; video thật vẫn chưa được bàn giao.
+NV4 đã thử khả năng quay màn hình ngày 29/10/2026 nhưng chế độ ghi desktop thu cả ứng dụng ngoài dự án, nên không dùng bản quay đó làm bằng chứng. Ảnh trình duyệt thật và kịch bản hai mô hình hiện có đủ cho báo cáo; video thật vẫn chưa được bàn giao.
