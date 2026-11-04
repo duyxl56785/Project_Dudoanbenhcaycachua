@@ -1,0 +1,7 @@
+diff --git a/tests/__init__.py b/tests/__init__.py
+deleted file mode 100644
+index db78820..0000000
+--- a/tests/__init__.py
++++ /dev/null
+@@ -1 +0,0 @@
+-"""Project tests."""
