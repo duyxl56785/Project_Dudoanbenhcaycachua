@@ -15,7 +15,7 @@ import torch.nn.functional as F
 from torchvision.transforms import CenterCrop, Resize
 
 from src.inference import (
-    ROOT, MODELS, InferenceError, _cached_model, class_names, load_config,
+    ROOT, MODELS, MODEL_LOCK, InferenceError, _cached_model, class_names, load_config,
     load_transform, resolve_device, validate_metadata,
 )
 
@@ -30,7 +30,7 @@ def _model_view(image: Image.Image, model_name: str, config: dict) -> Image.Imag
 
 
 def _largest_region(mask: np.ndarray) -> tuple[int, int, int, int] | None:
-    """Find the strongest connected component, avoiding a bounding box across islands."""
+    """Find the largest connected component, avoiding a bounding box across islands."""
     h, w = mask.shape
     visited = np.zeros_like(mask, dtype=bool)
     best_count = 0
@@ -63,18 +63,18 @@ def _largest_region(mask: np.ndarray) -> tuple[int, int, int, int] | None:
 
 def gradcam_map(model: torch.nn.Module, layer: torch.nn.Module, batch: torch.Tensor,
                 target_index: int) -> np.ndarray | None:
-    """Return [0,1] heatmap in input pixels without modifying model weights."""
+    """Differentiate the top-1 logit without changing weights, grads or module modes."""
     captured: dict[str, torch.Tensor] = {}
 
     def hook(_module, _inputs, output):
         captured["activations"] = output
-        output.register_hook(lambda grad: captured.__setitem__("gradients", grad.detach()))
 
-    handle = layer.register_forward_hook(hook)
-    try:
-        with torch.enable_grad():
-            batch = batch.detach().requires_grad_(True)
-            model.zero_grad(set_to_none=True)
+    with MODEL_LOCK, torch.inference_mode(False), torch.enable_grad():
+        modes = [(module, module.training) for module in model.modules()]
+        handle = layer.register_forward_hook(hook)
+        try:
+            model.eval()
+            batch = batch.detach().clone().requires_grad_(True)
             logits = model(batch)
             if logits.ndim != 2 or logits.shape[0] != 1 or not 0 <= target_index < logits.shape[1]:
                 raise InferenceError("Grad-CAM: logits hoặc lớp mục tiêu không hợp lệ.")
@@ -82,9 +82,11 @@ def gradcam_map(model: torch.nn.Module, layer: torch.nn.Module, batch: torch.Ten
                 raise InferenceError("Grad-CAM: logits không hữu hạn.")
             if int(logits.argmax(dim=1).item()) != target_index:
                 raise InferenceError("Grad-CAM: lớp dự đoán không khớp kết quả gốc.")
-            logits[0, target_index].backward()
-            activations = captured["activations"].detach()
-            gradients = captured["gradients"]
+            activations = captured.get("activations")
+            if activations is None or activations.ndim != 4:
+                raise InferenceError("Grad-CAM: feature layer cần đầu ra NCHW.")
+            gradients, = torch.autograd.grad(logits[0, target_index], activations)
+            activations = activations.detach()
             weights = gradients.mean(dim=(2, 3), keepdim=True)
             cam = (weights * activations).sum(dim=1, keepdim=True).relu()
             cam = F.interpolate(cam, size=batch.shape[-2:], mode="bilinear",
@@ -96,9 +98,12 @@ def gradcam_map(model: torch.nn.Module, layer: torch.nn.Module, batch: torch.Ten
                 return None
             cam = cam / top
             return cam.numpy()
-    finally:
-        handle.remove()
-        model.zero_grad(set_to_none=True)
+        except (RuntimeError, ValueError, TypeError, AttributeError) as exc:
+            raise InferenceError(f"Không thể tính Grad-CAM: {exc}") from exc
+        finally:
+            handle.remove()
+            for module, training in modes:
+                module.training = training
 
 
 def explain_image(image: Image.Image, model_name: str, target_index: int,
@@ -118,20 +123,21 @@ def explain_image(image: Image.Image, model_name: str, target_index: int,
     if not checkpoint.is_file():
         raise InferenceError(f"Thiếu checkpoint {checkpoint}")
     model = _cached_model(model_name, root, device, checkpoint.stat().st_mtime_ns)
-    layer = model.features[-1] if model_name == "cnn" else model.layer4[-1]
+    layer = model.features[-1] if model_name == "cnn" else model.layer4
     view = _model_view(image.convert("RGB"), model_name, config)
     batch = load_transform(model_name, config)(image.convert("RGB")).unsqueeze(0).to(device)
     cam = gradcam_map(model, layer, batch, target_index)
     if cam is None:
-        return {"png": None, "has_box": False, "message": "Grad-CAM không tạo được vùng chú ý ổn định."}
+        return {"png": None, "has_box": False, "message": "Grad-CAM không tạo được heatmap dương cho lớp dự đoán."}
 
     base = np.asarray(view, dtype=np.float32)
     alpha = (np.clip((cam - 0.2) / 0.8, 0.0, 1.0) * 0.52)[..., None]
     red = np.array([255.0, 50.0, 35.0], dtype=np.float32)
     blended = (base * (1.0 - alpha) + red * alpha).clip(0, 255).astype(np.uint8)
-    annotated = Image.fromarray(blended, mode="RGB")
+    annotated = Image.fromarray(blended)
     has_box = False
     if names[target_index] != "Healthy":
+        # shortcut: display heuristics only, require location labels before validating lesion boxes.
         region = _largest_region(cam >= 0.75)
         if region is not None:
             draw = ImageDraw.Draw(annotated)
@@ -143,5 +149,5 @@ def explain_image(image: Image.Image, model_name: str, target_index: int,
         "png": out.getvalue(), "has_box": has_box,
         "message": "Khung đỏ: vùng chú ý xấp xỉ theo Grad-CAM; không phải vị trí bệnh được xác thực."
         if has_box else
-        "Màu đỏ: vùng chú ý theo Grad-CAM. Không xác định được khung ổn định hoặc ảnh được dự đoán Healthy.",
+        "Màu đỏ: vùng chú ý theo Grad-CAM. Không chọn được khung phù hợp quy tắc hiển thị hoặc mô hình dự đoán Healthy.",
     }

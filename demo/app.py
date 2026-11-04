@@ -9,9 +9,15 @@ try:
 except ImportError as exc:
     raise SystemExit("Thiếu Streamlit. Cài đặt bằng pip install -r requirements.txt") from exc
 
-from demo.session import MAX_UPLOADS, MODEL_LABELS, append_history, dashboard, export_csv, predict_uploads, selected_models
+from demo.session import CLASS_LABELS_VI, MAX_UPLOADS, MODEL_LABELS, append_history, dashboard, export_csv, predict_uploads, selected_models
 from src.inference import InferenceError, MAX_IMAGE_BYTES, MODELS, ROOT, class_names, predict_image, read_image
-from src.explainability import explain_image
+
+
+def explain_image(*args, **kwargs):
+    # Import inside the optional step so an unavailable visualizer cannot break classification.
+    from src.explainability import explain_image as explain
+    return explain(*args, **kwargs)
+
 
 st.set_page_config(page_title="Dự đoán bệnh lá cà chua", page_icon="🍅", layout="wide")
 st.markdown("""<style>
@@ -68,10 +74,10 @@ with tab_predict:
                     try:
                         if upload.size > MAX_IMAGE_BYTES:
                             raise InferenceError("Ảnh vượt giới hạn 10 MiB.")
-                        st.image(read_image(upload.getvalue()), caption=upload.name, width="stretch")
+                        st.image(read_image(upload.getvalue()), caption=upload.name, width="stretch", alt=f"Ảnh tải lên: {upload.name}")
                     except InferenceError as exc:
                         st.error(f"{upload.name}: {exc}")
-    if st.button("Dự đoán bệnh", type="primary", disabled=len(uploads) > MAX_UPLOADS):
+    if st.button("Dự đoán bệnh", type="primary", disabled=len(uploads) > MAX_UPLOADS, width="stretch"):
         st.session_state.nv4_results = []
         if not uploads:
             st.error("Vui lòng tải ít nhất một ảnh JPG hoặc PNG trước khi dự đoán.")
@@ -79,19 +85,10 @@ with tab_predict:
             progress = st.progress(0, text="Đang xử lý ảnh...")
             items, records = [], []
             for index, upload in enumerate(uploads, 1):
-                batch_items, batch_records = predict_uploads([upload], selected_models(choice), predict_image, device=device)
-                if show_attention and batch_items:
-                    batch_items[0]["attention"] = {}
-                    for model_name, result in batch_items[0]["results"].items():
-                        try:
-                            batch_items[0]["attention"][model_name] = explain_image(
-                                read_image(upload.getvalue()), model_name, result["top_index"], device=device,
-                            )
-                        except (InferenceError, OSError, ValueError, RuntimeError) as exc:
-                            batch_items[0]["attention"][model_name] = {
-                                "png": None, "has_box": False,
-                                "message": f"Không thể hiển thị Grad-CAM: {exc}",
-                            }
+                batch_items, batch_records = predict_uploads(
+                    [upload], selected_models(choice), predict_image, device=device,
+                    explain_fn=explain_image if show_attention else None,
+                )
                 items.extend(batch_items)
                 records.extend(batch_records)
                 progress.progress(index / len(uploads), text=f"Đã xử lý {index}/{len(uploads)} ảnh")
@@ -102,12 +99,25 @@ with tab_predict:
         st.subheader("Kết quả lượt này")
         for index, item in enumerate(st.session_state.nv4_results):
             with st.container(border=True):
-                st.markdown(f"#### {item['name']}")
+                st.subheader(item["name"])
                 if "image" in item["errors"]:
                     st.error(item["errors"]["image"])
                     continue
-                if index < len(uploads):
-                    st.image(read_image(uploads[index].getvalue()), caption="Ảnh gốc", width=320)
+                image_columns = st.columns(1 + len(selected_models(choice)) if show_attention else 1)
+                with image_columns[0]:
+                    st.image(read_image(uploads[index].getvalue()), caption="Ảnh gốc", width="stretch", alt=f"Ảnh gốc: {item['name']}")
+                if show_attention:
+                    for column, model in zip(image_columns[1:], selected_models(choice)):
+                        with column:
+                            st.markdown(f"**Grad-CAM {MODEL_LABELS[model]}**")
+                            attention = item.get("attention", {}).get(model)
+                            if attention and attention["png"] is not None:
+                                st.image(attention["png"], caption="Ảnh mô hình nhìn thấy sau Resize/CenterCrop", width="stretch",
+                                         alt=f"Vùng chú ý xấp xỉ của {MODEL_LABELS[model]}")
+                            elif attention:
+                                st.info(attention["message"])
+                            else:
+                                st.caption("Không có Grad-CAM do bước dự đoán chưa thành công.")
                 columns = st.columns(len(selected_models(choice)))
                 for column, model in zip(columns, selected_models(choice)):
                     with column:
@@ -120,13 +130,20 @@ with tab_predict:
                         elif model in item["results"]:
                             result = item["results"][model]
                             attention = item.get("attention", {}).get(model)
-                            if attention:
-                                if attention["png"] is not None:
-                                    st.image(attention["png"], caption=f"Grad-CAM {MODEL_LABELS[model]} – ảnh mô hình thực sự nhìn thấy", width="stretch")
-                                st.caption(attention["message"])
-                            st.success(f"Dự đoán: {result['top_label']}")
-                            st.table({"Lớp": list(result["probabilities"]), "Xác suất": [f"{value:.2%}" for value in result["probabilities"].values()]})
+                            label = result["top_label"]
+                            st.success(f"Dự đoán: {CLASS_LABELS_VI.get(label, label)} ({label})")
+                            st.table({"Lớp": [f"{CLASS_LABELS_VI.get(name, name)} ({name})" for name in result["probabilities"]],
+                                      "Xác suất": [f"{value:.2%}" for value in result["probabilities"].values()]})
                             st.bar_chart({"Lớp": list(result["probabilities"]), "Xác suất": list(result["probabilities"].values())}, x="Lớp", y="Xác suất", horizontal=True)
+                            if attention:
+                                st.caption(attention["message"])
+                                st.caption("Vùng đánh dấu thể hiện nơi mô hình chú ý, không phải vị trí bệnh đã được xác thực.")
+                                if attention["png"] is not None:
+                                    st.download_button(
+                                        f"Tải ảnh kết quả {MODEL_LABELS[model]}", attention["png"],
+                                        file_name=f"{Path(item['name']).stem}_{model}_gradcam.png", mime="image/png",
+                                        key=f"gradcam_download_{index}_{model}", on_click="ignore", width="stretch",
+                                    )
                             st.caption(f"Forward pass: {result['forward_ms']:.2f} ms")
     elif uploads:
         st.caption("Nhấn Dự đoán bệnh để xem kết quả cho các ảnh đã chọn.")

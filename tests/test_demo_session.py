@@ -24,6 +24,25 @@ def picture():
 
 
 class SessionTests(unittest.TestCase):
+    def test_optional_visualization_errors_never_discard_predictions_or_history(self):
+        result = {"top_index": 0, "top_label": "Healthy", "probabilities": {"Healthy": 1.0}, "forward_ms": 1.0}
+        def predict(*args, **kwargs):
+            return result
+        def broken(*args, **kwargs):
+            raise ImportError("visualizer unavailable")
+        uploads = [Upload("leaf.jpg", picture()), Upload("bad.png", b"invalid")]
+        off, off_records = predict_uploads(uploads, ("cnn", "resnet18"), predict)
+        on, on_records = predict_uploads(uploads, ("cnn", "resnet18"), predict, explain_fn=broken)
+        self.assertNotIn("attention", off[0])
+        self.assertEqual(on[0]["results"], off[0]["results"])
+        self.assertEqual([r["status"] for r in on_records], ["Thành công", "Thành công", "Lỗi"])
+        self.assertEqual([r["probabilities"] for r in on_records], [r["probabilities"] for r in off_records])
+        self.assertIn("image", on[1]["errors"])
+        for model in ("cnn", "resnet18"):
+            self.assertIsNone(on[0]["attention"][model]["png"])
+            self.assertIn("visualizer unavailable", on[0]["attention"][model]["message"])
+        self.assertTrue(all("attention" not in record for record in on_records))
+
     def test_batch_keeps_results_associated_and_continues_after_bad_image(self):
         uploads = [Upload("a.jpg", picture()), Upload("bad.jpg", b"broken"), Upload("b.jpg", picture())]
         labels = iter(("Healthy", "Late Blight"))
