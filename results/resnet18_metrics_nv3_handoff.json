@@ -1,0 +1,32 @@
+{
+  "source": "NV3 PR #7 Google Drive handoff ZIP, downloaded and verified by NV5 on 2026-10-30",
+  "source_archive_url": "https://drive.google.com/file/d/153DOn8zLCiIhnydLoPNDcht3X0EFhKuR/view?usp=drive_link",
+  "source_commit": "5ce33847678af7c5b7c499f7d948d41f818afbda",
+  "source_run": "20261030_080647_2cbb40",
+  "split": "test",
+  "n_samples": 1356,
+  "checkpoint": "checkpoints/resnet18_best.pt",
+  "checkpoint_sha256": "61d44ba8ac02ee57c44cbd3835aaac2c657c97924735fea743a60df5f5fdf9e2",
+  "checkpoint_epoch": 9,
+  "checkpoint_val_macro_f1": 0.9808585369397294,
+  "checkpoint_val_loss": 0.04831455190504326,
+  "stage": "fine_tuning",
+  "total_parameters": 11178564,
+  "trainable_parameters": 8395780,
+  "device": "cuda (Tesla T4)",
+  "seed": 42,
+  "python_version": "3.13.16",
+  "torch_version": "2.11.0+cu130",
+  "torchvision_version": "0.26.0+cu130",
+  "accuracy": 0.9867256637168141,
+  "macro_precision": 0.9853475194293094,
+  "macro_recall": 0.9827315430817671,
+  "macro_f1": 0.983977947579615,
+  "per_class": {
+    "Healthy": {"precision": 0.9909638554216867, "recall": 0.996969696969697, "f1": 0.9939577039274925, "support": 330},
+    "Early Blight": {"precision": 0.9760765550239234, "recall": 0.9488372093023256, "f1": 0.9622641509433962, "support": 215},
+    "Late Blight": {"precision": 0.9789473684210527, "recall": 0.992, "f1": 0.9854304635761589, "support": 375},
+    "Bacterial Spot": {"precision": 0.9954022988505747, "recall": 0.9931192660550459, "f1": 0.9942594718714122, "support": 436}
+  },
+  "confusion_matrix": [[329, 0, 1, 0], [3, 204, 6, 2], [0, 3, 372, 0], [0, 2, 1, 433]]
+}
