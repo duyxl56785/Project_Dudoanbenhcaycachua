@@ -11,6 +11,7 @@ except ImportError as exc:
 
 from demo.session import MAX_UPLOADS, MODEL_LABELS, append_history, dashboard, export_csv, predict_uploads, selected_models
 from src.inference import InferenceError, MAX_IMAGE_BYTES, MODELS, ROOT, class_names, predict_image, read_image
+from src.explainability import explain_image
 
 st.set_page_config(page_title="Dự đoán bệnh lá cà chua", page_icon="🍅", layout="wide")
 st.markdown("""<style>
@@ -45,8 +46,12 @@ tab_predict, tab_history, tab_dashboard = st.tabs(("Dự đoán", "Lịch sử p
 
 with tab_predict:
     st.subheader("Tải ảnh")
+    show_attention = st.checkbox(
+        "Hiển thị vùng mô hình chú ý (Grad-CAM – thử nghiệm)", value=False,
+        help="Đây là vùng mô hình chú ý, KHÔNG phải vùng bệnh được xác định bằng nhãn vị trí.",
+    )
     uploads = st.file_uploader("Ảnh JPG, JPEG hoặc PNG; tối đa 10 MiB mỗi ảnh", type=("jpg", "jpeg", "png"), accept_multiple_files=True)
-    selection = (choice, device, tuple((upload.name, hashlib.sha256(upload.getvalue()).hexdigest()) for upload in uploads))
+    selection = (choice, device, show_attention, tuple((upload.name, hashlib.sha256(upload.getvalue()).hexdigest()) for upload in uploads))
     if st.session_state.get("nv4_selection") != selection:
         st.session_state.nv4_results = []
         st.session_state.nv4_selection = selection
@@ -75,6 +80,18 @@ with tab_predict:
             items, records = [], []
             for index, upload in enumerate(uploads, 1):
                 batch_items, batch_records = predict_uploads([upload], selected_models(choice), predict_image, device=device)
+                if show_attention and batch_items:
+                    batch_items[0]["attention"] = {}
+                    for model_name, result in batch_items[0]["results"].items():
+                        try:
+                            batch_items[0]["attention"][model_name] = explain_image(
+                                read_image(upload.getvalue()), model_name, result["top_index"], device=device,
+                            )
+                        except (InferenceError, OSError, ValueError, RuntimeError) as exc:
+                            batch_items[0]["attention"][model_name] = {
+                                "png": None, "has_box": False,
+                                "message": f"Không thể hiển thị Grad-CAM: {exc}",
+                            }
                 items.extend(batch_items)
                 records.extend(batch_records)
                 progress.progress(index / len(uploads), text=f"Đã xử lý {index}/{len(uploads)} ảnh")
@@ -83,12 +100,14 @@ with tab_predict:
             st.session_state.nv4_history = append_history(st.session_state.nv4_history, records)
     if st.session_state.nv4_results:
         st.subheader("Kết quả lượt này")
-        for item in st.session_state.nv4_results:
+        for index, item in enumerate(st.session_state.nv4_results):
             with st.container(border=True):
                 st.markdown(f"#### {item['name']}")
                 if "image" in item["errors"]:
                     st.error(item["errors"]["image"])
                     continue
+                if index < len(uploads):
+                    st.image(read_image(uploads[index].getvalue()), caption="Ảnh gốc", width=320)
                 columns = st.columns(len(selected_models(choice)))
                 for column, model in zip(columns, selected_models(choice)):
                     with column:
@@ -100,6 +119,11 @@ with tab_predict:
                             st.warning(message)
                         elif model in item["results"]:
                             result = item["results"][model]
+                            attention = item.get("attention", {}).get(model)
+                            if attention:
+                                if attention["png"] is not None:
+                                    st.image(attention["png"], caption=f"Grad-CAM {MODEL_LABELS[model]} – ảnh mô hình thực sự nhìn thấy", width="stretch")
+                                st.caption(attention["message"])
                             st.success(f"Dự đoán: {result['top_label']}")
                             st.table({"Lớp": list(result["probabilities"]), "Xác suất": [f"{value:.2%}" for value in result["probabilities"].values()]})
                             st.bar_chart({"Lớp": list(result["probabilities"]), "Xác suất": list(result["probabilities"].values())}, x="Lớp", y="Xác suất", horizontal=True)
