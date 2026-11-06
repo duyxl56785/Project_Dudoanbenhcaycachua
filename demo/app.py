@@ -10,7 +10,19 @@ except ImportError as exc:
     raise SystemExit("Thiếu Streamlit. Cài đặt bằng pip install -r requirements.txt") from exc
 
 from demo.session import CLASS_LABELS_VI, MAX_UPLOADS, MODEL_LABELS, append_history, dashboard, export_csv, predict_uploads, selected_models
-from src.inference import InferenceError, MAX_IMAGE_BYTES, MODELS, ROOT, class_names, predict_image, read_image
+from src.inference import InferenceError, MAX_IMAGE_BYTES, MODELS, ROOT, class_names, load_config, predict_image, read_image
+from src.view_geometry import draw_field_of_view, geometry_warnings, model_field_of_view
+
+
+def preprocessing_for(models):
+    """Preprocessing per model; a model whose config cannot be read is simply skipped here."""
+    result = {}
+    for model in models:
+        try:
+            result[model] = load_config(model)["preprocessing"]
+        except (InferenceError, KeyError, OSError):
+            continue
+    return result
 
 
 def explain_image(*args, **kwargs):
@@ -103,25 +115,35 @@ with tab_predict:
                 if "image" in item["errors"]:
                     st.error(item["errors"]["image"])
                     continue
-                image_columns = st.columns(1 + len(selected_models(choice)) if show_attention else 1)
-                with image_columns[0]:
-                    st.image(read_image(uploads[index].getvalue()), caption="Ảnh gốc", width="stretch", alt=f"Ảnh gốc: {item['name']}")
-                if show_attention:
-                    for column, model in zip(image_columns[1:], selected_models(choice)):
-                        with column:
-                            st.markdown(f"**Grad-CAM {MODEL_LABELS[model]}**")
+                original = read_image(uploads[index].getvalue())
+                preprocessing = preprocessing_for(selected_models(choice))
+                warnings = geometry_warnings(original.width, original.height, preprocessing)
+                if warnings:
+                    st.warning("Ảnh dài/rộng so với khung mô hình. " + " ".join(warnings)
+                               + " Nên cắt ảnh sát lá, gần vuông, rồi tải lại để kết quả đáng tin hơn.")
+                resnet_view = (model_field_of_view(original.width, original.height, "resnet18", preprocessing["resnet18"])
+                               if "resnet18" in preprocessing else None)
+                if resnet_view and resnet_view["coverage"] < 0.999:
+                    st.image(draw_field_of_view(original, resnet_view["box"]), width="stretch",
+                             caption="Ảnh gốc – khung xanh/vùng sáng là phần ResNet18 phân tích; CNN dùng cả ảnh (bị ép vuông)",
+                             alt=f"Ảnh gốc có đánh dấu vùng ResNet18 phân tích: {item['name']}")
+                else:
+                    st.image(original, caption="Ảnh gốc", width="stretch", alt=f"Ảnh gốc: {item['name']}")
+                # Each model column holds its own Grad-CAM and result, so stacked mobile layouts stay paired.
+                columns = st.columns(len(selected_models(choice)))
+                for column, model in zip(columns, selected_models(choice)):
+                    with column:
+                        st.markdown(f"#### {MODEL_LABELS[model]}")
+                        if show_attention:
                             attention = item.get("attention", {}).get(model)
                             if attention and attention["png"] is not None:
-                                st.image(attention["png"], caption="Ảnh mô hình nhìn thấy sau Resize/CenterCrop", width="stretch",
+                                st.image(attention["png"], width="stretch",
+                                         caption=f"Grad-CAM {MODEL_LABELS[model]} – ảnh 224×224 mô hình nhìn thấy",
                                          alt=f"Vùng chú ý xấp xỉ của {MODEL_LABELS[model]}")
                             elif attention:
                                 st.info(attention["message"])
                             else:
                                 st.caption("Không có Grad-CAM do bước dự đoán chưa thành công.")
-                columns = st.columns(len(selected_models(choice)))
-                for column, model in zip(columns, selected_models(choice)):
-                    with column:
-                        st.markdown(f"**{MODEL_LABELS[model]}**")
                         if model in item["errors"]:
                             message = item["errors"][model]
                             if message.startswith("Thiếu checkpoint"):

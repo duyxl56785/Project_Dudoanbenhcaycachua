@@ -26,7 +26,15 @@ def test_results_comparison_downloads_history_and_visualization_failure():
         assert not app.exception
         assert len(app.session_state["nv4_history"]) == 2
         assert sum("Lá khỏe mạnh (Healthy)" in element.value for element in app.success) == 2
-        assert len(app.image) == 4  # Preview + original + both overlays.
+        assert len(app.image) == 4  # Preview + original (with ResNet18 field of view) + both overlays.
+        # 300x180 is wide: both models get a plain-language geometry warning.
+        assert any("ResNet18 chỉ phân tích" in element.value and "CNN ép" in element.value for element in app.warning)
+        # Each Grad-CAM sits in the same column as that model's prediction (stays paired when stacked on phones).
+        result_columns = [column for column in app.columns if column.markdown
+                          and column.markdown[0].value.startswith("#### ")]
+        assert [column.markdown[0].value for column in result_columns] == ["#### CNN", "#### ResNet18"]
+        for column in result_columns:
+            assert len(column.image) == 1 and len(column.success) == 1
         assert len(app.get("download_button")) == 3  # Two PNGs and CSV.
         assert all("attention" not in record for record in app.session_state["nv4_history"])
         explain.side_effect = ImportError("visualizer unavailable")
