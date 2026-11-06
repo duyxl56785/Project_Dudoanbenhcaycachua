@@ -31,6 +31,18 @@ SPLIT_COLUMNS = ("split", "dataset_split", "subset")
 SCORE_KEYS = ("accuracy", "macro_precision", "macro_recall", "macro_f1")
 
 
+def configure_utf8_stdio() -> None:
+    """Allow Vietnamese CLI help and errors to print on legacy Windows consoles."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if callable(reconfigure):
+            try:
+                reconfigure(encoding="utf-8")
+            except (OSError, ValueError):
+                # Keep evaluation usable when stdout/stderr is a closed or custom stream.
+                pass
+
+
 def _first_column(fieldnames: Iterable[str], candidates: Iterable[str], role: str) -> str:
     fields = {name.strip().lower(): name for name in fieldnames if name}
     for candidate in candidates:
@@ -436,6 +448,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_utf8_stdio()
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--cnn-predictions"); parser.add_argument("--resnet18-predictions")
     parser.add_argument("--cnn-metrics"); parser.add_argument("--resnet18-metrics")
