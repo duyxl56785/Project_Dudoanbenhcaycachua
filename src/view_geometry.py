@@ -11,8 +11,9 @@ from __future__ import annotations
 
 from PIL import Image, ImageDraw
 
-# Below this share of the original area, or above this stretch, the UI warns.
-MIN_COVERAGE = 0.90
+# Warn only for genuinely long/wide photos. A square photo still loses ~23% to
+# ResNet18's CenterCrop, but that is the same geometry the model was trained and
+# tested with (PlantVillage is 256x256), so warning there would be pure noise.
 MAX_STRETCH = 1.15
 
 
@@ -40,14 +41,16 @@ def model_field_of_view(width: int, height: int, model_name: str, preprocessing:
 
 
 def geometry_warnings(width: int, height: int, preprocessing_by_model: dict) -> list[str]:
-    """Plain-language warnings for photos the models only partially or distortedly see."""
+    """Plain-language warnings for long/wide photos the models only partially or distortedly see."""
+    if max(width / height, height / width) <= MAX_STRETCH:
+        return []
     messages = []
     for model_name, preprocessing in preprocessing_by_model.items():
         view = model_field_of_view(width, height, model_name, preprocessing)
-        if model_name == "resnet18" and view["coverage"] < MIN_COVERAGE:
+        if model_name == "resnet18":
             messages.append(f"ResNet18 chỉ phân tích khoảng {view['coverage']:.0%} phần giữa ảnh "
                             "(vùng sáng trên ảnh gốc); phần bị làm tối không được phân tích.")
-        if model_name == "cnn" and view["stretch"] > MAX_STRETCH:
+        if model_name == "cnn":
             messages.append(f"CNN ép cả ảnh về hình vuông nên lá bị kéo méo khoảng ×{view['stretch']:.2f}.")
     return messages
 

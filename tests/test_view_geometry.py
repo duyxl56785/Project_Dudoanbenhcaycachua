@@ -28,7 +28,9 @@ class ViewGeometryTest(unittest.TestCase):
         self.assertGreater(y0, 400)  # A leaf in the top quarter is outside the crop.
 
     def test_warnings_only_for_affected_models(self):
-        self.assertEqual(geometry_warnings(500, 500, {"cnn": CNN}), [])
+        # Square PlantVillage-like photos match the training geometry: no warning for either model.
+        self.assertEqual(geometry_warnings(256, 256, {"cnn": CNN, "resnet18": RESNET}), [])
+        self.assertEqual(geometry_warnings(1100, 1000, {"cnn": CNN, "resnet18": RESNET}), [])
         both = geometry_warnings(900, 1600, {"cnn": CNN, "resnet18": RESNET})
         self.assertEqual(len(both), 2)
         self.assertTrue(any("ResNet18" in message for message in both))

@@ -42,7 +42,7 @@ lên lá khỏe, vì ResNet18 chỉ thấy ~43% giữa ảnh và CNN kéo méo �
 - `src/view_geometry.py`: ánh xạ vùng ResNet18 phân tích ngược về ảnh gốc theo
   đúng Resize/CenterCrop của torchvision (có test đối chiếu pixel với torchvision).
 - Ảnh gốc hiện khung xanh + làm tối phần ResNet18 không phân tích; cảnh báo bằng
-  lời khi ảnh dài/rộng (ResNet18 < 90% diện tích hoặc CNN méo > ×1,15).
+  lời chỉ khi ảnh dài/rộng (tỉ lệ cạnh > 1,15); ảnh vuông kiểu PlantVillage không cảnh báo.
 - Grad-CAM của mỗi mô hình nằm trong cùng cột với kết quả của mô hình đó, nên
   khi màn hình hẹp xếp dọc vẫn đi đúng cặp.
 - `.streamlit/config.toml`: giới hạn upload 10 MB khớp `MAX_IMAGE_BYTES`.

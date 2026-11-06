@@ -123,9 +123,9 @@ with tab_predict:
                                + " Nên cắt ảnh sát lá, gần vuông, rồi tải lại để kết quả đáng tin hơn.")
                 resnet_view = (model_field_of_view(original.width, original.height, "resnet18", preprocessing["resnet18"])
                                if "resnet18" in preprocessing else None)
-                if resnet_view and resnet_view["coverage"] < 0.999:
+                if resnet_view and warnings:
                     st.image(draw_field_of_view(original, resnet_view["box"]), width="stretch",
-                             caption="Ảnh gốc – khung xanh/vùng sáng là phần ResNet18 phân tích; CNN dùng cả ảnh (bị ép vuông)",
+                             caption="Ảnh gốc – khung xanh/vùng sáng là phần ResNet18 phân tích; CNN dùng cả ảnh nhưng ép về hình vuông",
                              alt=f"Ảnh gốc có đánh dấu vùng ResNet18 phân tích: {item['name']}")
                 else:
                     st.image(original, caption="Ảnh gốc", width="stretch", alt=f"Ảnh gốc: {item['name']}")
