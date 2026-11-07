@@ -35,6 +35,19 @@ lá hoặc không trùng vùng bệnh thật. Khi bản đồ không đủ rõ, 
   và phủ màu/khung như giao diện, không phải tọa độ trên ảnh gốc.
 - Lỗi tạo Grad-CAM (kể cả import module) không hủy dự đoán hoặc lịch sử/CSV.
 
+## Cập nhật giao diện (nhánh fix/v2-gradcam-ux, 06/11/2026)
+Phát hiện khi chạy giao diện thật: lá Healthy đặt ở nửa trên ảnh dọc 9:16 bị cả
+CNN (Late Blight 58,96%) và ResNet18 (Late Blight 76,51%) đoán sai và vẽ khung đỏ
+lên lá khỏe, vì ResNet18 chỉ thấy ~43% giữa ảnh và CNN kéo méo ×1,78.
+- `src/view_geometry.py`: ánh xạ vùng ResNet18 phân tích ngược về ảnh gốc theo
+  đúng Resize/CenterCrop của torchvision (có test đối chiếu pixel với torchvision).
+- Ảnh gốc hiện khung xanh + làm tối phần ResNet18 không phân tích; cảnh báo bằng
+  lời chỉ khi ảnh dài/rộng (tỉ lệ cạnh > 1,15); ảnh vuông kiểu PlantVillage không cảnh báo.
+- Grad-CAM của mỗi mô hình nằm trong cùng cột với kết quả của mô hình đó, nên
+  khi màn hình hẹp xếp dọc vẫn đi đúng cặp.
+- `.streamlit/config.toml`: giới hạn upload 10 MB khớp `MAX_IMAGE_BYTES`.
+Không đổi checkpoint, transform, class mapping hay cách tính Grad-CAM.
+
 ## Chạy thử trên Windows
 
 ```powershell

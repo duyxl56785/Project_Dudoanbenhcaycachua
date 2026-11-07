@@ -1,0 +1,4 @@
+# Keep Streamlit's own upload limit consistent with MAX_IMAGE_BYTES (10 MiB) in src/inference.py.
+# Streamlit reads this file when started from the repository root.
+[server]
+maxUploadSize = 10
