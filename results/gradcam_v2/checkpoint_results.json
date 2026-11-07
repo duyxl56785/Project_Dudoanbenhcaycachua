@@ -1,0 +1,251 @@
+{
+  "date": "2026-11-04",
+  "python": "3.14.2",
+  "torch": "2.14.1+cpu",
+  "torchvision": "0.29.1+cpu",
+  "streamlit": "1.66.1",
+  "cuda_available": false,
+  "reports": [
+    {
+      "model": "cnn",
+      "device": "cpu",
+      "checkpoint_sha256": "d33c95bbe15e82fa83f1fd954136ebfff6e1cbba1a86fe40af473a377390de1f",
+      "images": [
+        {
+          "image": "Bacterial_Spot_01_00416648-be6e-4bd4-bc8d-82f43f8a7240___GCREC_Bact.Sp 3110.JPG",
+          "sha256": "3320c46706d434c028aa93fde868140c48604a328844f2b1c553d020bdc9db06",
+          "expected_from_test_manifest": "Bacterial Spot",
+          "predicted": "Bacterial Spot",
+          "probabilities": {
+            "Healthy": 5.667620371241355e-06,
+            "Early Blight": 0.029939640313386917,
+            "Late Blight": 0.0005962589639239013,
+            "Bacterial Spot": 0.9694585204124451
+          },
+          "max_probability_delta": 0.0,
+          "has_box": true
+        },
+        {
+          "image": "Bacterial_Spot_02_01a3cf3f-94c1-44d5-8972-8c509d62558e___GCREC_Bact.Sp 3396.JPG",
+          "sha256": "36f537cc7496d7bfb5221832df23d58a5adf9892c44b127afee82ccb0a357269",
+          "expected_from_test_manifest": "Bacterial Spot",
+          "predicted": "Bacterial Spot",
+          "probabilities": {
+            "Healthy": 1.1524523557682187e-07,
+            "Early Blight": 0.0007996002095751464,
+            "Late Blight": 1.7801779904402792e-05,
+            "Bacterial Spot": 0.9991825222969055
+          },
+          "max_probability_delta": 0.0,
+          "has_box": true
+        },
+        {
+          "image": "Early_Blight_01_0012b9d2-2130-4a06-a834-b1f3af34f57e___RS_Erly.B 8389.JPG",
+          "sha256": "29b79036b67724f6a76895d17ef1b863ad7a7134e03141b1feb601a591336123",
+          "expected_from_test_manifest": "Early Blight",
+          "predicted": "Late Blight",
+          "probabilities": {
+            "Healthy": 0.00037289128522388637,
+            "Early Blight": 0.41735053062438965,
+            "Late Blight": 0.5816197991371155,
+            "Bacterial Spot": 0.000656789867207408
+          },
+          "max_probability_delta": 0.0,
+          "has_box": true
+        },
+        {
+          "image": "Early_Blight_02_004cbe60-8ff9-4965-92df-e86694d5e9ba___RS_Erly.B 8253.JPG",
+          "sha256": "896801c0cfcd0335be005844f254ff7f8c3a9c432398444f4539681f6e90603e",
+          "expected_from_test_manifest": "Early Blight",
+          "predicted": "Early Blight",
+          "probabilities": {
+            "Healthy": 0.0036503528244793415,
+            "Early Blight": 0.9254472255706787,
+            "Late Blight": 0.07090229541063309,
+            "Bacterial Spot": 1.637547626387459e-07
+          },
+          "max_probability_delta": 0.0,
+          "has_box": true
+        },
+        {
+          "image": "Healthy_01_00bce074-967b-4d50-967a-31fdaa35e688___RS_HL 0223.JPG",
+          "sha256": "41ae744b5de0ef4daa7936b2bbfb3d02974c675800a5a514761591670612a014",
+          "expected_from_test_manifest": "Healthy",
+          "predicted": "Healthy",
+          "probabilities": {
+            "Healthy": 0.9997169375419617,
+            "Early Blight": 4.793645530298818e-06,
+            "Late Blight": 0.0002782322117127478,
+            "Bacterial Spot": 3.7641509464947376e-08
+          },
+          "max_probability_delta": 0.0,
+          "has_box": false
+        },
+        {
+          "image": "Healthy_02_0326b4b6-0f25-47af-bfd9-d8fec314a4f5___RS_HL 0621.JPG",
+          "sha256": "226e4e50e6cbd922185c205f834fce18970df57708ae92971b56d93bb5c5fb9b",
+          "expected_from_test_manifest": "Healthy",
+          "predicted": "Healthy",
+          "probabilities": {
+            "Healthy": 0.9999827146530151,
+            "Early Blight": 1.4079672837397084e-05,
+            "Late Blight": 3.2230982469627634e-06,
+            "Bacterial Spot": 1.1858951320942168e-11
+          },
+          "max_probability_delta": 0.0,
+          "has_box": false
+        },
+        {
+          "image": "Late_Blight_01_005e3b43-9050-47da-9498-f9ecdcc703b3___RS_Late.B 5104.JPG",
+          "sha256": "a9eebda1ea65fee7d9f42f975d8b30f962b7a12c9ffa4f38ac9d95b3eda549a3",
+          "expected_from_test_manifest": "Late Blight",
+          "predicted": "Late Blight",
+          "probabilities": {
+            "Healthy": 0.0004900380154140294,
+            "Early Blight": 0.07426810264587402,
+            "Late Blight": 0.924834132194519,
+            "Bacterial Spot": 0.0004076859913766384
+          },
+          "max_probability_delta": 0.0,
+          "has_box": true
+        },
+        {
+          "image": "Late_Blight_02_008ebb44-eb77-4843-b621-4b88b5df7d43___RS_Late.B 5188.JPG",
+          "sha256": "70b1ba8718a4d1ef490adbced041915bf6a711c35751af8e059de3f5503c829b",
+          "expected_from_test_manifest": "Late Blight",
+          "predicted": "Late Blight",
+          "probabilities": {
+            "Healthy": 1.010459300232469e-06,
+            "Early Blight": 0.00350997899658978,
+            "Late Blight": 0.9964829683303833,
+            "Bacterial Spot": 6.001936981192557e-06
+          },
+          "max_probability_delta": 0.0,
+          "has_box": true
+        }
+      ]
+    },
+    {
+      "model": "resnet18",
+      "device": "cpu",
+      "checkpoint_sha256": "61d44ba8ac02ee57c44cbd3835aaac2c657c97924735fea743a60df5f5fdf9e2",
+      "images": [
+        {
+          "image": "Bacterial_Spot_01_00416648-be6e-4bd4-bc8d-82f43f8a7240___GCREC_Bact.Sp 3110.JPG",
+          "sha256": "3320c46706d434c028aa93fde868140c48604a328844f2b1c553d020bdc9db06",
+          "expected_from_test_manifest": "Bacterial Spot",
+          "predicted": "Bacterial Spot",
+          "probabilities": {
+            "Healthy": 0.0007825337816029787,
+            "Early Blight": 0.25575852394104004,
+            "Late Blight": 0.07236999273300171,
+            "Bacterial Spot": 0.6710889339447021
+          },
+          "max_probability_delta": 0.0,
+          "has_box": true
+        },
+        {
+          "image": "Bacterial_Spot_02_01a3cf3f-94c1-44d5-8972-8c509d62558e___GCREC_Bact.Sp 3396.JPG",
+          "sha256": "36f537cc7496d7bfb5221832df23d58a5adf9892c44b127afee82ccb0a357269",
+          "expected_from_test_manifest": "Bacterial Spot",
+          "predicted": "Bacterial Spot",
+          "probabilities": {
+            "Healthy": 8.994675937401553e-08,
+            "Early Blight": 1.3270204362925142e-05,
+            "Late Blight": 8.804214303381741e-06,
+            "Bacterial Spot": 0.9999778270721436
+          },
+          "max_probability_delta": 0.0,
+          "has_box": true
+        },
+        {
+          "image": "Early_Blight_01_0012b9d2-2130-4a06-a834-b1f3af34f57e___RS_Erly.B 8389.JPG",
+          "sha256": "29b79036b67724f6a76895d17ef1b863ad7a7134e03141b1feb601a591336123",
+          "expected_from_test_manifest": "Early Blight",
+          "predicted": "Early Blight",
+          "probabilities": {
+            "Healthy": 2.6274474294041283e-05,
+            "Early Blight": 0.9998822212219238,
+            "Late Blight": 7.999109948286787e-05,
+            "Bacterial Spot": 1.1515373444126453e-05
+          },
+          "max_probability_delta": 0.0,
+          "has_box": true
+        },
+        {
+          "image": "Early_Blight_02_004cbe60-8ff9-4965-92df-e86694d5e9ba___RS_Erly.B 8253.JPG",
+          "sha256": "896801c0cfcd0335be005844f254ff7f8c3a9c432398444f4539681f6e90603e",
+          "expected_from_test_manifest": "Early Blight",
+          "predicted": "Early Blight",
+          "probabilities": {
+            "Healthy": 2.6777436801239674e-07,
+            "Early Blight": 0.9995750784873962,
+            "Late Blight": 0.00042397688957862556,
+            "Bacterial Spot": 6.775961196581193e-07
+          },
+          "max_probability_delta": 0.0,
+          "has_box": true
+        },
+        {
+          "image": "Healthy_01_00bce074-967b-4d50-967a-31fdaa35e688___RS_HL 0223.JPG",
+          "sha256": "41ae744b5de0ef4daa7936b2bbfb3d02974c675800a5a514761591670612a014",
+          "expected_from_test_manifest": "Healthy",
+          "predicted": "Healthy",
+          "probabilities": {
+            "Healthy": 0.9915142059326172,
+            "Early Blight": 1.1327285392326303e-05,
+            "Late Blight": 0.008474450558423996,
+            "Bacterial Spot": 3.359755140763809e-08
+          },
+          "max_probability_delta": 0.0,
+          "has_box": false
+        },
+        {
+          "image": "Healthy_02_0326b4b6-0f25-47af-bfd9-d8fec314a4f5___RS_HL 0621.JPG",
+          "sha256": "226e4e50e6cbd922185c205f834fce18970df57708ae92971b56d93bb5c5fb9b",
+          "expected_from_test_manifest": "Healthy",
+          "predicted": "Healthy",
+          "probabilities": {
+            "Healthy": 0.9996457099914551,
+            "Early Blight": 0.0003534135175868869,
+            "Late Blight": 8.02705528712977e-07,
+            "Bacterial Spot": 2.641157292870844e-10
+          },
+          "max_probability_delta": 0.0,
+          "has_box": false
+        },
+        {
+          "image": "Late_Blight_01_005e3b43-9050-47da-9498-f9ecdcc703b3___RS_Late.B 5104.JPG",
+          "sha256": "a9eebda1ea65fee7d9f42f975d8b30f962b7a12c9ffa4f38ac9d95b3eda549a3",
+          "expected_from_test_manifest": "Late Blight",
+          "predicted": "Late Blight",
+          "probabilities": {
+            "Healthy": 1.011979748000158e-05,
+            "Early Blight": 0.004397810436785221,
+            "Late Blight": 0.9955862760543823,
+            "Bacterial Spot": 5.826415417686803e-06
+          },
+          "max_probability_delta": 0.0,
+          "has_box": true
+        },
+        {
+          "image": "Late_Blight_02_008ebb44-eb77-4843-b621-4b88b5df7d43___RS_Late.B 5188.JPG",
+          "sha256": "70b1ba8718a4d1ef490adbced041915bf6a711c35751af8e059de3f5503c829b",
+          "expected_from_test_manifest": "Late Blight",
+          "predicted": "Late Blight",
+          "probabilities": {
+            "Healthy": 1.7927482986124232e-05,
+            "Early Blight": 0.00045593694085255265,
+            "Late Blight": 0.9995259046554565,
+            "Bacterial Spot": 2.3828258122193802e-07
+          },
+          "max_probability_delta": 0.0,
+          "has_box": true
+        }
+      ]
+    }
+  ],
+  "browser_screenshot": "SKIP: Computer Use could not confidently determine Chrome URL on Windows",
+  "mobile_browser": "NOT_RUN",
+  "streamlit_8503": "Existing project server; health ok; new launch failed because port already occupied"
+}

@@ -9,10 +9,13 @@ import time
 from functools import lru_cache
 from importlib import import_module
 from pathlib import Path
+from threading import RLock
 
 ROOT = Path(__file__).resolve().parents[1]
 MAX_IMAGE_BYTES = 10 * 1024 * 1024
 MODELS = {"cnn": "cnn_best.pt", "resnet18": "resnet18_best.pt"}
+# Cached models are shared by Streamlit sessions; attention hooks need exclusive forwards.
+MODEL_LOCK = RLock()
 
 
 class InferenceError(Exception):
@@ -167,15 +170,16 @@ def predict(image, model, transform, names, device="cpu"):
     try:
         import torch
         batch = transform(image).unsqueeze(0).to(device)
-        model.eval()
-        if device.startswith("cuda"):
-            torch.cuda.synchronize(device)
-        start = time.perf_counter()
-        with torch.inference_mode():
-            logits = model(batch)
-        if device.startswith("cuda"):
-            torch.cuda.synchronize(device)
-        elapsed_ms = (time.perf_counter() - start) * 1000
+        with MODEL_LOCK:
+            model.eval()
+            if device.startswith("cuda"):
+                torch.cuda.synchronize(device)
+            start = time.perf_counter()
+            with torch.inference_mode():
+                logits = model(batch)
+            if device.startswith("cuda"):
+                torch.cuda.synchronize(device)
+            elapsed_ms = (time.perf_counter() - start) * 1000
         if logits.shape != (1, len(names)) or not torch.isfinite(logits).all():
             raise InferenceError(f"Đầu ra cần shape (1, {len(names)}) và giá trị hữu hạn.")
         values = torch.softmax(logits, dim=1)[0].cpu().tolist()
