@@ -64,17 +64,23 @@ def hsv_color_features(path: Path, size: int = 64, bins: int = 16) -> np.ndarray
     return np.concatenate(parts)
 
 
-def feature_matrix(rows: list[dict[str, str]], data_root: Path, config) -> tuple[np.ndarray, np.ndarray]:
-    # Import NV4's deterministic HOG implementation read-only.
+def feature_matrix(rows: list[dict[str, str]], data_root: Path, config: dict[str, int | str | bool]) -> tuple[np.ndarray, np.ndarray]:
+    """Extract the frozen RGB-HOG + HSV feature configuration."""
+    size = int(config["image_size"])
+    orientations = int(config["orientations"])
+    pixels_per_cell = int(config["pixels_per_cell"])
+    cells_per_block = int(config["cells_per_block"])
+    block_norm = str(config["block_norm"])
+    hsv_bins = int(config["hsv_bins"])
     vectors: list[np.ndarray] = []
     labels = np.empty(len(rows), dtype=np.int64)
     for index, row in enumerate(rows):
         path = data_root / row["path"]
         with Image.open(path) as image:
-            rgb = np.asarray(image.convert("RGB").resize((64, 64), Image.Resampling.BILINEAR), dtype=np.float32) / 255.0
+            rgb = np.asarray(image.convert("RGB").resize((size, size), Image.Resampling.BILINEAR), dtype=np.float32) / 255.0
         from skimage.feature import hog
-        descriptor = hog(rgb, orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2), block_norm="L2-Hys", feature_vector=True, channel_axis=-1).astype(np.float32)
-        vectors.append(np.concatenate([descriptor, hsv_color_features(path)]))
+        descriptor = hog(rgb, orientations=orientations, pixels_per_cell=(pixels_per_cell, pixels_per_cell), cells_per_block=(cells_per_block, cells_per_block), block_norm=block_norm, feature_vector=True, channel_axis=-1).astype(np.float32)
+        vectors.append(np.concatenate([descriptor, hsv_color_features(path, size=size, bins=hsv_bins)]))
         labels[index] = int(row["label"])
     return np.vstack(vectors), labels
 
@@ -97,6 +103,16 @@ def main() -> None:
     out.mkdir(parents=True, exist_ok=True)
     splits = load_splits(root, args.data_root.resolve())
     names = load_mapping(root)
+    config = {
+        "image_size": 64,
+        "grayscale": False,
+        "orientations": 9,
+        "pixels_per_cell": 8,
+        "cells_per_block": 2,
+        "block_norm": "L2-Hys",
+        "hsv_bins": 16,
+        "hsv_spatial_grid": "4x4",
+    }
     # Train only; validation was used before this script to freeze C=10.
     x_train, y_train = feature_matrix(splits["train"], args.data_root.resolve(), config)
     x_test, y_test = feature_matrix(splits["test"], args.data_root.resolve(), config)
