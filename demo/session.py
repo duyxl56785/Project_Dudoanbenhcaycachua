@@ -10,13 +10,15 @@ from src.inference import InferenceError, MAX_IMAGE_BYTES, read_image
 MAX_UPLOADS = 8
 MAX_HISTORY = 200
 MODEL_LABELS = {"cnn": "CNN", "resnet18": "ResNet18"}
+CLASS_LABELS_VI = {"Healthy": "Lá khỏe mạnh", "Early Blight": "Bệnh đốm vòng / cháy lá sớm",
+                   "Late Blight": "Bệnh mốc sương", "Bacterial Spot": "Bệnh đốm vi khuẩn"}
 
 
 def selected_models(choice):
     return {"CNN": ("cnn",), "ResNet18": ("resnet18",), "So sánh cả hai": ("cnn", "resnet18")}[choice]
 
 
-def predict_uploads(uploads, models, predict_fn, *, device="auto", now=None):
+def predict_uploads(uploads, models, predict_fn, *, device="auto", now=None, explain_fn=None):
     if len(uploads) > MAX_UPLOADS:
         raise InferenceError(f"Chỉ tải tối đa {MAX_UPLOADS} ảnh mỗi lượt.")
     now = now or datetime.now
@@ -43,6 +45,14 @@ def predict_uploads(uploads, models, predict_fn, *, device="auto", now=None):
             except InferenceError as exc:
                 item["errors"][model] = str(exc)
                 records.append(_record(upload.name, image_id, MODEL_LABELS[model], now, error=str(exc)))
+                continue
+            if explain_fn is not None:
+                try:
+                    attention = explain_fn(image, model, result["top_index"], device=device)
+                except Exception as exc:
+                    # Optional visualization failures must never discard a successful prediction.
+                    attention = {"png": None, "has_box": False, "message": f"Không thể hiển thị Grad-CAM: {exc}"}
+                item.setdefault("attention", {})[model] = attention
     return items, records
 
 
