@@ -1,0 +1,68 @@
+{
+  "model": "HOG + HSV colour features + RBF SVM",
+  "selection": "Validation macro-F1; Test opened only for final evaluation",
+  "feature": {
+    "image_size": 64,
+    "hog_grayscale": false,
+    "orientations": 9,
+    "pixels_per_cell": 8,
+    "cells_per_block": 2,
+    "block_norm": "L2-Hys",
+    "hsv_bins": 16,
+    "hsv_spatial_grid": "4x4",
+    "dimension": 1908
+  },
+  "C": 10.0,
+  "gamma": "scale",
+  "split_counts": {
+    "train": 4115,
+    "val": 1031,
+    "test": 1356
+  },
+  "test_correct": 1259,
+  "test_errors": 97,
+  "accuracy": 0.9284660766961652,
+  "macro_precision": 0.9250761042012671,
+  "macro_recall": 0.9024802904228977,
+  "macro_f1": 0.9095664655252522,
+  "per_class_f1": {
+    "Healthy": 0.972972972972973,
+    "Early Blight": 0.7789473684210526,
+    "Late Blight": 0.907035175879397,
+    "Bacterial Spot": 0.9793103448275862
+  },
+  "confusion_matrix": [
+    [
+      324,
+      2,
+      4,
+      0
+    ],
+    [
+      10,
+      148,
+      51,
+      6
+    ],
+    [
+      1,
+      11,
+      361,
+      2
+    ],
+    [
+      1,
+      4,
+      5,
+      426
+    ]
+  ],
+  "class_names": [
+    "Healthy",
+    "Early Blight",
+    "Late Blight",
+    "Bacterial Spot"
+  ],
+  "prediction_csv_sha256": "f19d187d56e8e7c17875fc6a6596e150bfb6a6edddc7dc3155f2284a5f67babd",
+  "checkpoint_sha256": "d40cf8af63242ebfe8e149eba333419de2c2551999589b7df2d5710db21cfcd5"
+}
