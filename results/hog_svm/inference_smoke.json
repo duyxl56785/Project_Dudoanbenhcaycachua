@@ -1,0 +1,59 @@
+{
+  "real_test_images": [
+    {
+      "true_index": 0,
+      "path": "raw/color/Tomato___healthy/00bce074-967b-4d50-967a-31fdaa35e688___RS_HL 0223.JPG",
+      "predicted_index": 0,
+      "predicted_label": "Healthy",
+      "decision_scores": {
+        "Healthy": 2.0180755376386443,
+        "Early Blight": -1.2660203842389062,
+        "Late Blight": -1.4767207589185747,
+        "Bacterial Spot": -3.575332811651881
+      },
+      "repeat_equal": true
+    },
+    {
+      "true_index": 1,
+      "path": "raw/color/Tomato___Early_blight/0012b9d2-2130-4a06-a834-b1f3af34f57e___RS_Erly.B 8389.JPG",
+      "predicted_index": 2,
+      "predicted_label": "Late Blight",
+      "decision_scores": {
+        "Healthy": -0.6968799675677474,
+        "Early Blight": -0.6615817918579545,
+        "Late Blight": 0.08198139675434057,
+        "Bacterial Spot": -4.101459444094038
+      },
+      "repeat_equal": true
+    },
+    {
+      "true_index": 2,
+      "path": "raw/color/Tomato___Late_blight/005e3b43-9050-47da-9498-f9ecdcc703b3___RS_Late.B 5104.JPG",
+      "predicted_index": 2,
+      "predicted_label": "Late Blight",
+      "decision_scores": {
+        "Healthy": -1.0164095661808772,
+        "Early Blight": 0.44989508972627434,
+        "Late Blight": 1.9324973411477584,
+        "Bacterial Spot": -6.36252505484761
+      },
+      "repeat_equal": true
+    },
+    {
+      "true_index": 3,
+      "path": "raw/color/Tomato___Bacterial_spot/00416648-be6e-4bd4-bc8d-82f43f8a7240___GCREC_Bact.Sp 3110.JPG",
+      "predicted_index": 3,
+      "predicted_label": "Bacterial Spot",
+      "decision_scores": {
+        "Healthy": -2.837974853190638,
+        "Early Blight": -0.9760006193799664,
+        "Late Blight": -2.0113105693339977,
+        "Bacterial Spot": 1.5560988475020507
+      },
+      "repeat_equal": true
+    }
+  ],
+  "real_png_prediction": "Bacterial Spot",
+  "missing_checkpoint": "rejected",
+  "corrupt_jpeg_rejected": true
+}

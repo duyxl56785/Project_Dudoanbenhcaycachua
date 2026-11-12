@@ -1,0 +1,35 @@
+name: NV4 HOG SVM tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - src/hog_svm.py
+      - scripts/train_hog_svm.py
+      - scripts/infer_hog_svm.py
+      - scripts/evaluate_hog_svm.py
+      - tests/test_hog_svm.py
+      - tests/test_hog_svm_evaluation.py
+      - requirements-hog-svm.txt
+      - results/hog_svm/**
+      - .gitattributes
+      - .github/workflows/nv4-hog-svm-ci.yml
+
+permissions:
+  contents: read
+
+jobs:
+  hog-svm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install traditional ML dependencies
+        run: python -m pip install numpy pillow scikit-learn scikit-image joblib matplotlib pytest
+      - name: Compile sources
+        run: python -m compileall -q src/hog_svm.py scripts/train_hog_svm.py scripts/infer_hog_svm.py scripts/evaluate_hog_svm.py tests/test_hog_svm.py tests/test_hog_svm_evaluation.py
+      - name: Verify HOG SVM and published artifacts
+        run: python -m pytest tests/test_hog_svm.py tests/test_hog_svm_evaluation.py -q
