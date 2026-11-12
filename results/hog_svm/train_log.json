@@ -1,0 +1,187 @@
+{
+  "started_at_utc": "2026-11-12T05:13:21.748781+00:00",
+  "split_counts": {
+    "train": 4115,
+    "val": 1031,
+    "test": 1356
+  },
+  "split_csv_sha256": {
+    "train": "a95af933f7abae4bd13fe28b58192571d8e78e8721092ef0cc555f4797746afc",
+    "val": "105751ffa430ca522a027807c7173612a6966c3b92cc7d60a4151da49005215b",
+    "test": "69a889672fa4e41504e3117173103832d1bdffede69a2034e4f4093128102b34"
+  },
+  "class_names": [
+    "Healthy",
+    "Early Blight",
+    "Late Blight",
+    "Bacterial Spot"
+  ],
+  "selection_rule": "highest Val macro-F1; then lower Val prediction time; then earlier trial",
+  "scaler_fit": "Train only",
+  "test_usage": "Predictions only, after model selection",
+  "versions": {
+    "python": "3.12.0",
+    "numpy": "2.5.4",
+    "scikit_image": "0.26.0",
+    "scikit_learn": "1.9.1",
+    "joblib": "1.6.0"
+  },
+  "feature_extraction": [
+    {
+      "hog_config": {
+        "image_size": 64,
+        "grayscale": true,
+        "orientations": 9,
+        "pixels_per_cell": 8,
+        "cells_per_block": 2,
+        "block_norm": "L2-Hys"
+      },
+      "split": "train",
+      "rows": 4115,
+      "vector_size": 1764,
+      "seconds": 14.68850250000105
+    },
+    {
+      "hog_config": {
+        "image_size": 64,
+        "grayscale": true,
+        "orientations": 9,
+        "pixels_per_cell": 8,
+        "cells_per_block": 2,
+        "block_norm": "L2-Hys"
+      },
+      "split": "val",
+      "rows": 1031,
+      "vector_size": 1764,
+      "seconds": 2.812310900000739
+    },
+    {
+      "hog_config": {
+        "image_size": 64,
+        "grayscale": true,
+        "orientations": 9,
+        "pixels_per_cell": 16,
+        "cells_per_block": 2,
+        "block_norm": "L2-Hys"
+      },
+      "split": "train",
+      "rows": 4115,
+      "vector_size": 324,
+      "seconds": 9.375288099996396
+    },
+    {
+      "hog_config": {
+        "image_size": 64,
+        "grayscale": true,
+        "orientations": 9,
+        "pixels_per_cell": 16,
+        "cells_per_block": 2,
+        "block_norm": "L2-Hys"
+      },
+      "split": "val",
+      "rows": 1031,
+      "vector_size": 324,
+      "seconds": 2.630597299998044
+    }
+  ],
+  "experiments": [
+    {
+      "trial": 1,
+      "image_size": 64,
+      "grayscale": true,
+      "orientations": 9,
+      "pixels_per_cell": 8,
+      "cells_per_block": 2,
+      "block_norm": "L2-Hys",
+      "hog_dimension": 1764,
+      "C": 0.01,
+      "val_accuracy": 0.7449078564500485,
+      "val_macro_f1": 0.6953791314197136,
+      "train_seconds": 18.123273600001994,
+      "val_predict_ms_per_image": 0.021630261877515995,
+      "iterations": 8
+    },
+    {
+      "trial": 2,
+      "image_size": 64,
+      "grayscale": true,
+      "orientations": 9,
+      "pixels_per_cell": 8,
+      "cells_per_block": 2,
+      "block_norm": "L2-Hys",
+      "hog_dimension": 1764,
+      "C": 0.1,
+      "val_accuracy": 0.7206595538312318,
+      "val_macro_f1": 0.67490356082915,
+      "train_seconds": 31.883852700004354,
+      "val_predict_ms_per_image": 0.021618622695375865,
+      "iterations": 48
+    },
+    {
+      "trial": 3,
+      "image_size": 64,
+      "grayscale": true,
+      "orientations": 9,
+      "pixels_per_cell": 8,
+      "cells_per_block": 2,
+      "block_norm": "L2-Hys",
+      "hog_dimension": 1764,
+      "C": 1.0,
+      "val_accuracy": 0.7080504364694471,
+      "val_macro_f1": 0.6674356380979154,
+      "train_seconds": 235.8494172999999,
+      "val_predict_ms_per_image": 0.007729970904927119,
+      "iterations": 1416
+    },
+    {
+      "trial": 4,
+      "image_size": 64,
+      "grayscale": true,
+      "orientations": 9,
+      "pixels_per_cell": 16,
+      "cells_per_block": 2,
+      "block_norm": "L2-Hys",
+      "hog_dimension": 324,
+      "C": 0.01,
+      "val_accuracy": 0.7449078564500485,
+      "val_macro_f1": 0.6765448435521115,
+      "train_seconds": 2.3833469999954104,
+      "val_predict_ms_per_image": 0.002648205627973176,
+      "iterations": 7
+    },
+    {
+      "trial": 5,
+      "image_size": 64,
+      "grayscale": true,
+      "orientations": 9,
+      "pixels_per_cell": 16,
+      "cells_per_block": 2,
+      "block_norm": "L2-Hys",
+      "hog_dimension": 324,
+      "C": 0.1,
+      "val_accuracy": 0.7284190106692532,
+      "val_macro_f1": 0.6721071925231834,
+      "train_seconds": 1.8529726000051596,
+      "val_predict_ms_per_image": 0.0014483026235845846,
+      "iterations": 8
+    },
+    {
+      "trial": 6,
+      "image_size": 64,
+      "grayscale": true,
+      "orientations": 9,
+      "pixels_per_cell": 16,
+      "cells_per_block": 2,
+      "block_norm": "L2-Hys",
+      "hog_dimension": 324,
+      "C": 1.0,
+      "val_accuracy": 0.7332686711930165,
+      "val_macro_f1": 0.6821082950959341,
+      "train_seconds": 1.2896709000051487,
+      "val_predict_ms_per_image": 0.001498739088934717,
+      "iterations": 9
+    }
+  ],
+  "selected_trial": 1,
+  "checkpoint_sha256": "ec61605eb4bfd897b6ee7756e54c665dbdad6314a78ceb300d14b0e974ef974b"
+}
