@@ -13,6 +13,7 @@
 ## Cấu hình và kết quả thật
 
 - Sáu lần thử: HOG grayscale 64×64, 9 orientations, 2×2 cells/block, L2-Hys; pixels/cell = 8 hoặc 16; `C` = 0.01, 0.1 hoặc 1.0. Chi tiết toàn bộ lần thử trong `validation_experiments.csv` và thời gian trích xuất trong `train_log.json`.
+- [Biểu đồ Validation thật](validation_comparison.png) được vẽ trực tiếp từ sáu dòng của `validation_experiments.csv` để NV5 dùng khi trình bày.
 - Chọn **8×8 pixels/cell, C = 0.01**, chiều vector HOG **1.764**. Validation Accuracy **0,7449078565**; macro-F1 **0,6953791314**. Thời gian fit scaler + LinearSVC của lượt chọn **18,12 giây**; trích xuất HOG Train **14,7 giây**, Val **2,8 giây** trên máy này. Các thời gian thay đổi theo phần cứng.
 - Checkpoint `hog_linear_svm.joblib` **95.628 byte**, SHA-256 `ec61605eb4bfd897b6ee7756e54c665dbdad6314a78ceb300d14b0e974ef974b`. Đã nạp lại và xác minh dự đoán không đổi. Artifact nhỏ nên được lưu trực tiếp trong PR; chỉ nạp file từ nguồn tin cậy và đối chiếu SHA-256.
 - `test_predictions.csv`: **1.356 dòng**, 0 ảnh lỗi. Mỗi dòng có ID, đường dẫn, nhãn thật/dự đoán, cấu hình, trạng thái và bốn **decision scores**. NV5 có thể tính Accuracy, Precision, Recall, macro-F1 và confusion matrix từ file này. Các decision scores **không phải xác suất**. Git giữ nguyên byte CSV qua `.gitattributes`, nên SHA-256 trong metadata kiểm chứng được cả sau khi clone trên Windows.
