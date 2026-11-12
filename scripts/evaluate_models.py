@@ -1,7 +1,8 @@
-"""Đánh giá độc lập và so sánh CNN/ResNet18 trên Test chung.
+"""Đánh giá độc lập và so sánh các mô hình trên Test chung.
 
 NV5 chỉ tổng hợp artifact đã bàn giao. Script không huấn luyện, không chọn
-checkpoint và không tự điền số liệu còn thiếu. Mỗi model có thể được cung cấp
+checkpoint và không tự điền số liệu còn thiếu. CNN, ResNet18 và HOG + Linear
+SVM có thể được cung cấp
 prediction CSV (tính lại metrics) hoặc metrics JSON có nguồn truy vết; nếu
 không có artifact thì model được ghi ``pending`` trong bảng.
 """
@@ -82,6 +83,8 @@ def canonical_sample_id(value: Any, *, is_path: bool) -> str:
     if not is_path:
         return sample_id
     normalized = sample_id.replace("\\", "/")
+    if normalized.casefold().startswith("raw/color/"):
+        return normalized[len("raw/color/"):]
     marker = "/raw/color/"
     position = normalized.casefold().find(marker)
     return normalized[position + len(marker):] if position >= 0 else normalized
@@ -94,11 +97,12 @@ def load_predictions(path: Path, mapping: dict[int, str], expected_split: str | 
         reader = csv.DictReader(stream)
         if not reader.fieldnames:
             raise ValueError(f"CSV không có header: {path}")
-        true_column = _first_column(reader.fieldnames, TRUE_COLUMNS, "ground truth")
-        pred_column = _first_column(reader.fieldnames, PRED_COLUMNS, "prediction")
+        true_column = _first_column(reader.fieldnames, (*TRUE_COLUMNS, "true_label_index"), "ground truth")
+        pred_column = _first_column(reader.fieldnames, (*PRED_COLUMNS, "predicted_label_index"), "prediction")
         lookup = {name.strip().lower(): name for name in reader.fieldnames if name}
         id_column = next((lookup[name] for name in ID_COLUMNS if name in lookup), None)
         split_column = next((lookup[name] for name in SPLIT_COLUMNS if name in lookup), None)
+        status_column = lookup.get("status")
         rows, seen = [], set()
         for row_number, row in enumerate(reader, start=2):
             sample_id = (canonical_sample_id(row[id_column], is_path=id_column.strip().lower() in {"path", "image_path", "filename"})
@@ -111,6 +115,8 @@ def load_predictions(path: Path, mapping: dict[int, str], expected_split: str | 
             split = str(row[split_column]).strip() if split_column else ""
             if expected_split and split and split.casefold() != expected_split.casefold():
                 raise ValueError(f"Split {split!r} ở dòng {row_number} không khớp {expected_split!r}")
+            if status_column and str(row.get(status_column, "")).strip().casefold() not in {"", "ok", "success"}:
+                raise ValueError(f"Prediction có trạng thái lỗi ở dòng {row_number} trong {path}")
             rows.append({"id": sample_id, "true": normalize_label(row[true_column], mapping, path),
                          "pred": normalize_label(row[pred_column], mapping, path), "split": split})
     if not rows:
@@ -278,6 +284,26 @@ def validate_same_test_set(first: list[dict[str, Any]], second: list[dict[str, A
         raise ValueError(f"Ground truth khác nhau giữa hai CSV (ví dụ: {mismatch[:5]})")
 
 
+def validate_against_test_manifest(rows: list[dict[str, Any]], manifest_path: Path, mapping: dict[int, str]) -> None:
+    """Require a prediction artifact to cover the fixed Test manifest exactly."""
+    if not manifest_path.is_file():
+        raise FileNotFoundError(f"Không tìm thấy Test manifest: {manifest_path}")
+    with manifest_path.open(newline="", encoding="utf-8-sig") as stream:
+        reader = csv.DictReader(stream)
+        if not reader.fieldnames or "path" not in reader.fieldnames or "label" not in reader.fieldnames:
+            raise ValueError(f"Test manifest thiếu path/label: {manifest_path}")
+        expected = {
+            (canonical_sample_id(row["path"], is_path=True), normalize_label(row["label"], mapping, manifest_path))
+            for row in reader
+        }
+    actual = {(row["id"], row["true"]) for row in rows}
+    if actual != expected:
+        raise ValueError(
+            "Prediction CSV không khớp Test manifest: "
+            f"thiếu={len(expected - actual)}, thừa={len(actual - expected)}"
+        )
+
+
 def validate_metrics_consistency(computed: dict[str, Any], reported: dict[str, Any], source: Path, tolerance: float = 1e-6) -> None:
     """Đối chiếu metrics JSON do chủ model bàn giao với prediction CSV."""
     for key in SCORE_KEYS:
@@ -341,7 +367,17 @@ def comparison_row(name: str, split: str, metrics: dict[str, Any] | None, metada
                 "python_version": _metadata_value(metadata, "python_version"),
                 "torch_version": _metadata_value(metadata, "torch_version"),
                 "torchvision_version": _metadata_value(metadata, "torchvision_version"),
+                "checkpoint_sha256": _metadata_value(metadata, "checkpoint_sha256"),
+                "prediction_csv": _metadata_value(metadata, "prediction_csv"),
+                "prediction_csv_sha256": _metadata_value(metadata, "prediction_csv_sha256"),
+                "source": _metadata_value(metadata, "source"),
+                "selection_rule": _metadata_value(metadata, "selection_rule"),
+                "score_type": _metadata_value(metadata, "score_type"),
                 "metadata_file": _metadata_value(metadata, "_metadata_file")})
+    if "hog_config" in metadata:
+        row["hog_config"] = json.dumps(metadata["hog_config"], ensure_ascii=False, sort_keys=True)
+    if "C" in metadata:
+        row["C"] = metadata["C"]
     for class_name in (metrics or {}).get("per_class", {}):
         row[f"{class_name}_f1"] = metrics["per_class"][class_name]["f1"]
     return row
@@ -380,6 +416,12 @@ def write_analysis(path: Path, mapping: dict[int, str], split: str, metrics_by_m
                       f"- ResNet18 cao hơn CNN **{resnet['accuracy'] - cnn['accuracy']:.4f} Accuracy** và **{resnet['macro_f1'] - cnn['macro_f1']:.4f} macro-F1** trên cùng {cnn['n_samples']} mẫu Test.",
                       "- Cả hai checkpoint đã được chủ mô hình chọn bằng Validation trước khi Test. Chênh lệch này mô tả artifact hiện có, không chứng minh quan hệ nhân quả hay thay thế kiểm định nhiều seed/ảnh thực địa.",
                       "- ResNet18 dùng ImageNet pretraining rồi fine-tuning; đây là một giải thích kỹ thuật hợp lý cho kết quả cao hơn CNN học từ đầu, nhưng cần thí nghiệm lặp để khẳng định."]
+    svm = metrics_by_model.get("HOG + Linear SVM")
+    if svm:
+        lines += ["", "## HOG + Linear SVM", "",
+                  f"- HOG + Linear SVM đạt Accuracy **{svm['accuracy']:.4f}** và macro-F1 **{svm['macro_f1']:.4f}** trên {svm['n_samples']} ảnh Test.",
+                  "- Đây là baseline đặc trưng thủ công: HOG trên ảnh xám kết hợp LinearSVC. Decision score chỉ dùng để chọn nhãn, không phải xác suất.",
+                  "- Cấu hình và C phải được chọn bằng Validation; Test chỉ dùng một lần sau khi chốt mô hình."]
     lines += ["", "## Cặp lớp dễ nhầm", ""]
     for model, metrics in available.items():
         matrix = metrics.get("confusion_matrix")
@@ -425,21 +467,33 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("Cần --cnn-predictions hoặc --cnn-metrics cho CNN")
     cnn, cnn_meta, cnn_source, cnn_rows = _model_artifact("CNN", args.cnn_predictions, args.cnn_metrics, mapping, args.split)
     resnet, resnet_meta, resnet_source, resnet_rows = _model_artifact("ResNet18", args.resnet18_predictions, args.resnet18_metrics, mapping, args.split)
-    if cnn_rows and resnet_rows:
-        validate_same_test_set(cnn_rows, resnet_rows)
+    svm, svm_meta, svm_source, svm_rows = _model_artifact("HOG + Linear SVM", getattr(args, "svm_predictions", None), getattr(args, "svm_metrics", None), mapping, args.split)
+    all_rows = [rows for rows in (cnn_rows, resnet_rows, svm_rows) if rows]
+    manifest_path = Path(getattr(args, "test_manifest", REPO_ROOT / "data/splits/test.csv"))
+    for rows in all_rows:
+        validate_against_test_manifest(rows, manifest_path, mapping)
+    if len(all_rows) > 1:
+        reference = all_rows[0]
+        for rows in all_rows[1:]:
+            validate_same_test_set(reference, rows)
     out = Path(args.output_dir); out.mkdir(parents=True, exist_ok=True)
-    write_csv(out / "comparison.csv", [comparison_row("CNN", args.split, cnn, cnn_meta), comparison_row("ResNet18", args.split, resnet, resnet_meta)])
+    rows = [comparison_row("CNN", args.split, cnn, cnn_meta), comparison_row("ResNet18", args.split, resnet, resnet_meta), comparison_row("HOG + Linear SVM", args.split, svm, svm_meta)]
     if cnn: plot_confusion(cnn, mapping, out / "cnn_confusion_matrix.png", f"CNN - {args.split}")
     if resnet: plot_confusion(resnet, mapping, out / "resnet18_confusion_matrix.png", f"ResNet18 - {args.split}")
-    write_analysis(out / "analysis.md", mapping, args.split, {"CNN": cnn, "ResNet18": resnet}, {"CNN": cnn_meta, "ResNet18": resnet_meta}, {"CNN": cnn_source, "ResNet18": resnet_source})
-    return {"output_dir": str(out), "models": {"CNN": "computed" if cnn else "pending", "ResNet18": "computed" if resnet else "pending"}}
+    if svm: plot_confusion(svm, mapping, out / "hog_svm_confusion_matrix.png", f"HOG + Linear SVM - {args.split}")
+    write_csv(out / "comparison.csv", rows)
+    write_analysis(out / "analysis.md", mapping, args.split, {"CNN": cnn, "ResNet18": resnet, "HOG + Linear SVM": svm}, {"CNN": cnn_meta, "ResNet18": resnet_meta, "HOG + Linear SVM": svm_meta}, {"CNN": cnn_source, "ResNet18": resnet_source, "HOG + Linear SVM": svm_source})
+    return {"output_dir": str(out), "models": {"CNN": "computed" if cnn else "pending", "ResNet18": "computed" if resnet else "pending", "HOG + Linear SVM": "computed" if svm else "pending"}}
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--cnn-predictions"); parser.add_argument("--resnet18-predictions")
     parser.add_argument("--cnn-metrics"); parser.add_argument("--resnet18-metrics")
+    parser.add_argument("--svm-predictions", help="HOG + Linear SVM prediction CSV")
+    parser.add_argument("--svm-metrics", help="NV5-normalized HOG + Linear SVM metrics JSON")
     parser.add_argument("--class-mapping", default=str(DEFAULT_MAPPING)); parser.add_argument("--split", default="test")
+    parser.add_argument("--test-manifest", default=str(REPO_ROOT / "data/splits/test.csv"))
     parser.add_argument("--output-dir", default=str(REPO_ROOT / "results"))
     args = parser.parse_args(argv)
     try:

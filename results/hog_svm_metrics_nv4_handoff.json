@@ -1,0 +1,37 @@
+{
+  "source": "NV4 PR #16, feature/nv4-hog-linear-svm",
+  "source_commit": "5c1448e2daaab2060f9f4733b5999d6dd1a174fe",
+  "split": "test",
+  "n_samples": 1356,
+  "prediction_csv": "results/hog_svm/test_predictions.csv",
+  "prediction_csv_sha256": "6e65dffb5f91b066dee3d6de5a5e16d65f84f04f008bac1e8778ebaf89b4dedc",
+  "checkpoint": "results/hog_svm/hog_linear_svm.joblib",
+  "checkpoint_sha256": "ec61605eb4bfd897b6ee7756e54c665dbdad6314a78ceb300d14b0e974ef974b",
+  "hog_config": {
+    "image_size": 64,
+    "grayscale": true,
+    "orientations": 9,
+    "pixels_per_cell": 8,
+    "cells_per_block": 2,
+    "block_norm": "L2-Hys",
+    "hog_dimension": 1764
+  },
+  "C": 0.01,
+  "score_type": "decision_score (not probability)",
+  "selection_rule": "highest Validation macro-F1; Test predictions generated after selection",
+  "val_accuracy": 0.7449078564500485,
+  "val_macro_f1": 0.6953791314197136,
+  "accuracy": 0.7389380530973452,
+  "macro_precision": 0.6955622690593916,
+  "macro_recall": 0.6972206360597656,
+  "macro_f1": 0.6939609251697716,
+  "per_class": {
+    "Healthy": {"precision": 0.8220338983050848, "recall": 0.8818181818181818, "f1": 0.8508771929824562, "support": 330},
+    "Early Blight": {"precision": 0.4409937888198758, "recall": 0.3302325581395349, "f1": 0.37765957446808507, "support": 215},
+    "Late Blight": {"precision": 0.7336683417085427, "recall": 0.7786666666666666, "f1": 0.7554980595084088, "support": 375},
+    "Bacterial Spot": {"precision": 0.7855530474040632, "recall": 0.7981651376146789, "f1": 0.7918088737201365, "support": 436}
+  },
+  "confusion_matrix": [[291, 16, 7, 16], [32, 71, 68, 44], [9, 39, 292, 35], [22, 35, 31, 348]],
+  "test_prediction_rows": 1356,
+  "test_prediction_errors": 0
+}
