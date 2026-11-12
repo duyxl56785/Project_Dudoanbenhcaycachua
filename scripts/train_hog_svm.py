@@ -101,7 +101,7 @@ def main() -> None:
                    "iterations": int(np.max(classifier.n_iter_))}
             experiments.append(row)
             with (artifact_dir / "validation_experiments.csv").open("w", newline="", encoding="utf-8-sig") as handle:
-                writer = csv.DictWriter(handle, fieldnames=list(row))
+                writer = csv.DictWriter(handle, fieldnames=list(row), lineterminator="\n")
                 writer.writeheader()
                 writer.writerows(experiments)
             write_json(artifact_dir / "train_log.json", log)
@@ -144,7 +144,7 @@ def main() -> None:
               "predicted_label", "model", "hog_config", "C", "status", "error"] + [f"decision_score_{i}" for i in range(4)]
     errors = 0
     with prediction_path.open("w", newline="", encoding="utf-8-sig") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         for row in test_rows:
             index = int(row["label"])
