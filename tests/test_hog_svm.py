@@ -81,3 +81,20 @@ def test_reload_and_inference_preserve_mapping_without_probabilities(tmp_path):
     metadata_path.write_text(json.dumps({"checkpoint_sha256": "0" * 64}), encoding="utf-8")
     with pytest.raises(ValueError, match="SHA-256"):
         predict_file(image_path, checkpoint, metadata_path)
+
+
+def test_published_test_predictions_match_metadata_and_fixed_split():
+    from pathlib import Path
+    project_root = Path(__file__).resolve().parents[1]
+    artifact_dir = project_root / "results/hog_svm"
+    metadata = json.loads((artifact_dir / "model_metadata.json").read_text(encoding="utf-8"))
+    csv_bytes = (artifact_dir / "test_predictions.csv").read_bytes()
+    assert hashlib.sha256(csv_bytes).hexdigest() == metadata["test_predictions_sha256"]
+    with (artifact_dir / "test_predictions.csv").open(encoding="utf-8-sig", newline="") as handle:
+        predictions = list(csv.DictReader(handle))
+    with (project_root / "data/splits/test.csv").open(encoding="utf-8-sig", newline="") as handle:
+        source = list(csv.DictReader(handle))
+    assert len(predictions) == len(source) == 1356
+    assert [row["path"] for row in predictions] == [row["path"] for row in source]
+    assert all(prediction["true_label_index"] == row["label"] and prediction["status"] == "ok"
+               for prediction, row in zip(predictions, source))

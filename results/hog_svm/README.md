@@ -15,7 +15,7 @@
 - Sáu lần thử: HOG grayscale 64×64, 9 orientations, 2×2 cells/block, L2-Hys; pixels/cell = 8 hoặc 16; `C` = 0.01, 0.1 hoặc 1.0. Chi tiết toàn bộ lần thử trong `validation_experiments.csv` và thời gian trích xuất trong `train_log.json`.
 - Chọn **8×8 pixels/cell, C = 0.01**, chiều vector HOG **1.764**. Validation Accuracy **0,7449078565**; macro-F1 **0,6953791314**. Thời gian fit scaler + LinearSVC của lượt chọn **18,12 giây**; trích xuất HOG Train **14,7 giây**, Val **2,8 giây** trên máy này. Các thời gian thay đổi theo phần cứng.
 - Checkpoint `hog_linear_svm.joblib` **95.628 byte**, SHA-256 `ec61605eb4bfd897b6ee7756e54c665dbdad6314a78ceb300d14b0e974ef974b`. Đã nạp lại và xác minh dự đoán không đổi. Artifact nhỏ nên được lưu trực tiếp trong PR; chỉ nạp file từ nguồn tin cậy và đối chiếu SHA-256.
-- `test_predictions.csv`: **1.356 dòng**, 0 ảnh lỗi. Mỗi dòng có ID, đường dẫn, nhãn thật/dự đoán, cấu hình, trạng thái và bốn **decision scores**. NV5 có thể tính Accuracy, Precision, Recall, macro-F1 và confusion matrix từ file này. Các decision scores **không phải xác suất**.
+- `test_predictions.csv`: **1.356 dòng**, 0 ảnh lỗi. Mỗi dòng có ID, đường dẫn, nhãn thật/dự đoán, cấu hình, trạng thái và bốn **decision scores**. NV5 có thể tính Accuracy, Precision, Recall, macro-F1 và confusion matrix từ file này. Các decision scores **không phải xác suất**. Git giữ nguyên byte CSV qua `.gitattributes`, nên SHA-256 trong metadata kiểm chứng được cả sau khi clone trên Windows.
 - `inference_smoke.json`: dự đoán lặp lại trên ảnh Test thật của bốn lớp; mẫu Early Blight đầu tiên bị nhầm thành Late Blight và được giữ nguyên. JPG/PNG thật, ảnh hỏng và thiếu checkpoint đã được thử.
 
 ## Chạy lại
@@ -36,4 +36,4 @@ Lệnh train từ chối ghi đè checkpoint cũ. Với artifact dir mới, lệ
 
 Đọc `test_predictions.csv` để đánh giá Test theo cùng split 1.356 ảnh, `validation_experiments.csv` để mô tả chọn tham số, `train_log.json` để lấy thời gian và `model_metadata.json` để kiểm tra SHA-256/mapping. Để tái suy luận, dùng checkpoint đã commit cùng lệnh `scripts.infer_hog_svm`. Một ảnh mẫu Early Blight dự đoán sai, nên tránh mô tả baseline là đúng tuyệt đối. Dataset PlantVillage có điều kiện chụp kiểm soát; kết quả không suy rộng thành chẩn đoán thực địa.
 
-Kiểm thử tại checkout này: **93 passed, 1 skipped, 19 subtests passed**; `compileall` và `git diff --check` đạt.
+Kiểm thử tại checkout này: **94 passed, 1 skipped, 19 subtests passed**; `compileall` và `git diff --check` đạt.
