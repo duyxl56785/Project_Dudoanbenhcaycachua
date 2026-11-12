@@ -1,0 +1,67 @@
+{
+  "selection_source": "results/traditional_svm_search/best_config.json",
+  "selection_rule": "highest Validation Macro-F1; Test opened only after selection",
+  "selected_config": {
+    "feature": "rgb64_hsv",
+    "model": "hog_pca_rbf",
+    "C": 10.0,
+    "gamma": "scale",
+    "pca_components": 128,
+    "feature_dim": 1908,
+    "val_accuracy": 0.9030067895247332,
+    "val_macro_f1": 0.8834699997405999,
+    "train_seconds": 5.269339199992828,
+    "scaler_fit": "Train only",
+    "pca_fit": "Train only"
+  },
+  "split_counts": {
+    "train": 4115,
+    "test": 1356
+  },
+  "test_correct": 1249,
+  "test_errors": 107,
+  "accuracy": 0.9210914454277286,
+  "macro_precision": 0.9073660178812544,
+  "macro_recall": 0.8976382321184968,
+  "macro_f1": 0.9008365129547065,
+  "per_class_f1": {
+    "Healthy": 0.9646017699115044,
+    "Early Blight": 0.7556675062972292,
+    "Late Blight": 0.9130998702983139,
+    "Bacterial Spot": 0.9699769053117783
+  },
+  "confusion_matrix": [
+    [
+      327,
+      2,
+      0,
+      1
+    ],
+    [
+      16,
+      150,
+      42,
+      7
+    ],
+    [
+      3,
+      18,
+      352,
+      2
+    ],
+    [
+      2,
+      12,
+      2,
+      420
+    ]
+  ],
+  "class_names": [
+    "Healthy",
+    "Early Blight",
+    "Late Blight",
+    "Bacterial Spot"
+  ],
+  "prediction_csv_sha256": "eb0b3db4c3ae116b7d435516af3e3f162572d116c267f3e8727a45d5ddefdc9f",
+  "checkpoint_sha256": "e2755c177c2c0c7f9a5611ee86eb7985f95ac4c3d58edfad722ecc0b670867bd"
+}
