@@ -18,6 +18,7 @@
 - Checkpoint `hog_linear_svm.joblib` **95.628 byte**, SHA-256 `ec61605eb4bfd897b6ee7756e54c665dbdad6314a78ceb300d14b0e974ef974b`. Đã nạp lại và xác minh dự đoán không đổi. Artifact nhỏ nên được lưu trực tiếp trong PR; chỉ nạp file từ nguồn tin cậy và đối chiếu SHA-256.
 - `test_predictions.csv`: **1.356 dòng**, 0 ảnh lỗi. Mỗi dòng có ID, đường dẫn, nhãn thật/dự đoán, cấu hình, trạng thái và bốn **decision scores**. NV5 có thể tính Accuracy, Precision, Recall, macro-F1 và confusion matrix từ file này. Các decision scores **không phải xác suất**. Git giữ nguyên byte CSV qua `.gitattributes`, nên SHA-256 trong metadata kiểm chứng được cả sau khi clone trên Windows.
 - `inference_smoke.json`: dự đoán lặp lại trên ảnh Test thật của bốn lớp; mẫu Early Blight đầu tiên bị nhầm thành Late Blight và được giữ nguyên. JPG/PNG thật, ảnh hỏng và thiếu checkpoint đã được thử.
+- [Đánh giá kỹ thuật sau huấn luyện](evaluation_20261112/README.md): checkpoint không đổi; Train/Validation/Test metrics, chỉ số từng lớp, ma trận nhầm lẫn, cùng ảnh Test đối chiếu với CNN/ResNet18 và biểu đồ từ kết quả thật. Test Accuracy **73,89%**, macro-F1 **69,40%**; đây là baseline, không dùng Test để chọn lại mô hình.
 
 ## Chạy lại
 

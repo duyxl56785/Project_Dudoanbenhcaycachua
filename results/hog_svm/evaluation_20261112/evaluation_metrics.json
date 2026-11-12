@@ -1,0 +1,245 @@
+{
+  "checkpoint_sha256": "ec61605eb4bfd897b6ee7756e54c665dbdad6314a78ceb300d14b0e974ef974b",
+  "test_csv_sha256": "6e65dffb5f91b066dee3d6de5a5e16d65f84f04f008bac1e8778ebaf89b4dedc",
+  "split_csv_sha256": {
+    "train": "a95af933f7abae4bd13fe28b58192571d8e78e8721092ef0cc555f4797746afc",
+    "val": "105751ffa430ca522a027807c7173612a6966c3b92cc7d60a4151da49005215b",
+    "test": "69a889672fa4e41504e3117173103832d1bdffede69a2034e4f4093128102b34"
+  },
+  "class_names": [
+    "Healthy",
+    "Early Blight",
+    "Late Blight",
+    "Bacterial Spot"
+  ],
+  "scaler_samples_seen": 4115,
+  "svm_iterations": 8,
+  "svm_max_iter": 3000,
+  "training_seconds_selected": 18.123273600001994,
+  "metrics": {
+    "train": {
+      "n_samples": 4115,
+      "accuracy": 0.983232077764277,
+      "macro_precision": 0.9846312251804898,
+      "macro_recall": 0.975450058047475,
+      "macro_f1": 0.9796337156142099,
+      "per_class": {
+        "Healthy": {
+          "precision": 0.9905362776025236,
+          "recall": 0.9978813559322034,
+          "f1": 0.9941952506596307,
+          "support": 944
+        },
+        "Early Blight": {
+          "precision": 0.9897260273972602,
+          "recall": 0.9145569620253164,
+          "f1": 0.9506578947368421,
+          "support": 632
+        },
+        "Late Blight": {
+          "precision": 0.9800332778702163,
+          "recall": 0.9915824915824916,
+          "f1": 0.9857740585774059,
+          "support": 1188
+        },
+        "Bacterial Spot": {
+          "precision": 0.9782293178519593,
+          "recall": 0.997779422649889,
+          "f1": 0.9879076584829608,
+          "support": 1351
+        }
+      },
+      "confusion_matrix": [
+        [
+          942,
+          0,
+          0,
+          2
+        ],
+        [
+          7,
+          578,
+          23,
+          24
+        ],
+        [
+          1,
+          5,
+          1178,
+          4
+        ],
+        [
+          1,
+          1,
+          1,
+          1348
+        ]
+      ]
+    },
+    "val": {
+      "n_samples": 1031,
+      "accuracy": 0.7449078564500485,
+      "macro_precision": 0.6960999274263203,
+      "macro_recall": 0.6985894525595473,
+      "macro_f1": 0.6953791314197136,
+      "per_class": {
+        "Healthy": {
+          "precision": 0.8458498023715415,
+          "recall": 0.8916666666666667,
+          "f1": 0.8681541582150102,
+          "support": 240
+        },
+        "Early Blight": {
+          "precision": 0.40336134453781514,
+          "recall": 0.3137254901960784,
+          "f1": 0.35294117647058826,
+          "support": 153
+        },
+        "Late Blight": {
+          "precision": 0.745398773006135,
+          "recall": 0.8154362416107382,
+          "f1": 0.7788461538461539,
+          "support": 298
+        },
+        "Bacterial Spot": {
+          "precision": 0.7897897897897898,
+          "recall": 0.7735294117647059,
+          "f1": 0.7815750371471025,
+          "support": 340
+        }
+      },
+      "confusion_matrix": [
+        [
+          214,
+          10,
+          6,
+          10
+        ],
+        [
+          9,
+          48,
+          52,
+          44
+        ],
+        [
+          7,
+          32,
+          243,
+          16
+        ],
+        [
+          23,
+          29,
+          25,
+          263
+        ]
+      ]
+    },
+    "test": {
+      "n_samples": 1356,
+      "accuracy": 0.7389380530973452,
+      "macro_precision": 0.6955622690593916,
+      "macro_recall": 0.6972206360597656,
+      "macro_f1": 0.6939609251697716,
+      "per_class": {
+        "Healthy": {
+          "precision": 0.8220338983050848,
+          "recall": 0.8818181818181818,
+          "f1": 0.8508771929824561,
+          "support": 330
+        },
+        "Early Blight": {
+          "precision": 0.4409937888198758,
+          "recall": 0.3302325581395349,
+          "f1": 0.3776595744680851,
+          "support": 215
+        },
+        "Late Blight": {
+          "precision": 0.7336683417085427,
+          "recall": 0.7786666666666666,
+          "f1": 0.7554980595084088,
+          "support": 375
+        },
+        "Bacterial Spot": {
+          "precision": 0.7855530474040632,
+          "recall": 0.7981651376146789,
+          "f1": 0.7918088737201365,
+          "support": 436
+        }
+      },
+      "confusion_matrix": [
+        [
+          291,
+          16,
+          7,
+          16
+        ],
+        [
+          32,
+          71,
+          68,
+          44
+        ],
+        [
+          9,
+          39,
+          292,
+          35
+        ],
+        [
+          22,
+          35,
+          31,
+          348
+        ]
+      ]
+    }
+  },
+  "evaluation_timings": {
+    "train": {
+      "hog_extract_seconds": 5.795337900010054,
+      "scale_and_predict_seconds": 0.04370080000080634
+    },
+    "val": {
+      "hog_extract_seconds": 1.4953355999896303,
+      "scale_and_predict_seconds": 0.008339499996509403
+    }
+  },
+  "comparison": [
+    {
+      "model": "CNN",
+      "split": "test",
+      "n_samples": 1356,
+      "accuracy": 0.9697640117994101,
+      "macro_precision": 0.9654164799550266,
+      "macro_recall": 0.9647012820761487,
+      "macro_f1": 0.9650338128761278,
+      "train_seconds": 1118.7,
+      "source": "results/cnn_metrics_nv2_handoff.json"
+    },
+    {
+      "model": "ResNet18",
+      "split": "test",
+      "n_samples": 1356,
+      "accuracy": 0.9867256637168141,
+      "macro_precision": 0.9853475194293094,
+      "macro_recall": 0.9827315430817671,
+      "macro_f1": 0.983977947579615,
+      "train_seconds": "",
+      "source": "results/resnet18_metrics_nv3_handoff.json"
+    },
+    {
+      "model": "HOG + Linear SVM",
+      "split": "test",
+      "n_samples": 1356,
+      "accuracy": 0.7389380530973452,
+      "macro_precision": 0.6955622690593916,
+      "macro_recall": 0.6972206360597656,
+      "macro_f1": 0.6939609251697716,
+      "train_seconds": 18.123273600001994,
+      "source": "results/hog_svm/test_predictions.csv"
+    }
+  ],
+  "accuracy_gap_resnet_minus_svm": 0.24778761061946897,
+  "macro_f1_gap_resnet_minus_svm": 0.2900170224098434
+}
