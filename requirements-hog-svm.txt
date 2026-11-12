@@ -1,2 +1,1 @@
 -r requirements.txt
-scikit-image>=0.24,<1
