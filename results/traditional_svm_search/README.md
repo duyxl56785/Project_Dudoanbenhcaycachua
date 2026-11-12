@@ -35,6 +35,9 @@ The confusion matrix and all per-image predictions are in `test_metrics.json`
 and `test_predictions.csv`. The serialized scaler, PCA and SVM are in
 `best_traditional_svm.joblib`.
 
+`comparison_four_models.csv` aligns this result with the existing CNN, ResNet18
+and NV4 HOG + Linear SVM metrics on the same 1,356-image Test split.
+
 ## Reproduction
 
 ```powershell
