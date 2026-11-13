@@ -62,6 +62,13 @@ existing CNN, ResNet18 and NV4 HOG + Linear SVM metrics on the same 1,356-image
 Test split. The primary project comparison uses the earlier non-PCA result in
 `results/comparison.csv`.
 
+## Later Validation-only rerun
+
+`results/traditional_svm_search_extended/` preserves a separate 34-trial rerun
+of the search. It was run after both recorded Test results had already been
+viewed, selected the same PCA(128) configuration by Validation Macro-F1, and
+does not add a new Test result or change the primary SVM conclusion.
+
 ## Reproduction
 
 ```powershell
