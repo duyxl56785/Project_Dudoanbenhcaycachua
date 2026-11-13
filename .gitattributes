@@ -1,2 +1,4 @@
 # Preserve the exact CSV bytes recorded in model_metadata.json on every OS.
 results/hog_svm/*.csv -text
+results/hog_svm_v2/*.csv -text
+results/hog_svm_v2/preliminary_gray96_high_dim/*.csv -text
