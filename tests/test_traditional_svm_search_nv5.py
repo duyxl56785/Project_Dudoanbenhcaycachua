@@ -1,11 +1,13 @@
 """Unit/integration coverage for the NV5 traditional search/evaluation scripts."""
 import csv
+import hashlib
 import json
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import joblib
 import numpy as np
 
 from scripts import evaluate_best_traditional_nv5 as final_eval
@@ -99,6 +101,18 @@ class TraditionalSearchTests(unittest.TestCase):
         self.assertEqual(metrics["test_errors"], 97)
         self.assertAlmostEqual(metrics["accuracy"], 0.9284660766961652)
         self.assertAlmostEqual(metrics["macro_f1"], 0.9095664655252522)
+
+    def test_primary_hsv_checkpoint_hash_and_metadata_are_consistent(self):
+        """Integration check: checkpoint bytes and fitted feature dimensions agree."""
+        artifact_dir = self.REPO_ROOT / "results" / "hog_svm_nv5_experiment"
+        checkpoint = artifact_dir / "hog_hsv_rbf_svm.joblib"
+        metrics = json.loads((artifact_dir / "metrics.json").read_text(encoding="utf-8"))
+        payload = joblib.load(checkpoint)
+        self.assertEqual(hashlib.sha256(checkpoint.read_bytes()).hexdigest(), metrics["checkpoint_sha256"])
+        self.assertEqual(list(payload["class_names"]), metrics["class_names"])
+        self.assertEqual(payload["config"]["dimension"], 1908)
+        self.assertEqual(payload["scaler"].n_features_in_, payload["config"]["dimension"])
+        self.assertEqual(payload["classifier"].n_features_in_, payload["config"]["dimension"])
 
 
 if __name__ == "__main__":

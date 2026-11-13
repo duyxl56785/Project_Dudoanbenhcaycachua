@@ -2,9 +2,11 @@
 
 - Split: `test`, 1.356 ảnh; mapping: `Healthy, Early Blight, Late Blight, Bacterial Spot`.
 - CNN, ResNet18, HOG + Linear SVM và HOG + HSV + RBF-SVM được chọn theo
-  Validation trước lần đánh giá Test được ghi nhận. Một tìm kiếm PCA của NV5
-  diễn ra sau khi đã xem kết quả Test HOG + HSV + RBF-SVM; kết quả PCA chỉ là
-  so sánh thăm dò, không được đưa vào bảng chính hay dùng để chọn mô hình.
+  Validation trước lần đánh giá Test được ghi nhận. NV5 có một lượt chọn PCA
+  ban đầu gồm 34 cấu hình, một lượt mở rộng 38 cấu hình và một lượt chạy lại
+  34 cấu hình; các lượt này tách biệt và không được cộng dồn. Chúng diễn ra
+  sau khi đã xem kết quả Test HOG + HSV + RBF-SVM, nên PCA chỉ là so sánh thăm
+  dò, không được đưa vào bảng chính hay dùng để chọn mô hình.
 - Tạo lúc: `2026-11-12T09:55:48.940640+00:00`.
 - Python: `3.12.14`.
 
@@ -50,8 +52,9 @@ Macro F1 cao nhất trong các artifact hiện có: **ResNet18** (0.9840). Đây
   **1.259/1.356** dự đoán đúng (Accuracy **0.9285**, macro-F1 **0.9096**) khi
   Test được mở cho lần đánh giá đầu tiên của chuỗi SVM NV5.
 - Nó vượt baseline HOG + Linear SVM, nhưng vẫn thấp hơn CNN và ResNet18. Kết quả
-  PCA 0.9211/0.9008 đã được giữ trong thư mục `traditional_svm_search` chỉ để
-  truy vết thăm dò, không dùng làm kết quả SVM chính.
+  PCA 0.9211/0.9008 từ lượt chọn 34 cấu hình ban đầu, cùng lượt mở rộng 38 cấu
+  hình và lượt chạy lại 34 cấu hình, được giữ trong `traditional_svm_search`
+  chỉ để truy vết thăm dò; không dùng làm kết quả SVM chính.
 
 ## Cặp lớp dễ nhầm
 

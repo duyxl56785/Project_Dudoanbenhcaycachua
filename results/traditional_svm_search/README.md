@@ -3,19 +3,23 @@
 This artifact records a validation-only search that reuses the fixed project
 manifests and does not modify NV4's HOG + LinearSVC pipeline.
 
-## Search protocol
+## Run history and protocol
 
-- Train: 4,115 images; Validation: 1,031 images; Test: 1,356 images.
-- Scaler and PCA (when used) are fitted on Train only.
-- Configurations are ranked by Validation Macro-F1. The retained log contains
-  **38 configurations**: 20 HOG + LinearSVC trials across five feature
-  families and four C values; 4 HOG + RBF-SVM trials and 12 HOG + PCA +
-  LinearSVC trials around the two best feature families; then 2 HOG + PCA +
-  RBF-SVM trials.
-- The script itself reads only Train/Validation. However, the separate non-PCA
-  experiment had already opened Test before this retained 38-trial search was
-  run. Therefore this follow-up search is exploratory and its Test result is
-  not an untouched holdout.
+- Fixed manifests: Train 4,115 images; Validation 1,031 images; Test 1,356
+  images. Scaler and PCA (when used) are fitted on Train only.
+- The runs below are **separate**. Their trial counts must not be added or
+  reported as one search:
+
+| Run | Evidence | Trial count | Scope and status |
+|---|---|---:|---|
+| Original frozen search | commit `959f1b3` | **34** | Validation Macro-F1 selected PCA(128)+RBF-SVM. Its Test result was later recorded after the earlier non-PCA Test result had already been viewed. |
+| Expanded retained search | `validation_search.csv`, `best_config.json` | **38** | A separate Train/Validation expansion: 20 LinearSVC trials, 4 RBF trials, 12 PCA+LinearSVC trials and 2 PCA+RBF-SVM trials. It is exploratory because Test was already known. |
+| Later rerun | `../traditional_svm_search_extended/` | **34** | A separate Validation-only rerun after both Test results were known; it does not produce a new Test claim. |
+
+`search_traditional_models_nv5.py` reads only Train/Validation. The historical
+chronology above means none of the post-Test runs may be described as having an
+untouched independent Test holdout. See `RUN_HISTORY.md` for commit-level
+traceability.
 
 ## Selected configuration
 
@@ -23,9 +27,11 @@ manifests and does not modify NV4's HOG + LinearSVC pipeline.
 plus 16-bin HSV histograms and 4×4 spatial HSV mean/std, followed by
 `StandardScaler`, PCA(128), and RBF-SVM (`C=10`, `gamma=scale`).
 
-Validation Accuracy is **90.3007%** and Validation Macro-F1 is **88.3470%**.
-The complete per-trial log is in `validation_search.csv` and the frozen choice
-is in `best_config.json`.
+The original 34-trial selection and the later 38-trial expansion selected the
+same configuration: Validation Accuracy **90.3007%**, Validation Macro-F1
+**88.3470%**. The retained 38-trial log is in `validation_search.csv`; the
+original 34-trial selection is traceable at commit `959f1b3` as documented in
+`RUN_HISTORY.md`.
 
 ## Previously observed Test result for the Validation-selected PCA model
 
@@ -49,13 +55,12 @@ were previously evaluated and their Test scores have already been viewed:
 | Configuration | PCA | Validation Macro-F1 | Test Accuracy | Test Macro-F1 | Role |
 |---|---:|---:|---:|---:|---|
 | HOG + HSV + RBF-SVM (`C=10`, `gamma=scale`) | No | 0.879552 | 92.8466% | 90.9566% | Earlier non-PCA experiment |
-| HOG + HSV + PCA + RBF-SVM (`C=10`, `gamma=scale`) | 128 | **0.883470** | 92.1091% | 90.0837% | Main searched model, selected by Validation Macro-F1 |
+| HOG + HSV + PCA + RBF-SVM (`C=10`, `gamma=scale`) | 128 | **0.883470** | 92.1091% | 90.0837% | Original 34-trial Validation winner; post-Test exploratory comparison |
 
-The PCA model is the primary model for the systematic search because it had
-the higher Validation Macro-F1. The non-PCA model had the higher previously
-observed Test score; that Test result does not change the Validation-based
-selection. Since both Test results have already been inspected, report them as
-previously observed comparisons, not as a fresh untouched final holdout.
+PCA(128) won the original 34-trial Validation ranking. It cannot replace the
+non-PCA 92.8466% result as the primary SVM Test report because that later PCA
+comparison happened after the non-PCA Test result was known. Both Test results
+are therefore previously observed comparisons, not fresh independent holdouts.
 
 `exploratory_comparison_four_models.csv` aligns this secondary result with the
 existing CNN, ResNet18 and NV4 HOG + Linear SVM metrics on the same 1,356-image
@@ -64,10 +69,9 @@ Test split. The primary project comparison uses the earlier non-PCA result in
 
 ## Later Validation-only rerun
 
-`results/traditional_svm_search_extended/` preserves a separate 34-trial rerun
-of the search. It was run after both recorded Test results had already been
-viewed, selected the same PCA(128) configuration by Validation Macro-F1, and
-does not add a new Test result or change the primary SVM conclusion.
+`results/traditional_svm_search_extended/` preserves the separate 34-trial
+rerun listed above. It selected the same PCA(128) configuration, but does not
+add a new Test result or change the primary SVM conclusion.
 
 ## Reproduction
 
