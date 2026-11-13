@@ -65,7 +65,10 @@ def main() -> None:
             writer.writerow({"image_id": Path(row["path"]).stem, "path": row["path"], "true_label_index": int(actual), "true_label": LABELS[int(actual)], "predicted_label_index": int(predicted), "predicted_label": LABELS[int(predicted)], "model": "hog_pca_rbf", "status": "ok"})
     metrics = {
         "selection_source": "results/traditional_svm_search/best_config.json",
-        "selection_rule": "highest Validation Macro-F1; Test opened only after selection",
+        "selection_rule": (
+            "highest Validation Macro-F1; this PCA result is exploratory because "
+            "a separate non-PCA experiment had already opened Test"
+        ),
         "selected_config": best,
         "split_counts": {"train": len(train_rows), "test": len(test_rows)},
         "test_correct": int(np.sum(y_test == prediction)),

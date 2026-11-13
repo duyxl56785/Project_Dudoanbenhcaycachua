@@ -1,6 +1,6 @@
 {
   "selection_source": "results/traditional_svm_search/best_config.json",
-  "selection_rule": "highest Validation Macro-F1; Test opened only after selection",
+  "selection_rule": "highest Validation Macro-F1; this PCA result is exploratory because a separate non-PCA experiment had already opened Test",
   "selected_config": {
     "feature": "rgb64_hsv",
     "model": "hog_pca_rbf",

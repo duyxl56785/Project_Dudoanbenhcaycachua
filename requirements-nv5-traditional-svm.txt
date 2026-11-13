@@ -1,0 +1,4 @@
+# Dependencies in addition to requirements.txt for NV5 HOG/SVM scripts.
+-r requirements.txt
+scikit-image==0.25.2
+joblib==1.4.2

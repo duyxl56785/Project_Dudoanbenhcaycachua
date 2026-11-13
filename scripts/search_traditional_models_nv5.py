@@ -1,7 +1,7 @@
 """Systematic NV5 search for traditional HOG/SVM models.
 
-Only Train and Validation are read during the search.  The fixed Test split is
-opened after the best Validation macro-F1 configuration is frozen.
+Only Train and Validation are read during the search.  This script never opens
+the fixed Test split; a separately invoked evaluator is responsible for that.
 """
 from __future__ import annotations
 
@@ -30,7 +30,6 @@ FEATURES = {
     "rgb64": {"size": 64, "grayscale": False, "orientations": 9, "ppc": 8},
     "gray96": {"size": 96, "grayscale": True, "orientations": 9, "ppc": 8},
     "rgb64_orient12": {"size": 64, "grayscale": False, "orientations": 12, "ppc": 8},
-    "rgb48": {"size": 48, "grayscale": False, "orientations": 9, "ppc": 8},
     "rgb64_hsv": {"size": 64, "grayscale": False, "orientations": 9, "ppc": 8, "hsv": True},
 }
 
@@ -159,10 +158,12 @@ def main() -> None:
         del x_train, x_val, y_train, y_val, scaler
         gc.collect()
 
-    top_features = [str(row["feature"]) for row in sorted(feature_best, key=lambda r: (float(r["val_macro_f1"]), float(r["val_accuracy"])), reverse=True)[:1]]
+    # Keep the two best validation feature families.  Together with the five
+    # Stage-1 families this reproduces the 38 recorded Validation trials.
+    top_features = [str(row["feature"]) for row in sorted(feature_best, key=lambda r: (float(r["val_macro_f1"]), float(r["val_accuracy"])), reverse=True)[:2]]
     print(f"top_features={top_features}", flush=True)
 
-    # Stage 2: nonlinear RBF around the best HOG feature family (2).
+    # Stage 2: nonlinear RBF around the two best HOG feature families (4).
     for feature_name in top_features:
         x_train, y_train = extract(train_rows, data_root, feature_name)
         x_val, y_val = extract(val_rows, data_root, feature_name)
@@ -174,7 +175,7 @@ def main() -> None:
             results.append(row)
             print(f"  {feature_name} RBF C={c_value:g} val_f1={row['val_macro_f1']:.6f}", flush=True)
 
-        # Stage 3: PCA + LinearSVC (6 configurations for the selected family).
+        # Stage 3: PCA + LinearSVC (6 configurations per selected family; 12 total).
         for components in (64, 128, 256):
             for c_value in (0.1, 1.0):
                 row = trial(feature_name, "hog_pca_linear", c_value, "scale", components, x_train, y_train, x_val, y_val, already_scaled=True)

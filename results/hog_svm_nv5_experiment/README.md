@@ -12,12 +12,18 @@ This is an additional NV5 experiment; it does not overwrite NV4's original
 
 ## Final Test result
 
-The independently evaluated Test result is 1,259/1,356 correct (92.8466% Accuracy), macro Precision 92.5076%, macro Recall 90.2480%, and macro-F1 90.9566%. Per-class F1 and the confusion matrix are recorded in `metrics.json`; every Test row is traceable in `test_predictions.csv`.
+This was the first recorded NV5 SVM Test evaluation: 1,259/1,356 correct
+(92.8466% Accuracy), macro Precision 92.5076%, macro Recall 90.2480%, and
+macro-F1 90.9566%. Per-class F1 and the confusion matrix are recorded in
+`metrics.json`; every Test row is traceable in `test_predictions.csv`. A later
+PCA search occurred after this Test result had been viewed, so that later result
+is documented as exploratory rather than as a fresh holdout.
 
 ## Reproduction
 
 ```powershell
 $py = 'C:\Users\PC\AppData\Local\Programs\Python\Python312\python.exe'
+& $py -m pip install -r requirements-nv5-traditional-svm.txt
 & $py scripts/evaluate_hog_svm_experiment.py --data-root data/raw --out-dir results/hog_svm_nv5_experiment
 ```
 

@@ -7,11 +7,15 @@ manifests and does not modify NV4's HOG + LinearSVC pipeline.
 
 - Train: 4,115 images; Validation: 1,031 images; Test: 1,356 images.
 - Scaler and PCA (when used) are fitted on Train only.
-- Configurations are ranked by Validation Macro-F1. Test labels are not opened
-  by `search_traditional_models_nv5.py`.
-- **34 configurations** were run: HOG + LinearSVC across five HOG feature
-  families and four C values; HOG + RBF-SVM around the best feature; HOG + PCA
-  + LinearSVC for 64/128/256 components; and HOG + PCA + RBF-SVM.
+- Configurations are ranked by Validation Macro-F1. The retained log contains
+  **38 configurations**: 20 HOG + LinearSVC trials across five feature
+  families and four C values; 4 HOG + RBF-SVM trials and 12 HOG + PCA +
+  LinearSVC trials around the two best feature families; then 2 HOG + PCA +
+  RBF-SVM trials.
+- The script itself reads only Train/Validation. However, the separate non-PCA
+  experiment had already opened Test before this retained 38-trial search was
+  run. Therefore this follow-up search is exploratory and its Test result is
+  not an untouched holdout.
 
 ## Selected configuration
 
@@ -23,9 +27,11 @@ Validation Accuracy is **90.3007%** and Validation Macro-F1 is **88.3470%**.
 The complete per-trial log is in `validation_search.csv` and the frozen choice
 is in `best_config.json`.
 
-## Final Test result
+## Previously observed Test result for the Validation-selected PCA model
 
-After selection, the model was fit on Train only and evaluated once on Test:
+The PCA(128) model was selected by Validation Macro-F1. Its Test score was
+computed after the earlier non-PCA experiment had already exposed Test. Treat
+this as an exploratory comparison, not a fresh final holdout:
 
 - 1,249/1,356 correct (Accuracy **92.1091%**)
 - Macro Precision **90.7366%**, Macro Recall **89.7638%**, Macro-F1 **90.0837%**
@@ -51,13 +57,16 @@ observed Test score; that Test result does not change the Validation-based
 selection. Since both Test results have already been inspected, report them as
 previously observed comparisons, not as a fresh untouched final holdout.
 
-`comparison_four_models.csv` aligns this result with the existing CNN, ResNet18
-and NV4 HOG + Linear SVM metrics on the same 1,356-image Test split.
+`exploratory_comparison_four_models.csv` aligns this secondary result with the
+existing CNN, ResNet18 and NV4 HOG + Linear SVM metrics on the same 1,356-image
+Test split. The primary project comparison uses the earlier non-PCA result in
+`results/comparison.csv`.
 
 ## Reproduction
 
 ```powershell
 $py = 'C:\Users\PC\AppData\Local\Programs\Python\Python312\python.exe'
+& $py -m pip install -r requirements-nv5-traditional-svm.txt
 & $py scripts/search_traditional_models_nv5.py --data-root data/raw --out-dir results/traditional_svm_search
 & $py scripts/evaluate_best_traditional_nv5.py --data-root data/raw --search-dir results/traditional_svm_search
 ```

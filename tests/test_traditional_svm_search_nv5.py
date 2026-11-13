@@ -13,7 +13,10 @@ from scripts import search_traditional_models_nv5 as search
 
 
 class TraditionalSearchTests(unittest.TestCase):
+    REPO_ROOT = Path(__file__).resolve().parents[1]
+
     def test_feature_families_cover_hog_and_hsv_shapes(self):
+        self.assertEqual(len(search.FEATURES), 5)
         self.assertIn("gray64", search.FEATURES)
         self.assertIn("rgb64_hsv", search.FEATURES)
         self.assertEqual(search.FEATURES["rgb64_hsv"]["hsv"], True)
@@ -58,6 +61,34 @@ class TraditionalSearchTests(unittest.TestCase):
                 with patch("sys.argv", ["evaluate_best_traditional_nv5.py", "--data-root", td, "--search-dir", td]):
                     with self.assertRaisesRegex(ValueError, "Unexpected best model: hog_linear"):
                         final_eval.main()
+
+    def test_recorded_validation_search_artifacts_are_consistent(self):
+        """Integration check for the retained 38-trial Validation-only log."""
+        search_dir = self.REPO_ROOT / "results" / "traditional_svm_search"
+        with (search_dir / "validation_search.csv").open(encoding="utf-8-sig", newline="") as handle:
+            rows = list(csv.DictReader(handle))
+        best_config = json.loads((search_dir / "best_config.json").read_text(encoding="utf-8"))
+        self.assertEqual(len(rows), 38)
+        self.assertEqual(best_config["trials"], len(rows))
+        self.assertTrue(all(row["scaler_fit"] == "Train only" for row in rows))
+        pca_rows = [row for row in rows if row["model"] == "hog_pca_rbf"]
+        self.assertEqual(len(pca_rows), 2)
+        self.assertEqual(best_config["best"]["model"], "hog_pca_rbf")
+        self.assertAlmostEqual(best_config["best"]["val_macro_f1"], max(float(row["val_macro_f1"]) for row in rows))
+
+    def test_primary_hsv_svm_artifacts_match_metrics_and_prediction_schema(self):
+        """Integration check: the recorded primary SVM Test evidence is complete."""
+        artifact_dir = self.REPO_ROOT / "results" / "hog_svm_nv5_experiment"
+        metrics = json.loads((artifact_dir / "metrics.json").read_text(encoding="utf-8"))
+        with (artifact_dir / "test_predictions.csv").open(encoding="utf-8-sig", newline="") as handle:
+            predictions = list(csv.DictReader(handle))
+        self.assertEqual(len(predictions), 1356)
+        self.assertEqual(len({row["image_id"] for row in predictions}), 1356)
+        self.assertEqual(sum(sum(row) for row in metrics["confusion_matrix"]), 1356)
+        self.assertEqual(metrics["test_correct"], 1259)
+        self.assertEqual(metrics["test_errors"], 97)
+        self.assertAlmostEqual(metrics["accuracy"], 0.9284660766961652)
+        self.assertAlmostEqual(metrics["macro_f1"], 0.9095664655252522)
 
 
 if __name__ == "__main__":
