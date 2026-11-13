@@ -1,0 +1,40 @@
+{
+  "accuracy": 0.7912979351032449,
+  "macro_precision": 0.7489017156527261,
+  "macro_recall": 0.7422376689877224,
+  "macro_f1": 0.7358757840587302,
+  "n_samples": 1356,
+  "correct": 1073,
+  "wrong": 283,
+  "confusion_matrix": [
+    [
+      313,
+      4,
+      9,
+      4
+    ],
+    [
+      40,
+      67,
+      69,
+      39
+    ],
+    [
+      4,
+      26,
+      320,
+      25
+    ],
+    [
+      17,
+      25,
+      21,
+      373
+    ]
+  ],
+  "test_hog_seconds": 8.622338599991053,
+  "test_predict_seconds": 0.006214099994394928,
+  "test_predict_ms_per_image": 0.004582669612385641,
+  "test_total_ms_per_image": 6.363239454266555,
+  "prediction_csv_sha256": "f337c4c6f1a2b7680aafaa03ecb37d09a9bb32cb302e98b96c0fe329161641e9"
+}

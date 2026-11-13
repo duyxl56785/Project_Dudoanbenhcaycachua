@@ -1,0 +1,71 @@
+{
+  "model": "HOG + LinearSVC V2",
+  "checkpoint": "hog_linear_svm_v2.joblib",
+  "checkpoint_sha256": "756bee68d15699323c14fcbd7dc5a535c316d27c2c3d948edf0989d3d8ebc23c",
+  "checkpoint_bytes": 49418,
+  "hog_config": {
+    "image_size": 96,
+    "grayscale": false,
+    "orientations": 9,
+    "pixels_per_cell": 16,
+    "cells_per_block": 2,
+    "block_norm": "L2-Hys"
+  },
+  "hog_dimension": 900,
+  "C": 0.001,
+  "class_weight": "balanced",
+  "class_names": [
+    "Healthy",
+    "Early Blight",
+    "Late Blight",
+    "Bacterial Spot"
+  ],
+  "split_counts": {
+    "train": 4115,
+    "val": 1031,
+    "test": 1356
+  },
+  "split_csv_sha256": {
+    "train": "a95af933f7abae4bd13fe28b58192571d8e78e8721092ef0cc555f4797746afc",
+    "val": "105751ffa430ca522a027807c7173612a6966c3b92cc7d60a4151da49005215b",
+    "test": "69a889672fa4e41504e3117173103832d1bdffede69a2034e4f4093128102b34"
+  },
+  "validation": {
+    "trial": 22,
+    "image_size": 96,
+    "grayscale": false,
+    "orientations": 9,
+    "pixels_per_cell": 16,
+    "cells_per_block": 2,
+    "block_norm": "L2-Hys",
+    "hog_dimension": 900,
+    "C": 0.001,
+    "class_weight": "balanced",
+    "max_iter": 150,
+    "tol": 0.01,
+    "train_seconds": 0.9641334999905666,
+    "val_predict_ms_per_image": 0.003120853535372088,
+    "iterations": 4,
+    "convergence_warnings": 0,
+    "val_accuracy": 0.7895247332686712,
+    "val_macro_precision": 0.7417345245006056,
+    "val_macro_recall": 0.7468064602798614,
+    "val_macro_f1": 0.7431649527977437,
+    "eligible_for_selection": true
+  },
+  "selection_rule": "converged trials only; highest Validation macro-F1; then faster Validation prediction; then earlier trial",
+  "scaler_fit": "Train only",
+  "final_fit": "Train only; no Train+Val refit",
+  "checkpoint_reload_prediction_equal": true,
+  "versions": {
+    "python": "3.12.0",
+    "numpy": "2.5.4",
+    "scikit_image": "0.26.0",
+    "scikit_learn": "1.9.1",
+    "joblib": "1.6.0"
+  },
+  "completed_at_utc": "2026-11-13T00:42:44.695839+00:00",
+  "test_prediction_rows": 1356,
+  "test_prediction_errors": 0,
+  "test_predictions_sha256": "f337c4c6f1a2b7680aafaa03ecb37d09a9bb32cb302e98b96c0fe329161641e9"
+}
