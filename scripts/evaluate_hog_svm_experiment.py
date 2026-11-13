@@ -93,14 +93,28 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
+def prepare_output_dir(out: Path, *, overwrite: bool) -> None:
+    """Create an output directory without silently replacing audit evidence."""
+    artifact_names = ("hog_hsv_rbf_svm.joblib", "test_predictions.csv", "metrics.json")
+    existing = [out / name for name in artifact_names if (out / name).exists()]
+    if existing and not overwrite:
+        joined = ", ".join(path.name for path in existing)
+        raise FileExistsError(
+            f"Refusing to overwrite existing evaluation artifacts in {out}: {joined}. "
+            "Use a new --out-dir or pass --overwrite intentionally."
+        )
+    out.mkdir(parents=True, exist_ok=True)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--out-dir", type=Path, default=Path("results/hog_svm_nv5_experiment"))
+    parser.add_argument("--overwrite", action="store_true", help="intentionally replace existing output artifacts")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     out = args.out_dir.resolve()
-    out.mkdir(parents=True, exist_ok=True)
+    prepare_output_dir(out, overwrite=args.overwrite)
     splits = load_splits(root, args.data_root.resolve())
     names = load_mapping(root)
     config = {
@@ -126,7 +140,7 @@ def main() -> None:
     matrix = confusion_matrix(y_test, predictions, labels=labels)
     metrics = {
         "model": "HOG + HSV colour features + RBF SVM",
-        "selection": "Validation macro-F1; Test opened only for final evaluation",
+        "selection": "Validation macro-F1; first recorded SVM Test evaluation",
         "feature": {"image_size": 64, "hog_grayscale": False, "orientations": 9, "pixels_per_cell": 8, "cells_per_block": 2, "block_norm": "L2-Hys", "hsv_bins": 16, "hsv_spatial_grid": "4x4", "dimension": int(x_train.shape[1])},
         "C": 10.0,
         "gamma": "scale",

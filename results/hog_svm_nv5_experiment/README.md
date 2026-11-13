@@ -24,8 +24,13 @@ is documented as exploratory rather than as a fresh holdout.
 ```powershell
 $py = 'C:\Users\PC\AppData\Local\Programs\Python\Python312\python.exe'
 & $py -m pip install -r requirements-nv5-traditional-svm.txt
-& $py scripts/evaluate_hog_svm_experiment.py --data-root data/raw --out-dir results/hog_svm_nv5_experiment
+& $py scripts/evaluate_hog_svm_experiment.py --data-root data/raw --out-dir results/hog_svm_nv5_experiment_rerun
 ```
+
+The evaluator refuses to replace `metrics.json`, `test_predictions.csv` or the
+checkpoint in an existing output directory unless `--overwrite` is supplied
+explicitly. Use a new output directory for any reproduction run so the retained
+audit artifact is preserved.
 
 The raw archive is the official `tomato_6502_images.zip` from the project data
 folder (SHA-256 `303c77726cd56def12de4bec9a86517c6c65abd62b1dca8614f717fcfc227304`)

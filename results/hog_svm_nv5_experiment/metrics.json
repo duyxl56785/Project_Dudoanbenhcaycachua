@@ -1,6 +1,6 @@
 {
   "model": "HOG + HSV colour features + RBF SVM",
-  "selection": "Validation macro-F1; Test opened only for final evaluation",
+  "selection": "Validation macro-F1; first recorded SVM Test evaluation",
   "feature": {
     "image_size": 64,
     "hog_grayscale": false,

@@ -9,6 +9,7 @@ from unittest.mock import patch
 import numpy as np
 
 from scripts import evaluate_best_traditional_nv5 as final_eval
+from scripts import evaluate_hog_svm_experiment as hsv_eval
 from scripts import search_traditional_models_nv5 as search
 
 
@@ -40,6 +41,15 @@ class TraditionalSearchTests(unittest.TestCase):
         _, macro_f1 = search.score(truth, pred)
         self.assertAlmostEqual(macro_f1, f1_score(truth, pred, labels=[0, 1, 2, 3], average="macro"))
         self.assertEqual(confusion_matrix(truth, pred, labels=[0, 1, 2, 3]).shape, (4, 4))
+
+    def test_hsv_evaluator_refuses_to_overwrite_audited_artifacts(self):
+        with tempfile.TemporaryDirectory() as td:
+            output = Path(td) / "artifacts"
+            output.mkdir()
+            (output / "metrics.json").write_text("{}", encoding="utf-8")
+            with self.assertRaisesRegex(FileExistsError, "Refusing to overwrite"):
+                hsv_eval.prepare_output_dir(output, overwrite=False)
+            hsv_eval.prepare_output_dir(output, overwrite=True)
 
     def test_search_read_split_uses_manifest_and_rejects_missing_file(self):
         with tempfile.TemporaryDirectory() as td:
