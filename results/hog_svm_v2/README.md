@@ -24,6 +24,8 @@ Trước lưới trên, 5 trial thăm dò grayscale 96×96, 9 hướng, cell 8 (
 
 Lượt được chọn là **#22**: RGB 96×96, HOG 9 hướng, cell 16×16, block 2×2, `C=0.001`, `class_weight=balanced`. Validation Accuracy **0,789525**, macro-Precision **0,741735**, macro-Recall **0,746806**, macro-F1 **0,743165**. Lượt này hội tụ sau 4 vòng, không có cảnh báo. Checkpoint được nạp lại và dự đoán trên ảnh Validation giống hệt trước khi lưu.
 
+Toàn bộ lưới 40 trial mất **221,28 giây** theo timestamp trong log; tổng thời gian fit classifier là **173,64 giây**. Với cấu hình được chọn, trích xuất HOG Train mất **8,08 giây** và Validation mất **1,99 giây**; fit classifier riêng mất **0,964 giây**. Các số này đo trên CPU của lần chạy này.
+
 ## So sánh V1 và V2
 
 | Chỉ số | V1 | V2 |
