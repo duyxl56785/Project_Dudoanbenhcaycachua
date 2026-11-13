@@ -35,6 +35,22 @@ The confusion matrix and all per-image predictions are in `test_metrics.json`
 and `test_predictions.csv`. The serialized scaler, PCA and SVM are in
 `best_traditional_svm.joblib`.
 
+## Comparison with the non-PCA HSV model
+
+Two traditional-model Test results are recorded because both configurations
+were previously evaluated and their Test scores have already been viewed:
+
+| Configuration | PCA | Validation Macro-F1 | Test Accuracy | Test Macro-F1 | Role |
+|---|---:|---:|---:|---:|---|
+| HOG + HSV + RBF-SVM (`C=10`, `gamma=scale`) | No | 0.879552 | 92.8466% | 90.9566% | Earlier non-PCA experiment |
+| HOG + HSV + PCA + RBF-SVM (`C=10`, `gamma=scale`) | 128 | **0.883470** | 92.1091% | 90.0837% | Main searched model, selected by Validation Macro-F1 |
+
+The PCA model is the primary model for the systematic search because it had
+the higher Validation Macro-F1. The non-PCA model had the higher previously
+observed Test score; that Test result does not change the Validation-based
+selection. Since both Test results have already been inspected, report them as
+previously observed comparisons, not as a fresh untouched final holdout.
+
 `comparison_four_models.csv` aligns this result with the existing CNN, ResNet18
 and NV4 HOG + Linear SVM metrics on the same 1,356-image Test split.
 

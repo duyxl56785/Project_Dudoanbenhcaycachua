@@ -1,6 +1,6 @@
 {
   "selection": "highest Validation Macro-F1",
-  "trials": 34,
+  "trials": 38,
   "best": {
     "feature": "rgb64_hsv",
     "model": "hog_pca_rbf",
@@ -10,7 +10,7 @@
     "feature_dim": 1908,
     "val_accuracy": 0.9030067895247332,
     "val_macro_f1": 0.8834699997405999,
-    "train_seconds": 5.269339199992828,
+    "train_seconds": 1.9430166999954963,
     "scaler_fit": "Train only",
     "pca_fit": "Train only"
   }

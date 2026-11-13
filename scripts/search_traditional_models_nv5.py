@@ -162,7 +162,7 @@ def main() -> None:
     top_features = [str(row["feature"]) for row in sorted(feature_best, key=lambda r: (float(r["val_macro_f1"]), float(r["val_accuracy"])), reverse=True)[:1]]
     print(f"top_features={top_features}", flush=True)
 
-    # Stage 2: nonlinear RBF around the two best HOG feature families (4).
+    # Stage 2: nonlinear RBF around the best HOG feature family (2).
     for feature_name in top_features:
         x_train, y_train = extract(train_rows, data_root, feature_name)
         x_val, y_val = extract(val_rows, data_root, feature_name)
@@ -174,7 +174,7 @@ def main() -> None:
             results.append(row)
             print(f"  {feature_name} RBF C={c_value:g} val_f1={row['val_macro_f1']:.6f}", flush=True)
 
-        # Stage 3: PCA + LinearSVC (6 per feature; 12 total).
+        # Stage 3: PCA + LinearSVC (6 configurations for the selected family).
         for components in (64, 128, 256):
             for c_value in (0.1, 1.0):
                 row = trial(feature_name, "hog_pca_linear", c_value, "scale", components, x_train, y_train, x_val, y_val, already_scaled=True)
