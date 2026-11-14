@@ -1,5 +1,8 @@
 import csv
 import json
+import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -30,6 +33,21 @@ def write_metrics(path, n_samples=4):
 
 
 class EvaluateModelsTests(unittest.TestCase):
+    def test_cli_help_is_utf8_safe_with_legacy_windows_encoding(self):
+        """The Vietnamese CLI help must work in a CP1252 PowerShell session."""
+        root = Path(__file__).parents[1]
+        environment = {**os.environ, "PYTHONIOENCODING": "cp1252"}
+        result = subprocess.run(
+            [sys.executable, str(root / "scripts" / "evaluate_models.py"), "--help"],
+            cwd=root,
+            env=environment,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=30,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8", errors="replace"))
+        self.assertIn("Đánh giá độc lập", result.stdout.decode("utf-8"))
+
     def test_mapping_is_contiguous_and_rejects_gap(self):
         with tempfile.TemporaryDirectory(dir=Path(__file__).parents[1]) as directory:
             root = Path(directory)

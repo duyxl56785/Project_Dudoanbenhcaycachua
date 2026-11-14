@@ -1,0 +1,41 @@
+name: NV5 traditional SVM tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/evaluate_models.py'
+      - 'scripts/evaluate_hog_svm_experiment.py'
+      - 'scripts/search_traditional_models_nv5.py'
+      - 'scripts/evaluate_best_traditional_nv5.py'
+      - 'tests/test_nv5_evaluate_models.py'
+      - 'tests/test_traditional_svm_search_nv5.py'
+      - 'results/hog_svm_nv5_experiment/**'
+      - 'results/traditional_svm_search/**'
+      - 'results/traditional_svm_search_extended/**'
+      - 'requirements-nv5-traditional-svm.txt'
+      - '.github/workflows/nv5-traditional-svm-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  nv5-traditional:
+    name: NV5 traditional model tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install minimal CPU dependencies
+        run: |
+          python -m pip install numpy==2.2.6 scikit-learn==1.6.1 scikit-image==0.25.2 joblib==1.4.2 pillow==11.2.1
+      - name: Validate scripts and tests
+        run: python -m compileall -q scripts tests
+      - name: Run data-independent NV5 tests
+        run: python -m unittest tests.test_nv5_evaluate_models tests.test_traditional_svm_search_nv5 -v

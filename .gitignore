@@ -17,3 +17,6 @@ __pycache__/
 results/hog_svm/*.npz
 
 # Lưu ý: KHÔNG chặn *.pt trong checkpoints/. File > 100 MB phải để ở Drive/Release (xem checkpoints/README.md).
+
+# NV5 trained artifact is distributed via verified Google Drive handoff.
+results/hog_svm_nv5_experiment/hog_hsv_rbf_svm.joblib

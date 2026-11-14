@@ -1,0 +1,21 @@
+{
+  "executed_at": "2026-11-12T21:09:26.6260030+07:00",
+  "command": "C:\\Users\\PC\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -u scripts/evaluate_hog_svm_experiment.py --data-root data/raw --out-dir results/hog_svm_nv5_experiment",
+  "status": "success",
+  "data_root": "data/raw",
+  "split_counts": {"train": 4115, "val": 1031, "test": 1356},
+  "selection_rule": "Validation macro-F1; first recorded SVM Test evaluation",
+  "python": "3.12.10",
+  "numpy": "2.2.6",
+  "scikit_image": "0.25.2",
+  "scikit_learn": "1.6.1",
+  "joblib": "1.4.2",
+  "test_correct": 1259,
+  "test_errors": 97,
+  "accuracy": 0.9284660766961652,
+  "macro_precision": 0.9250761042012671,
+  "macro_recall": 0.9024802904228977,
+  "macro_f1": 0.9095664655252522,
+  "prediction_csv_sha256": "f19d187d56e8e7c17875fc6a6596e150bfb6a6edddc7dc3155f2284a5f67babd",
+  "checkpoint_sha256": "d40cf8af63242ebfe8e149eba333419de2c2551999589b7df2d5710db21cfcd5"
+}
