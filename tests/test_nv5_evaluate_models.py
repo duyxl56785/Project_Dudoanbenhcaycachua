@@ -5,9 +5,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts.evaluate_models import (evaluate, load_class_mapping, load_predictions,
-                                     metrics_from_json, run, validate_against_test_manifest,
-                                     validate_same_test_set)
+from scripts.evaluate_models import (configure_utf8_stdio, evaluate, load_class_mapping,
+                                     load_predictions, metrics_from_json, run,
+                                     validate_against_test_manifest, validate_same_test_set)
 
 MAPPING = {0: "Healthy", 1: "Early Blight", 2: "Late Blight", 3: "Bacterial Spot"}
 
@@ -30,6 +30,21 @@ def write_metrics(path, n_samples=4):
 
 
 class EvaluateModelsTests(unittest.TestCase):
+    def test_utf8_console_configuration_is_safe_for_reconfigurable_streams(self):
+        class Stream:
+            def __init__(self):
+                self.encoding = "cp1252"
+                self.calls = []
+
+            def reconfigure(self, **kwargs):
+                self.calls.append(kwargs)
+
+        stdout, stderr = Stream(), Stream()
+        with patch("scripts.evaluate_models.sys.stdout", stdout), patch("scripts.evaluate_models.sys.stderr", stderr):
+            configure_utf8_stdio()
+        self.assertEqual(stdout.calls, [{"encoding": "utf-8"}])
+        self.assertEqual(stderr.calls, [{"encoding": "utf-8"}])
+
     def test_mapping_is_contiguous_and_rejects_gap(self):
         with tempfile.TemporaryDirectory(dir=Path(__file__).parents[1]) as directory:
             root = Path(directory)

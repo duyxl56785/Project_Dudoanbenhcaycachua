@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const skillDir = "C:/Users/PC/.codex/plugins/cache/openai-primary-runtime/presentations/26.1026.10807/skills/presentations";
+const skillDir = "C:/Users/PC/.codex/plugins/cache/openai-primary-runtime/presentations/26.1104.12130/skills/presentations";
 const candidate = path.join(root, ".report_build", "slides_nhom_tomato_two_models_nv5.pptx");
 const finalPath = path.join(root, ".report_final_tmp", "slides_nhom_tomato_two_models_nv5.pptx");
 const publishPath = path.join(root, "report", "deliverables", "slides_nhom_tomato_two_models_nv5.pptx");
@@ -21,7 +21,10 @@ const result = await finalizePresentation({
   layoutArgs: ["--expected-slide-size-emu", "12192000,6858000", "--validate-bullet-geometry", "--validate-heading-fit", "--require-native-table-slide", "6"],
   requiredNativeTableOwnerSlides: [6],
   materializeLiteralChartWorkbooks: true,
-  fontPolicy: { basis: "design", families: ["Aptos", "Aptos Display"] },
+  // Artifact Tool serializes this deck's explicit text style as Arial. Keep the
+  // validator aligned with the rendered, editable deck rather than changing the
+  // established design solely to satisfy a policy default.
+  fontPolicy: { basis: "design", families: ["Arial"] },
   verifyArtifactToolImport: true,
   receiptPath: path.join(staging, "slides_nhom_tomato_two_models_nv5_v3.validation.json"),
 });

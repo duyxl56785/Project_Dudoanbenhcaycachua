@@ -161,7 +161,7 @@ slide = slideBase("Bàn giao cần thiết để chốt báo cáo");
 box(slide, "NV3", 86, 180, 260, 34, { size: 25, color: colors.blue, bold: true });
 box(slide, "Đã nhận: checkpoint/hash, CSV, metrics\nCần duy trì link ZIP và provenance\nKhông commit checkpoint nhị phân vào NV5", 86, 235, 500, 150, { size: 20 });
 box(slide, "NV4 và nhóm trưởng", 700, 180, 390, 34, { size: 25, color: colors.blue, bold: true });
-box(slide, "Ảnh/video và checkpoint demo\nMẫu Word/PPTX, người trình bày\nReview số liệu trước khi merge", 700, 235, 440, 150, { size: 20 });
+box(slide, "Ảnh/video demo nếu nhóm yêu cầu\nMẫu Word/PPTX, người trình bày\nNghiệm thu hình thức trước khi nộp", 700, 235, 440, 150, { size: 20 });
 box(slide, "Đã chạy evaluate_models.py với hai CSV. Mọi cập nhật sau dùng comparison.csv từ cùng nguồn.", 86, 510, 1080, 58, { size: 21, color: colors.navy, bold: true });
 
 for (const [index, item] of deck.slides.items.entries()) {
