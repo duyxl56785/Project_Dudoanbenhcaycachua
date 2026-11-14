@@ -1,6 +1,6 @@
 # Kịch bản video demo NV4 – Nguyễn Minh Duy
 
-Thời lượng gợi ý: 4–6 phút. Quay trên bản tích hợp có cả checkpoint CNN và ResNet18 thật đã xác minh SHA-256; nêu rõ đây là bản ghép cục bộ nếu PR #7/#9 chưa merge vào `main`. Không trình bày ảnh chụp cũ có thông báo thiếu checkpoint như trạng thái hiện tại.
+Thời lượng gợi ý: 4–6 phút. Quay từ `main` sau khi lấy checkpoint ResNet18 thật của NV3 và xác minh SHA-256 của cả hai mô hình. PR #1/#7/#9 đã merge. Không trình bày ảnh chụp cũ có thông báo thiếu checkpoint như trạng thái hiện tại.
 
 ## 1. Mở đầu
 
@@ -60,17 +60,17 @@ Thời lượng gợi ý: 4–6 phút. Quay trên bản tích hợp có cả che
 
 **Màn hình:** mở bảng kiểm thử trong `docs/DEMO_README.md`.
 
-**Lời nói:** “Bản ghép HEAD PR #9/#7/#1 mới nhất đã đạt 76 test, 1 skip và 19 subtests; ghép thêm PR #11 đạt 86 test, 1 skip và 19 subtests. Script và API cho cả CNN/ResNet18 khớp xác suất trên cùng ảnh. ResNet18 đánh giá lại 1.356 ảnh Test đạt Accuracy khoảng 98,67% và macro-F1 khoảng 98,40%. CNN và ResNet18 có xác suất khác nhau trên cùng ảnh; nhóm giữ nguyên kết quả thật.”
+**Lời nói:** “Từ HEAD `main` ngày 14/11, bộ kiểm thử đạt 122 test, 6 skip và 28 subtests. Hai checkpoint thật strict-load trên CPU. Script và API cho CNN/ResNet18 khớp xác suất trên cùng ảnh, sai khác tối đa bằng 0. Trong trình duyệt, hai ảnh thật đều có kết quả riêng của mỗi mô hình. Nhóm giữ nguyên kết quả thật, kể cả dự đoán sai.”
 
 ## 11. Giới hạn và kết luận
 
 **Màn hình:** quay lại phần cảnh báo đầu trang.
 
-**Lời nói:** “Hệ thống chỉ biết bốn lớp đã học, dữ liệu PlantVillage chủ yếu ở điều kiện kiểm soát và kết quả không thay thế chuyên gia. Cả CNN và ResNet18 đã được kiểm thử bằng checkpoint thật trong bản tích hợp cục bộ. Trước nghiệm thu cuối, nhóm còn review, merge các PR và kiểm thử lại từ main. Em xin cảm ơn.”
+**Lời nói:** “Hệ thống chỉ biết bốn lớp đã học, dữ liệu PlantVillage chủ yếu ở điều kiện kiểm soát và kết quả không thay thế chuyên gia. CNN và ResNet18 đã được kiểm thử từ `main` với checkpoint thật. Checkpoint ResNet18 cần tải riêng từ gói NV3 khi chạy trên máy khác. Em xin cảm ơn.”
 
 ## Checklist trước khi quay
 
-- Dùng đúng HEAD PR #9/#7/#1 đã ghi trong báo cáo kiểm thử; checkpoint CNN SHA-256 `d33c95bb...f473a377390de1f`, ResNet18 SHA-256 `61d44ba8...f5f5fdf9e2`.
+- Dùng HEAD `main` mới nhất; checkpoint CNN SHA-256 `d33c95bb...f473a377390de1f`, ResNet18 SHA-256 `61d44ba8...f5f5fdf9e2`.
 - Tắt thông báo cá nhân, không quay đường dẫn chứa thông tin nhạy cảm.
 - Chuẩn bị sẵn một ảnh thật, một file hỏng và cửa sổ README.
 - Quay rõ preview, tên bệnh, đủ bốn xác suất và biểu đồ của cả CNN lẫn ResNet18, chế độ so sánh, cùng thông báo lỗi.
@@ -78,11 +78,11 @@ Thời lượng gợi ý: 4–6 phút. Quay trên bản tích hợp có cả che
 - Không cắt ghép để thay đổi nhãn hoặc xác suất; nếu dự đoán sai, giữ nguyên và giải thích.
 - Kiểm tra file video đã ghi bằng cách mở lại, nghe/nhìn toàn bộ các đoạn chính và ghi thời lượng, dung lượng, đường dẫn bàn giao. Chỉ đánh dấu video hoàn thành khi có file thật đã xem lại.
 
-**Trạng thái 01/11/2026:** chưa có video được ghi hoặc bàn giao; các ảnh chụp trình duyệt thật của cả hai mô hình nằm trong `demo/screenshots/`. Máy có FFmpeg với `gdigrab`, nhưng phiên điều khiển trình duyệt hiện không khởi tạo được để quay trọn luồng thao tác; không tạo video từ ảnh tĩnh hoặc tuyên bố đã quay.
+**Trạng thái 14/11/2026:** chưa có video được ghi và xem lại; các ảnh chụp trình duyệt thật của cả hai mô hình nằm trong `demo/screenshots/`. Không tạo video từ ảnh tĩnh hoặc tuyên bố đã quay.
 
 ## Hướng dẫn quay video hai mô hình thật cho NV5
 
-1. Tạo môi trường theo `docs/DEMO_README.md`; dùng đồng bộ mã/YAML/checkpoint/metadata CNN từ PR #9 và ResNet18 từ PR #7. Đối chiếu SHA-256 CNN `d33c95bbe15e82fa83f1fd954136ebfff6e1cbba1a86fe40af473a377390de1f`, ResNet18 `61d44ba8ac02ee57c44cbd3835aaac2c657c97924735fea743a60df5f5fdf9e2` trước khi quay. Chạy `python -m streamlit run demo/app.py` từ gốc bản tích hợp.
+1. Tạo môi trường theo `docs/DEMO_README.md` từ `main`; đặt checkpoint/metadata ResNet18 NV3 vào `checkpoints/`. Đối chiếu SHA-256 CNN `d33c95bbe15e82fa83f1fd954136ebfff6e1cbba1a86fe40af473a377390de1f`, ResNet18 `61d44ba8ac02ee57c44cbd3835aaac2c657c97924735fea743a60df5f5fdf9e2` trước khi quay. Chạy `python -m streamlit run demo/app.py` từ gốc dự án.
 2. Mở demo trong một cửa sổ trình duyệt riêng. Trong phần mềm quay, chọn **Window Capture / quay cửa sổ ứng dụng** cho đúng cửa sổ này, không chọn toàn màn hình. Quay thử vài giây rồi xem lại để chắc chắn khung hình chỉ chứa demo và chữ đọc được; tắt thông báo cá nhân.
 3. Dùng ảnh thật trong `data/raw/` nhưng không đưa nguyên dataset vào video. Quay liên tục thao tác upload, preview, CNN, ResNet18, so sánh hai mô hình, từng bảng bốn xác suất, thêm ảnh Healthy và ảnh hỏng, xem lịch sử, tải CSV và xem Dashboard. Giữ nguyên mọi kết quả thật, kể cả dự đoán sai.
 4. Kiểm tra file MP4 sau khi dừng: hình và tiếng (nếu thuyết minh), tên bệnh, bốn xác suất mỗi mô hình, thông báo ảnh hỏng, lịch sử, CSV và Dashboard phải xem được. Chỉ đánh dấu video hoàn thành trong Issue khi tệp đã được mở và đối chiếu.
