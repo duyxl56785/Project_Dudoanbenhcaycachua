@@ -5,8 +5,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts.evaluate_models import (configure_utf8_stdio, load_class_mapping, load_predictions,
-                                     metrics_from_json, run, validate_same_test_set)
+from scripts.evaluate_models import (configure_utf8_stdio, evaluate, load_class_mapping,
+                                     load_predictions, metrics_from_json, run,
+                                     validate_against_test_manifest, validate_same_test_set)
 
 MAPPING = {0: "Healthy", 1: "Early Blight", 2: "Late Blight", 3: "Bacterial Spot"}
 
@@ -81,6 +82,38 @@ class EvaluateModelsTests(unittest.TestCase):
             write_predictions(cnn, [{"path": r"data\raw\raw\color\Tomato___Healthy\a.jpg", "true": 0, "pred": 0}])
             write_predictions(resnet, [{"path": "/content/run/data/raw/raw/color/Tomato___Healthy/a.jpg", "true": 0, "pred": 0}])
             validate_same_test_set(load_predictions(cnn, MAPPING, "test"), load_predictions(resnet, MAPPING, "test"))
+
+    def test_svm_schema_and_relative_test_manifest_are_validated(self):
+        with tempfile.TemporaryDirectory(dir=Path(__file__).parents[1]) as directory:
+            root = Path(directory)
+            predictions = root / "test_predictions.csv"
+            with predictions.open("w", newline="", encoding="utf-8-sig") as stream:
+                writer = csv.DictWriter(stream, fieldnames=[
+                    "image_id", "path", "true_label_index", "predicted_label_index", "status",
+                    "decision_score_0", "decision_score_1", "decision_score_2", "decision_score_3",
+                ])
+                writer.writeheader()
+                for index, name in MAPPING.items():
+                    writer.writerow({"image_id": f"sample-{index}", "path": f"raw/color/Class/{index}.JPG",
+                                     "true_label_index": index, "predicted_label_index": index,
+                                     "status": "ok", "decision_score_0": 0, "decision_score_1": 0,
+                                     "decision_score_2": 0, "decision_score_3": 1})
+            manifest = root / "test.csv"
+            with manifest.open("w", newline="", encoding="utf-8") as stream:
+                writer = csv.DictWriter(stream, fieldnames=["path", "label"])
+                writer.writeheader()
+                for index in MAPPING:
+                    writer.writerow({"path": f"raw/color/Class/{index}.JPG", "label": index})
+            rows = load_predictions(predictions, MAPPING, "test")
+            validate_against_test_manifest(rows, manifest, MAPPING)
+            self.assertEqual(evaluate(rows, MAPPING)["accuracy"], 1.0)
+
+    def test_svm_status_error_is_rejected(self):
+        with tempfile.TemporaryDirectory(dir=Path(__file__).parents[1]) as directory:
+            path = Path(directory) / "test_predictions.csv"
+            path.write_text("path,true_label_index,predicted_label_index,status\na.jpg,0,0,error\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "trạng thái lỗi"):
+                load_predictions(path, MAPPING, "test")
 
     def test_metrics_json_schema_and_missing_fields(self):
         with tempfile.TemporaryDirectory(dir=Path(__file__).parents[1]) as directory:
@@ -178,11 +211,37 @@ class EvaluateModelsTests(unittest.TestCase):
             })()
             with patch("scripts.evaluate_models.plot_confusion"):
                 result = run(args)
-            self.assertEqual(result["models"], {"CNN": "computed", "ResNet18": "pending"})
+            self.assertEqual(result["models"], {"CNN": "computed", "ResNet18": "pending", "HOG + Linear SVM": "pending"})
             comparison = (output / "comparison.csv").read_text(encoding="utf-8")
             self.assertIn("CNN,computed", comparison)
             self.assertIn("ResNet18,pending", comparison)
             self.assertIn("ResNet18", (output / "analysis.md").read_text(encoding="utf-8"))
+
+    def test_run_writes_three_model_comparison(self):
+        with tempfile.TemporaryDirectory(dir=Path(__file__).parents[1]) as directory:
+            root = Path(directory)
+            cnn_metrics = root / "cnn_metrics.json"; write_metrics(cnn_metrics)
+            predictions = root / "svm_predictions.csv"
+            write_predictions(predictions, [{"path": name, "true": index, "pred": index} for index, name in enumerate(("a", "b", "c", "d"))])
+            manifest = root / "test.csv"
+            manifest.write_text("path,label\na,0\nb,1\nc,2\nd,3\n", encoding="utf-8")
+            svm_metadata = root / "svm_metadata.json"
+            svm_metadata.write_text(json.dumps({"source": "NV4 PR #16", "checkpoint_sha256": "a" * 64,
+                                                "prediction_csv_sha256": "b" * 64, "score_type": "decision_score"}), encoding="utf-8")
+            output = root / "results"
+            args = type("Args", (), {
+                "class_mapping": str(Path(__file__).parents[1] / "configs" / "class_mapping.json"),
+                "cnn_predictions": None, "cnn_metrics": str(cnn_metrics),
+                "resnet18_predictions": None, "resnet18_metrics": None,
+                "svm_predictions": str(predictions), "svm_metrics": str(svm_metadata),
+                "test_manifest": str(manifest), "split": "test", "output_dir": str(output),
+            })()
+            with patch("scripts.evaluate_models.plot_confusion"):
+                result = run(args)
+            self.assertEqual(result["models"]["HOG + Linear SVM"], "computed")
+            comparison = (output / "comparison.csv").read_text(encoding="utf-8")
+            self.assertIn("HOG + Linear SVM,computed", comparison)
+            self.assertIn("score_type", comparison.splitlines()[0])
 
 
 if __name__ == "__main__":

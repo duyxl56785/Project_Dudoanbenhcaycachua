@@ -13,4 +13,7 @@ __pycache__/
 .DS_Store
 .vscode/
 
+# Feature caches are local; the verified SVM checkpoint is only 96 KiB.
+results/hog_svm/*.npz
+
 # Lưu ý: KHÔNG chặn *.pt trong checkpoints/. File > 100 MB phải để ở Drive/Release (xem checkpoints/README.md).

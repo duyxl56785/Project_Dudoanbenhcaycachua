@@ -2,14 +2,16 @@ name: NV4 demo tests
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, feature/v2-gradcam-visualization]
     paths:
       - demo/**
-      - src/inference.py
-      - tests/test_inference.py
-      - tests/test_demo_*.py
-      - tests/test_nv4_*.py
+      - src/**
+      - tests/**
+      - configs/**
+      - requirements.txt
+      - .streamlit/**
       - docs/DEMO_README.md
+      - docs/GRADCAM_V2.md
       - .github/workflows/nv4-demo-ci.yml
 
 permissions:
@@ -17,7 +19,6 @@ permissions:
 
 jobs:
   nv4-demo:
-    if: github.head_ref == 'feature/nv4-demo'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -1,0 +1,11 @@
+{
+  "source": "V1 frozen checkpoint; no refit or model selection",
+  "n_samples": 1356,
+  "correct": 1002,
+  "test_hog_seconds": 2.3555412999994587,
+  "test_predict_seconds": 0.021297600003890693,
+  "test_predict_ms_per_image": 0.01570619469313473,
+  "test_total_ms_per_image": 1.7528310472001103,
+  "prediction_match_published_csv": true,
+  "checkpoint_sha256": "ec61605eb4bfd897b6ee7756e54c665dbdad6314a78ceb300d14b0e974ef974b"
+}
