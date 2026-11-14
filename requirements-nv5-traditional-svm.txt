@@ -1,4 +1,6 @@
 # Dependencies in addition to requirements.txt for NV5 HOG/SVM scripts.
 -r requirements.txt
+# Checkpoint hog_hsv_rbf_svm.joblib was serialized with this exact version.
+scikit-learn==1.6.1
 scikit-image==0.25.2
 joblib==1.4.2
