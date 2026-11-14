@@ -102,13 +102,26 @@ class TraditionalSearchTests(unittest.TestCase):
         self.assertAlmostEqual(metrics["accuracy"], 0.9284660766961652)
         self.assertAlmostEqual(metrics["macro_f1"], 0.9095664655252522)
 
+    def test_primary_hsv_checkpoint_handoff_metadata_is_consistent(self):
+        """The external model can be identified without downloading it in CI."""
+        artifact_dir = self.REPO_ROOT / "results" / "hog_svm_nv5_experiment"
+        metrics = json.loads((artifact_dir / "metrics.json").read_text(encoding="utf-8"))
+        handoff = (artifact_dir / "CHECKPOINT_HANDOFF.md").read_text(encoding="utf-8")
+        expected_sha = "d40cf8af63242ebfe8e149eba333419de2c2551999589b7df2d5710db21cfcd5"
+        self.assertEqual(metrics["checkpoint_sha256"], expected_sha)
+        self.assertEqual(metrics["feature"]["dimension"], 1908)
+        self.assertIn(expected_sha, handoff)
+        self.assertIn("https://drive.google.com/file/d/1dlLKDcyn0NkBFJBeedyByJBPC5AkXDVr/view", handoff)
+
     def test_primary_hsv_checkpoint_hash_and_metadata_are_consistent(self):
-        """Integration check: checkpoint bytes and fitted feature dimensions agree."""
+        """Verify the real joblib only if the external checkpoint was downloaded."""
         artifact_dir = self.REPO_ROOT / "results" / "hog_svm_nv5_experiment"
         checkpoint = artifact_dir / "hog_hsv_rbf_svm.joblib"
         metrics = json.loads((artifact_dir / "metrics.json").read_text(encoding="utf-8"))
-        payload = joblib.load(checkpoint)
+        if not checkpoint.is_file():
+            self.skipTest("NV5 SVM checkpoint distributed via Drive; see CHECKPOINT_HANDOFF.md")
         self.assertEqual(hashlib.sha256(checkpoint.read_bytes()).hexdigest(), metrics["checkpoint_sha256"])
+        payload = joblib.load(checkpoint)
         self.assertEqual(list(payload["class_names"]), metrics["class_names"])
         self.assertEqual(payload["config"]["dimension"], 1908)
         self.assertEqual(payload["scaler"].n_features_in_, payload["config"]["dimension"])
