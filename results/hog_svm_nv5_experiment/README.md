@@ -35,3 +35,20 @@ audit artifact is preserved.
 The raw archive is the official `tomato_6502_images.zip` from the project data
 folder (SHA-256 `303c77726cd56def12de4bec9a86517c6c65abd62b1dca8614f717fcfc227304`)
 and is intentionally not committed.
+
+## External checkpoint handoff
+
+The original trained checkpoint is stored **outside Git** in the group Drive:
+
+- [hog_hsv_rbf_svm.joblib (Google Drive)](https://drive.google.com/file/d/1dlLKDcyn0NkBFJBeedyByJBPC5AkXDVr/view)
+- Size: **25,157,911 bytes**
+- SHA-256: `d40cf8af63242ebfe8e149eba333419de2c2551999589b7df2d5710db21cfcd5`
+- Serialized with **Python 3.12.10 / scikit-learn 1.6.1** (see `execution_log.json`). Use `requirements-nv5-traditional-svm.txt` for a compatible environment.
+
+The file was uploaded on 2026-11-14 and independently downloaded from Drive onto Windows; the downloaded bytes have the same SHA-256 as the original checkout. To test the serialized model locally, download it into `results/hog_svm_nv5_experiment/hog_hsv_rbf_svm.joblib` and verify:
+
+```powershell
+Get-FileHash -Algorithm SHA256 results/hog_svm_nv5_experiment/hog_hsv_rbf_svm.joblib
+```
+
+Without the optional checkpoint download, the Test predictions and metrics remain auditable from committed CSV/JSON; the joblib integration test deliberately skips while the artifact is absent. See [CHECKPOINT_HANDOFF.md](CHECKPOINT_HANDOFF.md) for the precise distribution and merge decision.
