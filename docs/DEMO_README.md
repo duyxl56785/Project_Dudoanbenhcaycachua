@@ -1,5 +1,11 @@
 # Demo Streamlit – NV4 Nguyễn Minh Duy
 
+## Trạng thái hiện tại: 14/11/2026
+
+PR #1 (NV4), #7 (ResNet18), #9 (CNN), #16 (HOG + Linear SVM V1) và #19 (V2) **đã merge vào `main`**. Phần từ đây đến các mục nhật ký bên dưới mô tả trạng thái lịch sử tại từng ngày, không phải tình trạng PR hiện nay. Mã CNN và ResNet18 đã có trong `main`; checkpoint CNN 1.571.893 byte nằm trong repository, còn checkpoint ResNet18 fine-tuned 44.794.251 byte phải lấy từ [gói NV3 bàn giao](https://drive.google.com/file/d/153DOn8zLCiIhnydLoPNDcht3X0EFhKuR/view), đặt cạnh metadata tại `checkpoints/`. SHA-256 lần lượt là `d33c95bbe15e82fa83f1fd954136ebfff6e1cbba1a86fe40af473a377390de1f` và `61d44ba8ac02ee57c44cbd3835aaac2c657c97924735fea743a60df5f5fdf9e2`.
+
+NV4 kiểm thử lại từ HEAD `main` `d69b315` trong worktree riêng: `pytest` **122 passed, 6 skipped, 28 subtests passed**; `compileall` và `git diff --check` đạt. Hai checkpoint thật strict-load trên CPU, metadata/transform/mapping khớp. `demo.check_consistency --model both` trên cùng ảnh Bacterial Spot đạt **CNN PASS, ResNet18 PASS, max |delta|=0**. Streamlit khởi động từ `main`, trình duyệt tải hai ảnh thật, xem trước, so sánh cả hai mô hình, hiển thị đủ bốn xác suất, lịch sử bốn lượt và dashboard đúng 2 ảnh/4 lượt. [Báo cáo kiểm toán mới](audits/NV4_FINAL_AUDIT_20261114.md). Chưa có video demo cuối được ghi và xem lại; [kịch bản quay](DEMO_SCRIPT_NV4.md) đã cập nhật.
+
 ## Kiểm thử lại HEAD NV3 ngày 01/11/2026
 
 Sau commit NV3 `2e10e6a`, NV4 ghép HEAD mới của PR #9/#7/#1 trên worktree tạm từ `main`, xác minh lại checkpoint ResNet18 thật, script/API, ba chế độ Streamlit và toàn bộ test; sau đó kiểm tra thêm PR #11. [Báo cáo, xác suất từng lớp, kết quả test và ảnh chụp thật](audits/NV4_RESNET18_RETEST_20261101.md). Bản ghép đạt **76 passed, 1 skipped, 19 subtests**; thêm NV5 đạt **86 passed, 1 skipped, 19 subtests**. Các PR vẫn cần review/merge và kiểm thử lại trên `main`; phần dưới giữ nhật ký những lần kiểm thử trước.
@@ -55,7 +61,7 @@ python -m scripts.check_dataset --data-root data/raw --verify-hashes
 
 ## Cài đặt và chạy
 
-`requirements.txt` đã liệt kê Streamlit, PyTorch, torchvision, Pillow và PyYAML. Môi trường `.venv` dựng từ file này đã được kiểm tra với Python 3.12.0, PyTorch 2.14.1+cpu, torchvision 0.29.1+cpu, Streamlit 1.66.1, Pillow 13.0.0 và PyYAML 6.0.3. CNN đã được xác minh end-to-end trong bản tích hợp tạm; nhánh NV4 hiện vẫn thiếu mã/checkpoint đã merge. Các lệnh cần chạy từ thư mục gốc dự án:
+`requirements.txt` đã liệt kê Streamlit, PyTorch, torchvision, Pillow và PyYAML. Môi trường `.venv` đã được kiểm tra với Python 3.12.0, PyTorch 2.14.1+cpu, torchvision 0.29.1+cpu, Streamlit 1.66.1, Pillow 13.0.0 và PyYAML 6.0.3. Mã hai mô hình có trong `main`; trước khi chạy cần đặt đúng checkpoint/metadata ResNet18 từ gói bàn giao và kiểm tra SHA-256 như mục trạng thái hiện tại. Các lệnh chạy từ thư mục gốc dự án:
 
 ```powershell
 python -m venv .venv
@@ -67,10 +73,10 @@ python -m unittest discover -s tests -v
 
 ## Tiền xử lý và mô hình
 
-Val/Test và demo dùng pipeline tất định từ `build_val_transform(model_name, config)`: chuyển RGB, resize/crop theo YAML, chuyển tensor và normalize bằng đúng `mean/std` của checkpoint; không dùng augmentation Train. CNN PR #9 dùng ảnh đầu vào 224×224 và ImageNet mean/std. ResNet18 phải dùng config/metadata chính thức của NV3; các giá trị còn `null` không được tự suy đoán.
+Val/Test và demo dùng pipeline tất định từ `build_val_transform(model_name, config)`: chuyển RGB, resize/crop theo YAML, chuyển tensor và normalize bằng đúng `mean/std` của checkpoint; không dùng augmentation Train. CNN resize 224×224. ResNet18 resize cạnh ngắn 256 rồi center crop 224×224. Cả hai dùng ImageNet mean `[0.485, 0.456, 0.406]` và std `[0.229, 0.224, 0.225]`, được đối chiếu với metadata thật.
 
 - **CNN tự xây dựng:** `build_model(num_classes=4)`, checkpoint thật PR #9, đã strict-load và suy luận CPU thành công.
-- **ResNet18:** source PR #7 có `build_model(num_classes=4)` nhưng chưa có checkpoint fine-tuned. Demo chỉ báo thiếu checkpoint, tuyệt đối không chạy trọng số ngẫu nhiên như kết quả thật.
+- **ResNet18:** kiến trúc `build_model(num_classes=4)` đã merge từ PR #7; checkpoint fine-tuned và metadata NV3 được bàn giao qua Drive như mục đầu. Demo chỉ suy luận khi bộ file thật hợp lệ, và báo thiếu checkpoint trên máy chưa cài đặt.
 
 Để kiểm tra consistency CNN trong bản tích hợp tạm từ PR #9, cần lấy đồng bộ `src/models/cnn.py`, `src/cnn_training.py`, `scripts/infer_cnn.py`, `configs/cnn.yaml`, `checkpoints/cnn_best.pt` và `checkpoints/cnn_best.meta.json`. Riêng `src/cnn_training.py` là dependency của script NV2; thiếu file này sẽ gây `ModuleNotFoundError` dù API NV4 có thể strict-load checkpoint. Lần kiểm tra lại ngày 29/10/2026 với đúng bộ file trên và ảnh Bacterial Spot thật đạt `cnn: PASS; top-1=Bacterial Spot; max |delta|=0` trên CPU, SHA-256 checkpoint vẫn là `d33c95bb...f473a377390de1f`.
 
