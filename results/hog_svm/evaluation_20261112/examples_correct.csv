@@ -1,0 +1,13 @@
+﻿path,true_label,predicted_label
+raw/color/Tomato___healthy/00bce074-967b-4d50-967a-31fdaa35e688___RS_HL 0223.JPG,Healthy,Healthy
+raw/color/Tomato___healthy/0326b4b6-0f25-47af-bfd9-d8fec314a4f5___RS_HL 0621.JPG,Healthy,Healthy
+raw/color/Tomato___healthy/050e7bff-2f2d-4c92-9422-05ce93f1d5a9___RS_HL 0097.JPG,Healthy,Healthy
+raw/color/Tomato___Early_blight/00c5c908-fc25-4710-a109-db143da23112___RS_Erly.B 7778.JPG,Early Blight,Early Blight
+raw/color/Tomato___Early_blight/011aa278-a39e-40b0-b6e4-2e2f835889f0___RS_Erly.B 8251.JPG,Early Blight,Early Blight
+raw/color/Tomato___Early_blight/01f87f04-ff38-4aba-b7d1-587aa06e5282___RS_Erly.B 7851.JPG,Early Blight,Early Blight
+raw/color/Tomato___Late_blight/005e3b43-9050-47da-9498-f9ecdcc703b3___RS_Late.B 5104.JPG,Late Blight,Late Blight
+raw/color/Tomato___Late_blight/008ebb44-eb77-4843-b621-4b88b5df7d43___RS_Late.B 5188.JPG,Late Blight,Late Blight
+raw/color/Tomato___Late_blight/00ce4c63-9913-4b16-898c-29f99acf0dc3___RS_Late.B 4982.JPG,Late Blight,Late Blight
+raw/color/Tomato___Bacterial_spot/00416648-be6e-4bd4-bc8d-82f43f8a7240___GCREC_Bact.Sp 3110.JPG,Bacterial Spot,Bacterial Spot
+raw/color/Tomato___Bacterial_spot/01a3cf3f-94c1-44d5-8972-8c509d62558e___GCREC_Bact.Sp 3396.JPG,Bacterial Spot,Bacterial Spot
+raw/color/Tomato___Bacterial_spot/01d9fc8d-5083-468d-a583-885f33517cdd___GCREC_Bact.Sp 3422.JPG,Bacterial Spot,Bacterial Spot
