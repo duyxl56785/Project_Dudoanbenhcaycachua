@@ -493,7 +493,11 @@ def main(argv: list[str] | None = None) -> int:
     for stream in (sys.stdout, sys.stderr):
         reconfigure = getattr(stream, "reconfigure", None)
         if reconfigure is not None:
-            reconfigure(encoding="utf-8", errors="replace")
+            try:
+                reconfigure(encoding="utf-8", errors="replace")
+            except (OSError, ValueError):
+                # Some test runners/embedders expose closed or immutable streams.
+                pass
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--cnn-predictions"); parser.add_argument("--resnet18-predictions")
     parser.add_argument("--cnn-metrics"); parser.add_argument("--resnet18-metrics")
