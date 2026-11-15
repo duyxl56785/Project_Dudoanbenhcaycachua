@@ -21,7 +21,8 @@ giá vào đây.
 - `bao_cao_nhom_tomato_final.docx`: báo cáo nộp, gồm CNN, ResNet18 và hai
   baseline HOG + SVM (NV4, NV5); số liệu khớp `results/comparison.csv`.
 - `slides_bao_cao_cong_viec_final.pptx`: slide báo cáo công việc theo mẫu
-  CMC (1 trang giới thiệu, 5 trang từng thành viên, 1 trang tổng kết). Cột
+  CMC (trang bìa, 1 trang giới thiệu bài toán và các mô hình, 5 trang từng
+  thành viên, 1 trang tổng kết). Cột
   "Tự đánh giá" và "Trưởng nhóm đánh giá" do nhóm điền khi trình bày.
 - Các tệp `*_nv5`, `*_draft_*`, `*_template*` ở trên là bản trung gian, giữ lại
   để truy vết.
