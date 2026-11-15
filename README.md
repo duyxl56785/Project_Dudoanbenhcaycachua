@@ -9,9 +9,22 @@ Phạm vi kỹ thuật đã chốt: **phân loại ảnh lá cà chua theo 4 l�
 1. CNN tự xây dựng, huấn luyện từ đầu (không pretrained).
 2. ResNet18 pretrained, Transfer Learning (feature extraction rồi fine-tuning).
 
-Kèm demo Streamlit để tải ảnh lá và xem dự đoán. Công nghệ: Python, PyTorch/torchvision, Streamlit. Dữ liệu: PlantVillage (phiên bản/link sẽ ghi trong [docs/DATASET_README.md](docs/DATASET_README.md)).
+Kèm demo Streamlit để tải ảnh lá và xem dự đoán (có Grad-CAM thử nghiệm). Ngoài hai mô hình chính, nhóm bổ sung hai baseline học máy truyền thống (HOG + SVM) để so sánh. Công nghệ: Python, PyTorch/torchvision, scikit-learn, scikit-image, Streamlit. Dữ liệu: 6.502 ảnh màu từ [PlantVillage](https://huggingface.co/datasets/mohanty/PlantVillage), xem [docs/DATASET_README.md](docs/DATASET_README.md).
 
-> Trạng thái: **mới khởi tạo khung dự án**. Chưa có dữ liệu, mô hình hay kết quả thực nghiệm.
+> Trạng thái (15/11/2026): **đã tích hợp dữ liệu, hai mô hình chính, hai baseline SVM, demo và đánh giá vào `main`.** Còn lại khâu đóng gói nộp: video demo, bản báo cáo/slide cuối và các mục chưa đóng ở [Tiến độ](#tiến-độ).
+
+## Kết quả trên tập Test
+
+Tập Test cố định **1.356 ảnh**; mọi mô hình chọn checkpoint/cấu hình bằng **Validation macro-F1**, Test chỉ dùng để báo cáo. Nguồn: [`results/comparison.csv`](results/comparison.csv).
+
+| Mô hình | Accuracy | Macro-F1 | F1 Early Blight | Ghi chú |
+|---|---:|---:|---:|---|
+| ResNet18 (transfer learning) | **98,67%** | **0,9840** | 0,9623 | Mô hình chính |
+| CNN tự xây dựng | 96,98% | 0,9650 | 0,9274 | Mô hình chính, 389.924 tham số |
+| HOG + HSV + RBF-SVM | 92,85% | 0,9096 | 0,7789 | Baseline NV5 |
+| HOG + Linear SVM V1 | 73,89% | 0,6940 | 0,3777 | Baseline NV4 |
+
+Early Blight ↔ Late Blight là cặp nhầm lẫn khó nhất ở mọi mô hình. Chênh lệch ResNet18–CNN đo trên một seed và một tập Test trong miền PlantVillage, chưa kiểm định ngoài miền. Phân tích chi tiết: [`results/analysis.md`](results/analysis.md).
 
 📄 **Mọi thành viên đọc trước:** [Tài liệu bàn giao nhiệm vụ (23/10/2026)](docs/BAN_GIAO_NHIEM_VU_NHOM_HOC_MAY_CA_CHUA_23-10-2026.txt) – phân công, hợp đồng kỹ thuật dùng chung, việc phải làm, tệp bàn giao và điều kiện nghiệm thu của từng NV, các Gate.
 
@@ -45,59 +58,33 @@ Chi tiết file phụ trách, Gate và người nhận bàn giao của từng ng
 ```
 Project_Dudoanbenhcaycachua/
 ├── README.md
-├── requirements.txt
-├── .gitignore
-├── .github/
-│   └── pull_request_template.md   # checklist bàn giao (a)-(f)
-├── configs/
-│   ├── class_mapping.json         # ánh xạ nhãn dùng chung
-│   ├── cnn.yaml                   # NV2
-│   └── resnet18.yaml              # NV3
+├── requirements.txt               # demo, CNN, ResNet18, HOG-SVM V1
+├── requirements-*.txt             # môi trường riêng cho HOG-SVM / SVM NV5 / test
+├── .github/workflows/             # CI: demo, HOG-SVM, SVM NV5
+├── configs/                       # class_mapping.json (chung), cnn.yaml, resnet18.yaml
 ├── data/
-│   ├── README.md                  # cách tải/kiểm tra dữ liệu (không commit ảnh)
+│   ├── README.md                  # cách tải ZIP dataset từ Drive (không commit ảnh)
+│   ├── dataset_manifest.csv, audit/
 │   └── splits/                    # train.csv, val.csv, test.csv (NV1)
 ├── src/
-│   ├── data/
-│   │   ├── dataset.py             # NV1
-│   │   └── transforms.py          # NV1
-│   ├── models/
-│   │   ├── cnn.py                 # NV2
-│   │   └── resnet18.py            # NV3
-│   └── inference.py               # NV4
-├── scripts/
-│   ├── prepare_dataset.py         # NV1
-│   ├── check_dataset.py           # NV1
-│   ├── visualize_dataset.py       # NV1
-│   ├── train_cnn.py               # NV2
-│   ├── eval_cnn.py                # NV2
-│   ├── infer_cnn.py               # NV2
-│   ├── train_resnet18.py          # NV3
-│   ├── eval_resnet18.py           # NV3
-│   ├── infer_resnet18.py          # NV3
-│   └── evaluate_models.py         # NV5
-├── checkpoints/
-│   └── README.md                  # link trọng số nếu tách khỏi Git
-├── results/
-│   ├── cnn/
-│   └── resnet18/
+│   ├── data/                      # dataset.py, transforms.py (NV1)
+│   ├── models/                    # cnn.py (NV2), resnet18.py (NV3)
+│   ├── inference.py               # nạp checkpoint cho demo (NV4)
+│   ├── explainability.py          # Grad-CAM
+│   └── hog_svm.py                 # đặc trưng HOG/HSV cho SVM
+├── scripts/                       # prepare/check dataset, train/eval/infer từng mô hình, evaluate_models.py
+├── checkpoints/                   # cnn_best.pt trong Git; resnet18_best.pt tải từ Drive
+├── results/                       # metrics, prediction CSV, confusion matrix, comparison.csv
 ├── figures/
-├── demo/
-│   ├── app.py                     # NV4
-│   └── screenshots/
-├── report/                        # báo cáo .docx, slide (NV5)
-└── docs/
-    ├── BAN_GIAO_NHIEM_VU_NHOM_HOC_MAY_CA_CHUA_23-10-2026.txt   # tài liệu phân công
-    ├── PHAN_CONG.md               # bảng phân công kèm tài khoản GitHub
-    ├── DATASET_README.md
-    ├── CNN_README.md
-    ├── RESNET18_README.md
-    ├── DEMO_README.md
-    └── MEETING_NOTES.md
+├── demo/                          # app.py (Streamlit), check_consistency.py, screenshots/
+├── report/                        # báo cáo, slide, checklist nghiệm thu (NV5)
+├── tests/                         # pytest/unittest cho từng NV
+└── docs/                          # README từng phần, audit, Q&A bảo vệ
 ```
 
 ## Cài đặt
 
-Yêu cầu: Python 3 (phiên bản cụ thể sẽ ghi khi chốt môi trường thực nghiệm).
+Yêu cầu: **Python 3.12** (môi trường CI và môi trường huấn luyện CNN dùng 3.12).
 
 ```bash
 git clone https://github.com/duyxl56785/Project_Dudoanbenhcaycachua.git
@@ -109,7 +96,25 @@ pip install -r requirements.txt
 
 Nếu cần PyTorch bản GPU (CUDA), cài `torch`/`torchvision` theo hướng dẫn tại https://pytorch.org trước khi cài phần còn lại. Trên Google Colab, ghi lại phiên bản thư viện thực tế đã dùng.
 
-Hướng dẫn tải dữ liệu: [data/README.md](data/README.md). Hướng dẫn chạy từng phần: xem các file trong [docs/](docs/).
+### Checkpoint
+
+| File | Có trong Git? | Cách lấy | SHA-256 |
+|---|---|---|---|
+| `checkpoints/cnn_best.pt` | Có | – | `d33c95bbe15e82fa83f1fd954136ebfff6e1cbba1a86fe40af473a377390de1f` |
+| `checkpoints/resnet18_best.pt` (44,8 MB) | Không | Giải nén [gói NV3 trên Drive](https://drive.google.com/file/d/153DOn8zLCiIhnydLoPNDcht3X0EFhKuR/view), đặt `resnet18_best.pt` và `resnet18_best.meta.json` vào `checkpoints/` | `61d44ba8ac02ee57c44cbd3835aaac2c657c97924735fea743a60df5f5fdf9e2` |
+| `results/hog_svm_nv5_experiment/hog_hsv_rbf_svm.joblib` (25 MB) | Không | Xem [CHECKPOINT_HANDOFF.md](results/hog_svm_nv5_experiment/CHECKPOINT_HANDOFF.md); cần scikit-learn 1.6.1 | `d40cf8af63242ebfe8e149eba333419de2c2551999589b7df2d5710db21cfcd5` |
+
+Kiểm tra hash trước khi nạp: `Get-FileHash -Algorithm SHA256 <file>` (PowerShell) hoặc `sha256sum <file>`. Chi tiết: [checkpoints/README.md](checkpoints/README.md).
+
+### Chạy nhanh
+
+```bash
+streamlit run demo/app.py                              # demo (cần checkpoint ở trên)
+python -m demo.check_consistency <anh.jpg> --model both   # đối chiếu demo với script suy luận
+python -m pytest tests -q                              # test; phần cần ảnh/checkpoint sẽ tự skip
+```
+
+Hướng dẫn tải dữ liệu: [data/README.md](data/README.md). Hướng dẫn chạy từng phần: [CNN](docs/CNN_README.md), [ResNet18](docs/RESNET18_README.md), [Demo](docs/DEMO_README.md), [đánh giá NV5](docs/NV5_EVALUATION.md).
 
 ## Quy tắc chung
 
@@ -129,13 +134,13 @@ Hướng dẫn tải dữ liệu: [data/README.md](data/README.md). Hướng d�
 
 ## Tiến độ
 
-Chưa có ngày hạn chính thức; nhóm tự điền theo lịch giảng viên.
+Chưa có ngày hạn chính thức; nhóm tự điền theo lịch giảng viên. Trạng thái cập nhật 15/11/2026 theo bằng chứng trong repo.
 
 | Gate | Nội dung                                   | Chủ trì            | Hạn         | Trạng thái |
 |------|--------------------------------------------|--------------------|-------------|------------|
-| 0    | Thống nhất kho chung, quy tắc, mapping     | NV1, cả nhóm       | (chưa điền) | Chưa làm   |
-| 1    | Chốt dataset, split, transforms            | NV1                | (chưa điền) | Chưa làm   |
-| 2    | Có mô hình huấn luyện (CNN + ResNet18)     | NV2, NV3           | (chưa điền) | Chưa làm   |
-| 3    | Kiểm định thực nghiệm trên Test chung      | NV5                | (chưa điền) | Chưa làm   |
-| 4    | Demo tích hợp mô hình thật                 | NV4                | (chưa điền) | Chưa làm   |
-| 5    | Đóng gói nộp và bảo vệ                     | Cả nhóm            | (chưa điền) | Chưa làm   |
+| 0    | Thống nhất kho chung, quy tắc, mapping     | NV1, cả nhóm       | (chưa điền) | Xong – `configs/class_mapping.json`, PR template, CI |
+| 1    | Chốt dataset, split, transforms            | NV1                | (chưa điền) | Xong phần kỹ thuật (PR #8 đã merge; NV4 xác minh SHA-256 đủ 6.502 ảnh). Còn mục chờ xác nhận ở [DATASET_README §9](docs/DATASET_README.md#9-trạng-thái-bàn-giao) |
+| 2    | Có mô hình huấn luyện (CNN + ResNet18)     | NV2, NV3           | (chưa điền) | Xong – PR #9, PR #7 |
+| 3    | Kiểm định thực nghiệm trên Test chung      | NV5                | (chưa điền) | Xong – [`results/comparison.csv`](results/comparison.csv), PR #18 |
+| 4    | Demo tích hợp mô hình thật                 | NV4                | (chưa điền) | Xong – [audit 14/11](docs/audits/NV4_FINAL_AUDIT_20261114.md); chưa quay video |
+| 5    | Đóng gói nộp và bảo vệ                     | Cả nhóm            | (chưa điền) | Đang làm – video demo, báo cáo/slide bản cuối |

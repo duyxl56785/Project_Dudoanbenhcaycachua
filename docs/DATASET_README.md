@@ -535,12 +535,14 @@ NV3 cần xác nhận:
 - Nhận được bằng chứng NV2 đã kiểm tra dữ liệu và load batch CNN thực tế.
 - Đã xử lý xung đột phạm vi sở hữu `configs/cnn.yaml`.
 
-### Chưa hoàn thành
+- PR #8 đã merge vào `main` (commit `ab65fa7`).
+- NV4 đã chạy độc lập `python -m scripts.check_dataset --data-root data/raw --verify-hashes` trên ZIP SHA-256 `303c7772…7304`: khớp SHA-256 đủ 6.502 ảnh, không chồng lấn path/hash/`group_id` giữa các split ([DEMO_README](DEMO_README.md#dataset-đã-xác-minh-trên-máy-nv4)).
+- CNN (NV2), ResNet18 (NV3), SVM (NV4, NV5) đều huấn luyện và đánh giá trên cùng split 4.115 / 1.031 / 1.356.
 
-- Chưa có log chạy script `--verify-hashes` mới trên toàn bộ ảnh thật tại môi trường NV1.
-- Chưa có log xác nhận Gate 1 độc lập từ NV3 trên ảnh thật.
-- Chưa có phê duyệt cuối cùng từ các reviewer.
-- PR #8 chưa được xác nhận merge.
+### Chưa hoàn thành (cập nhật 15/11/2026)
+
+- Chưa đính kèm log `--verify-hashes` chạy tại môi trường NV1.
+- Chưa có log xác nhận Gate 1 riêng từ NV3 trên ảnh thật (NV3 đã train trên split này nhưng chưa ghi xác nhận Gate 1).
 - Issue #2 chưa được xác nhận đóng.
 
 ### Kết luận
