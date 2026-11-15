@@ -11,7 +11,7 @@ Phạm vi kỹ thuật đã chốt: **phân loại ảnh lá cà chua theo 4 l�
 
 Kèm demo Streamlit để tải ảnh lá và xem dự đoán (có Grad-CAM thử nghiệm). Ngoài hai mô hình chính, nhóm bổ sung hai baseline học máy truyền thống (HOG + SVM) để so sánh. Công nghệ: Python, PyTorch/torchvision, scikit-learn, scikit-image, Streamlit. Dữ liệu: 6.502 ảnh màu từ [PlantVillage](https://huggingface.co/datasets/mohanty/PlantVillage), xem [docs/DATASET_README.md](docs/DATASET_README.md).
 
-> Trạng thái (15/11/2026): **đã tích hợp dữ liệu, hai mô hình chính, hai baseline SVM, demo và đánh giá vào `main`.** Còn lại khâu đóng gói nộp: video demo, bản báo cáo/slide cuối và các mục chưa đóng ở [Tiến độ](#tiến-độ).
+> Trạng thái (15/11/2026): **đã tích hợp dữ liệu, hai mô hình chính, hai baseline SVM, demo và đánh giá vào `main`.** Báo cáo và slide bản nộp cuối nằm trong [`report/deliverables/`](report/deliverables/); demo được trình bày trực tiếp khi bảo vệ, không quay video.
 
 ## Kết quả trên tập Test
 
@@ -142,5 +142,5 @@ Chưa có ngày hạn chính thức; nhóm tự điền theo lịch giảng viê
 | 1    | Chốt dataset, split, transforms            | NV1                | (chưa điền) | Xong – PR #8; xác minh SHA-256 đủ 6.502 ảnh bởi NV4 (14/11) và NV1 (15/11); xem [DATASET_README §9](docs/DATASET_README.md#9-trạng-thái-bàn-giao) |
 | 2    | Có mô hình huấn luyện (CNN + ResNet18)     | NV2, NV3           | (chưa điền) | Xong – PR #9, PR #7 |
 | 3    | Kiểm định thực nghiệm trên Test chung      | NV5                | (chưa điền) | Xong – [`results/comparison.csv`](results/comparison.csv), PR #18 |
-| 4    | Demo tích hợp mô hình thật                 | NV4                | (chưa điền) | Xong – [audit 14/11](docs/audits/NV4_FINAL_AUDIT_20261114.md); chưa quay video |
-| 5    | Đóng gói nộp và bảo vệ                     | Cả nhóm            | (chưa điền) | Đang làm – video demo, báo cáo/slide bản cuối |
+| 4    | Demo tích hợp mô hình thật                 | NV4                | (chưa điền) | Xong – [audit 14/11](docs/audits/NV4_FINAL_AUDIT_20261114.md); demo trình bày trực tiếp |
+| 5    | Đóng gói nộp và bảo vệ                     | Cả nhóm            | (chưa điền) | Xong – báo cáo và slide bản cuối trong `report/deliverables/` |
