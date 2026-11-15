@@ -139,7 +139,7 @@ Chưa có ngày hạn chính thức; nhóm tự điền theo lịch giảng viê
 | Gate | Nội dung                                   | Chủ trì            | Hạn         | Trạng thái |
 |------|--------------------------------------------|--------------------|-------------|------------|
 | 0    | Thống nhất kho chung, quy tắc, mapping     | NV1, cả nhóm       | (chưa điền) | Xong – `configs/class_mapping.json`, PR template, CI |
-| 1    | Chốt dataset, split, transforms            | NV1                | (chưa điền) | Xong phần kỹ thuật (PR #8 đã merge; NV4 xác minh SHA-256 đủ 6.502 ảnh). Còn mục chờ xác nhận ở [DATASET_README §9](docs/DATASET_README.md#9-trạng-thái-bàn-giao) |
+| 1    | Chốt dataset, split, transforms            | NV1                | (chưa điền) | Xong – PR #8; xác minh SHA-256 đủ 6.502 ảnh bởi NV4 (14/11) và NV1 (15/11); xem [DATASET_README §9](docs/DATASET_README.md#9-trạng-thái-bàn-giao) |
 | 2    | Có mô hình huấn luyện (CNN + ResNet18)     | NV2, NV3           | (chưa điền) | Xong – PR #9, PR #7 |
 | 3    | Kiểm định thực nghiệm trên Test chung      | NV5                | (chưa điền) | Xong – [`results/comparison.csv`](results/comparison.csv), PR #18 |
 | 4    | Demo tích hợp mô hình thật                 | NV4                | (chưa điền) | Xong – [audit 14/11](docs/audits/NV4_FINAL_AUDIT_20261114.md); chưa quay video |

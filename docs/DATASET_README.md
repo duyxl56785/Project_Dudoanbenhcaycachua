@@ -516,7 +516,7 @@ NV3 cần xác nhận:
 - [ ] Cung cấp hoặc liên kết đầy đủ log và hình trực quan hóa cần thiết.
 - [ ] NV2 re-review và phê duyệt.
 - [ ] NV3 re-review và phê duyệt.
-- [ ] PR #8 được merge vào `main`.
+- [x] PR #8 được merge vào `main`.
 - [ ] Issue #2 được xác nhận hoàn thành và đóng.
 
 ---
@@ -539,11 +539,11 @@ NV3 cần xác nhận:
 - NV4 đã chạy độc lập `python -m scripts.check_dataset --data-root data/raw --verify-hashes` trên ZIP SHA-256 `303c7772…7304`: khớp SHA-256 đủ 6.502 ảnh, không chồng lấn path/hash/`group_id` giữa các split ([DEMO_README](DEMO_README.md#dataset-đã-xác-minh-trên-máy-nv4)).
 - CNN (NV2), ResNet18 (NV3), SVM (NV4, NV5) đều huấn luyện và đánh giá trên cùng split 4.115 / 1.031 / 1.356.
 
-### Chưa hoàn thành (cập nhật 15/11/2026)
+- NV1 chạy lại `--verify-hashes` trên ảnh thật ngày 15/11/2026: PASS, 6.502/6.502 ảnh ([log](audits/NV1_VERIFY_HASHES_20261115.txt)).
 
-- Chưa đính kèm log `--verify-hashes` chạy tại môi trường NV1.
-- Chưa có log xác nhận Gate 1 riêng từ NV3 trên ảnh thật (NV3 đã train trên split này nhưng chưa ghi xác nhận Gate 1).
-- Issue #2 chưa được xác nhận đóng.
+### Chốt Gate 1 (15/11/2026)
+
+Trưởng nhóm (NV1) chốt Gate 1 dựa trên hai lần xác minh trên ảnh thật: lần độc lập của NV4 (14/11) và lần của NV1 (15/11), cùng việc NV2, NV3, NV4, NV5 đã huấn luyện và đánh giá trên đúng split này. NV3 không ghi xác nhận Gate 1 riêng; ghi chú này thay cho mục đó. Issue #2 được đóng sau khi PR #22 merge.
 
 ### Kết luận
 
