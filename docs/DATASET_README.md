@@ -543,7 +543,7 @@ NV3 cần xác nhận:
 
 ### Chốt Gate 1 (15/11/2026)
 
-Trưởng nhóm (NV1) chốt Gate 1 dựa trên hai lần xác minh trên ảnh thật: lần độc lập của NV4 (14/11) và lần của NV1 (15/11), cùng việc NV2, NV3, NV4, NV5 đã huấn luyện và đánh giá trên đúng split này. NV3 không ghi xác nhận Gate 1 riêng; ghi chú này thay cho mục đó. Issue #2 được đóng sau khi PR #22 merge.
+Trưởng nhóm (NV1) chốt Gate 1 dựa trên hai lần xác minh trên ảnh thật: lần độc lập của NV4 (14/11) và lần của NV1 (15/11), cùng việc NV2, NV3, NV4, NV5 đã huấn luyện và đánh giá trên đúng split này. NV3 đã xác nhận tiếp nhận Gate 1 trong phạm vi dữ liệu dùng cho ResNet18 (split, ánh xạ nhãn, tiền xử lý) ngày 15/11/2026 tại [Issue #2](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/issues/2#issuecomment-6892390446).
 
 ### Kết luận
 
@@ -551,7 +551,7 @@ Phần Dataset & Preprocessing đã có mã nguồn, dữ liệu cố định, t
 
 NV2 đã xác minh dữ liệu và khả năng đọc batch CNN trên ảnh thật.
 
-Tuy nhiên, **Gate 1 chưa được coi là nghiệm thu hoàn tất** cho đến khi các điều kiện review còn lại được giải quyết và PR #8 được phê duyệt, merge.
+PR #8 đã merge ngày 28/10/2026. **Gate 1 được nghiệm thu** ngày 15/11/2026 theo mục "Chốt Gate 1" ở trên.
 
 Không sử dụng kết quả forward pass của mô hình chưa huấn luyện làm bằng chứng Accuracy hoặc chất lượng phân loại bệnh.
 
