@@ -6,7 +6,9 @@
 
 Đánh giá mới xuất schema metrics NV5 cùng SHA-256 checkpoint và cột CSV `split=test`, vẫn giữ các trường legacy. Script từ chối ghi đè kết quả đã tồn tại. Để tái lập có chủ đích, sao chép YAML vào vị trí cục bộ riêng và đặt `output.results_dir` đến thư mục mới; không sửa hoặc ghi đè gói thực nghiệm đã bàn giao. Không cần train lại để kiểm tra tích hợp.
 
-**Trạng thái:** Đã sửa theo review PR #7: factory offline, checkpoint thuần + metadata JSON, dùng chung API NV1. Nhánh NV3 cần tích hợp NV1 PR #8 trước khi chạy luồng dữ liệu. **Chưa có huấn luyện thực nghiệm, checkpoint pretrained đã fine-tune hoặc kết quả Accuracy/F1 thực tế.** Không dùng test giả để báo cáo độ chính xác.
+**Trạng thái hiện tại (15/11/2026):** PR #7 đã merge vào `main`. Checkpoint fine-tuned (epoch 9, Validation macro-F1 0,9809) đạt **Accuracy 98,67%, Macro-F1 0,9840** trên Test 1.356 ảnh ([metrics](../results/resnet18_metrics_nv3_handoff.json)); NV4 strict-load và kiểm tra nhất quán demo PASS ([audit 14/11](audits/NV4_FINAL_AUDIT_20261114.md)). Checkpoint không nằm trong Git, tải theo [checkpoints/README.md](../checkpoints/README.md).
+
+*Trạng thái lịch sử trước khi train (giữ để truy vết):* Đã sửa theo review PR #7: factory offline, checkpoint thuần + metadata JSON, dùng chung API NV1. Nhánh NV3 cần tích hợp NV1 PR #8 trước khi chạy luồng dữ liệu. Khi đó chưa có huấn luyện thực nghiệm hay kết quả Accuracy/F1 thực tế.
 
 ## Cấu trúc
 

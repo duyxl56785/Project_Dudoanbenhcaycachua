@@ -1,0 +1,13 @@
+NV1 – kiểm tra SHA-256 dataset trên máy NV1 (Lê Xuân Bảo)
+Thời điểm: 2026-11-15 15:59 +0700
+Commit code: 1979bb9 (nhánh docs/nv1-final-integration-20261115, nằm trên main f760a26)
+Python: Python 3.10.12 (Linux VM của Claude desktop trên máy NV1, đọc ảnh tại D:\CMC\HocKi5\HocMay\Project_Dudoanbenhcaycachua\data\raw)
+Lệnh: python -m scripts.check_dataset --data-root data/raw --verify-hashes
+Exit code: 0
+--- Output ---
+train: 4115
+val: 1031
+test: 1356
+Manifest/split/group integrity: PASS
+Actual image SHA-256 verification: PASS
+Verified images: 6502

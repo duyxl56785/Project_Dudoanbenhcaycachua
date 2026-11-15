@@ -15,3 +15,13 @@ giá vào đây.
   trên cùng Test. Bản cập nhật có bảng so sánh, biểu đồ Macro-F1, confusion
   matrix và ảnh demo Streamlit có nguồn NV4; chưa thay thế mẫu nộp CMC chính
   thức. Đối chiếu nguồn tại `../RESULTS_TRACEABILITY.md`.
+
+## Bản nộp cuối (15/11/2026)
+
+- `bao_cao_nhom_tomato_final.docx`: báo cáo nộp, gồm CNN, ResNet18 và hai
+  baseline HOG + SVM (NV4, NV5); số liệu khớp `results/comparison.csv`.
+- `slides_bao_cao_cong_viec_final.pptx`: slide báo cáo công việc theo mẫu
+  CMC (1 trang giới thiệu, 5 trang từng thành viên, 1 trang tổng kết). Cột
+  "Tự đánh giá" và "Trưởng nhóm đánh giá" do nhóm điền khi trình bày.
+- Các tệp `*_nv5`, `*_draft_*`, `*_template*` ở trên là bản trung gian, giữ lại
+  để truy vết.

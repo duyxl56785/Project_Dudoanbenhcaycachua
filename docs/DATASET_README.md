@@ -516,7 +516,7 @@ NV3 cần xác nhận:
 - [ ] Cung cấp hoặc liên kết đầy đủ log và hình trực quan hóa cần thiết.
 - [ ] NV2 re-review và phê duyệt.
 - [ ] NV3 re-review và phê duyệt.
-- [ ] PR #8 được merge vào `main`.
+- [x] PR #8 được merge vào `main`.
 - [ ] Issue #2 được xác nhận hoàn thành và đóng.
 
 ---
@@ -535,13 +535,15 @@ NV3 cần xác nhận:
 - Nhận được bằng chứng NV2 đã kiểm tra dữ liệu và load batch CNN thực tế.
 - Đã xử lý xung đột phạm vi sở hữu `configs/cnn.yaml`.
 
-### Chưa hoàn thành
+- PR #8 đã merge vào `main` (commit `ab65fa7`).
+- NV4 đã chạy độc lập `python -m scripts.check_dataset --data-root data/raw --verify-hashes` trên ZIP SHA-256 `303c7772…7304`: khớp SHA-256 đủ 6.502 ảnh, không chồng lấn path/hash/`group_id` giữa các split ([DEMO_README](DEMO_README.md#dataset-đã-xác-minh-trên-máy-nv4)).
+- CNN (NV2), ResNet18 (NV3), SVM (NV4, NV5) đều huấn luyện và đánh giá trên cùng split 4.115 / 1.031 / 1.356.
 
-- Chưa có log chạy script `--verify-hashes` mới trên toàn bộ ảnh thật tại môi trường NV1.
-- Chưa có log xác nhận Gate 1 độc lập từ NV3 trên ảnh thật.
-- Chưa có phê duyệt cuối cùng từ các reviewer.
-- PR #8 chưa được xác nhận merge.
-- Issue #2 chưa được xác nhận đóng.
+- NV1 chạy lại `--verify-hashes` trên ảnh thật ngày 15/11/2026: PASS, 6.502/6.502 ảnh ([log](audits/NV1_VERIFY_HASHES_20261115.txt)).
+
+### Chốt Gate 1 (15/11/2026)
+
+Trưởng nhóm (NV1) chốt Gate 1 dựa trên hai lần xác minh trên ảnh thật: lần độc lập của NV4 (14/11) và lần của NV1 (15/11), cùng việc NV2, NV3, NV4, NV5 đã huấn luyện và đánh giá trên đúng split này. NV3 đã xác nhận tiếp nhận Gate 1 trong phạm vi dữ liệu dùng cho ResNet18 (split, ánh xạ nhãn, tiền xử lý) ngày 15/11/2026 tại [Issue #2](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/issues/2#issuecomment-6892390446).
 
 ### Kết luận
 
@@ -549,7 +551,7 @@ Phần Dataset & Preprocessing đã có mã nguồn, dữ liệu cố định, t
 
 NV2 đã xác minh dữ liệu và khả năng đọc batch CNN trên ảnh thật.
 
-Tuy nhiên, **Gate 1 chưa được coi là nghiệm thu hoàn tất** cho đến khi các điều kiện review còn lại được giải quyết và PR #8 được phê duyệt, merge.
+PR #8 đã merge ngày 28/10/2026. **Gate 1 được nghiệm thu** ngày 15/11/2026 theo mục "Chốt Gate 1" ở trên.
 
 Không sử dụng kết quả forward pass của mô hình chưa huấn luyện làm bằng chứng Accuracy hoặc chất lượng phân loại bệnh.
 
