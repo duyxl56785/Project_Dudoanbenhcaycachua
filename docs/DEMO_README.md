@@ -1,10 +1,12 @@
 # Demo Streamlit – NV4 Nguyễn Minh Duy
 
-## Trạng thái hiện tại: 14/11/2026
+## Trạng thái hiện tại: 21/11/2026
 
 PR #1 (NV4), #7 (ResNet18), #9 (CNN), #16 (HOG + Linear SVM V1) và #19 (V2) **đã merge vào `main`**. Phần từ đây đến các mục nhật ký bên dưới mô tả trạng thái lịch sử tại từng ngày, không phải tình trạng PR hiện nay. Mã CNN và ResNet18 đã có trong `main`; checkpoint CNN 1.571.893 byte nằm trong repository, còn checkpoint ResNet18 fine-tuned 44.794.251 byte phải lấy từ [gói NV3 bàn giao](https://drive.google.com/file/d/153DOn8zLCiIhnydLoPNDcht3X0EFhKuR/view), đặt cạnh metadata tại `checkpoints/`. SHA-256 lần lượt là `d33c95bbe15e82fa83f1fd954136ebfff6e1cbba1a86fe40af473a377390de1f` và `61d44ba8ac02ee57c44cbd3835aaac2c657c97924735fea743a60df5f5fdf9e2`.
 
-NV4 kiểm thử lại từ HEAD `main` `d69b315` trong worktree riêng: `pytest` **122 passed, 6 skipped, 28 subtests passed**; `compileall` và `git diff --check` đạt. Hai checkpoint thật strict-load trên CPU, metadata/transform/mapping khớp. `demo.check_consistency --model both` trên cùng ảnh Bacterial Spot đạt **CNN PASS, ResNet18 PASS, max |delta|=0**. Streamlit khởi động từ `main`, trình duyệt tải hai ảnh thật, xem trước, so sánh cả hai mô hình, hiển thị đủ bốn xác suất, lịch sử bốn lượt và dashboard đúng 2 ảnh/4 lượt. [Báo cáo kiểm toán mới](audits/NV4_FINAL_AUDIT_20261114.md). Chưa có video demo cuối được ghi và xem lại; [kịch bản quay](DEMO_SCRIPT_NV4.md) đã cập nhật.
+NV4 kiểm thử lại từ checkout sạch của `main` tại HEAD `521c873`: toàn bộ suite đạt **130 passed, 7 skipped, 28 subtests passed**; `pip check`, `compileall` và `git diff --check` đều đạt. Riêng HOG V1/V2 đạt **12 passed**. Hai checkpoint CNN/ResNet18 thật strict-load trên CPU, metadata/transform/mapping khớp; `demo.check_consistency --model both` đạt CNN PASS, ResNet18 PASS, `max |delta|=0`. Streamlit đã được kiểm tra trên trình duyệt với hai mô hình thật, ảnh hợp lệ và ảnh lỗi, lịch sử và Dashboard. [Báo cáo kiểm toán](audits/NV4_FINAL_AUDIT_20261114.md) ghi chi tiết phiên nghiệm thu 14/11. Nhóm thống nhất tại commit `03e69f6` ngày 15/11 rằng demo được trình bày trực tiếp khi bảo vệ, không yêu cầu video. Kịch bản hiện dùng cho phần trình bày trực tiếp: [DEMO_SCRIPT_NV4.md](DEMO_SCRIPT_NV4.md).
+
+Workflow HOG/SVM đã được bổ sung kiểm tra trainer, test và artifact V2 tại [PR #24](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/pull/24); GitHub Actions run [44876447437](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/actions/runs/44876447437) thành công. PR đang chờ reviewer.
 
 ## Kiểm thử lại HEAD NV3 ngày 01/11/2026
 
@@ -144,7 +146,7 @@ Giao diện đa ảnh và dashboard sau khi chạy CNN thật: [so sánh đa ả
 
 Kiểm thử lại ngày 28/10/2026 với checkpoint CNN SHA-256 `d33c95bb...f473a377390de1f`: tải ảnh Bacterial Spot và Healthy thật cùng `corrupt.jpg`. Hai ảnh được CNN dự đoán đúng, ảnh hỏng bị từ chối riêng; lịch sử ghi đủ hai lượt thành công và một lượt lỗi, nút CSV tải file thành công, dashboard hiển thị 2 ảnh/2 lượt thành công/1 lỗi. Chọn ResNet18 cho cùng ảnh hiển thị trạng thái thiếu checkpoint, không tạo dự đoán. Xóa lịch sử trong phiên đã xác nhận trạng thái trống. [Preview đa ảnh và lỗi](../demo/screenshots/preview_batch_error_20261028.jpg), [lịch sử và CSV](../demo/screenshots/history_csv_20261028.jpg), [dashboard có lượt lỗi](../demo/screenshots/dashboard_error_20261028.jpg).
 
-**Video demo chưa được quay.** [Kịch bản và danh sách thao tác](DEMO_SCRIPT_NV4.md) đã cập nhật để quay màn hình thật khi nhóm chốt bản trình bày.
+**Trạng thái hiện tại:** nhóm thống nhất demo trực tiếp khi bảo vệ, không yêu cầu video (commit `03e69f6` trên `main`, ngày 15/11/2026). Dùng [kịch bản demo trực tiếp](DEMO_SCRIPT_NV4.md) và các ảnh trình duyệt thật trong `demo/screenshots/`.
 
 Các ảnh dưới đây được chụp trực tiếp từ phiên Streamlit kiểm thử, không phải ảnh dựng. Chúng là bằng chứng hành vi giao diện; số liệu đánh giá tập Test vẫn lấy từ phép kiểm thử tái lập nêu trên.
 
@@ -162,8 +164,8 @@ NV5 có thể dùng phần mô tả chức năng, cách chạy, giới hạn và
 |---|---|---|
 | Giao diện CNN, đa ảnh, lỗi, lịch sử, dashboard | Ảnh thật trong `demo/screenshots/` và bảng kiểm thử trình duyệt ở trên | Minh họa luồng sử dụng và xử lý lỗi; không gọi ảnh demo là phép đánh giá Test toàn tập. |
 | CNN Test Accuracy 0,969764; macro-F1 0,965034 | Checkpoint/metrics PR #9, phép đánh giá lại 1.356 ảnh đã ghi ở trên | Ghi rõ nguồn PR #9 và kết quả NV4 tái lập; NV5 có phép đối chiếu độc lập ở PR #11. |
-| ResNet18 | PR #7 chỉ có mã kiến trúc, chưa có checkpoint fine-tuned | Để trạng thái chờ; không lập bảng so sánh định lượng hoặc gắn ảnh thiếu checkpoint thành kết quả mô hình. |
-| Video | `docs/DEMO_SCRIPT_NV4.md` là kịch bản; hiện chưa có tệp video | Có thể dùng ảnh chụp thật; chưa ghi “đã quay video”. |
+| ResNet18 | Checkpoint fine-tuned và metadata NV3, SHA-256 `61d44ba8ac02ee57c44cbd3835aaac2c657c97924735fea743a60df5f5fdf9e2` | Tải từ gói NV3, đặt vào `checkpoints/`, xác minh hash trước khi chạy trên máy mới. |
+| Demo bảo vệ | Nhóm thống nhất trình bày trực tiếp, không yêu cầu video; ảnh thật trong `demo/screenshots/` | Dùng kịch bản `docs/DEMO_SCRIPT_NV4.md` và trình bày ứng dụng trực tiếp. |
 
 Workflow `.github/workflows/nv4-demo-ci.yml` chỉ chạy khi PR có head `feature/nv4-demo` và thay đổi file NV4. Nó chạy `compileall` và `pytest tests -q` trên CPU với checkout sạch, không cần ảnh dataset, checkpoint hay GPU. Kiểm thử cục bộ trên checkout sạch đạt **34 passed, 19 subtests passed**; trạng thái GitHub Actions phải kiểm tra riêng sau mỗi push.
 

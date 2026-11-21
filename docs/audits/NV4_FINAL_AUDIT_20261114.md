@@ -27,8 +27,17 @@ V2 là cải tiến của NV4 trên Validation, không ghi đè V1. Checkpoint `
 
 Tính lại Test CSV 1.356 ảnh: **1.073 đúng / 283 sai**, Accuracy `0.7912979351`, macro-Precision `0.7489017157`, macro-Recall `0.7422376690`, macro-F1 `0.7358757841`; confusion matrix `[[313,4,9,4],[40,67,69,39],[4,26,320,25],[17,25,21,373]]`. V1 đã xem Test trước khi phát triển V2; V2 chọn tham số bằng Validation nhưng Test không còn là holdout hoàn toàn độc lập cho quá trình phát triển chung. Chi tiết trong [`results/hog_svm_v2/README.md`](../../results/hog_svm_v2/README.md).
 
-## Việc còn lại
+## Việc còn lại tại thời điểm kiểm toán 14/11/2026
 
 1. Quay video demo liên tục từ `main`, mở xem lại tệp thật rồi bàn giao cho NV5; dùng [kịch bản](../DEMO_SCRIPT_NV4.md). Issue #5 tiếp tục mở cho mục này.
 2. Khi triển khai trên máy sạch, tải checkpoint ResNet18 và metadata NV3, xác minh SHA-256, cài dependencies rồi chạy lại test/demo. Lần này đã dùng checkout mã sạch nhưng môi trường Python sẵn có.
 3. NV5/Cường xử lý artifact PR #18 theo yêu cầu trưởng nhóm; trưởng nhóm review và quyết định merge. Không gán kết quả RBF-SVM cho mô hình Linear SVM của NV4.
+
+## Cập nhật trạng thái ngày 21/11/2026
+
+- Nhóm đã chốt tại commit `03e69f6` trên `main` ngày 15/11 rằng demo được trình bày trực tiếp khi bảo vệ, không yêu cầu video. Vì vậy, mục video trong Issue #5 không còn là điều kiện nghiệm thu; Issue #5 đã đóng sau khi đối chiếu quyết định này và các bằng chứng tích hợp. Kịch bản được chuyển thành hướng dẫn demo trực tiếp.
+- HOG + Linear SVM V1/V2 đã merge qua PR #16/#19; PR #19 có review APPROVED. NV5 đã đưa V2 vào phần thực nghiệm bổ sung trong báo cáo hậu-merge PR #21, ghi rõ giới hạn do Test V1 đã được xem trước khi phát triển V2.
+- PR #18 (đánh giá chung NV5) và PR #21 (bản tổng hợp hậu-merge) đã merge vào `main`; báo cáo/slide bản nộp cuối được lưu trong `report/deliverables/`.
+- Trên checkout sạch từ `main` HEAD `521c873`, `python -m pytest tests -q` đạt **130 passed, 7 skipped, 28 subtests passed**; `pip check`, `compileall` và `git diff --check` đạt. Riêng HOG V1/V2: **12 passed**.
+- Rà soát phát hiện workflow HOG/SVM trước đó chỉ theo dõi V1. Đã bổ sung V2 trainer, test và artifact vào workflow tại [PR #24](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/pull/24). GitHub Actions [run 44876447437](https://github.com/duyxl56785/Project_Dudoanbenhcaycachua/actions/runs/44876447437) SUCCESS; PR #24 đang chờ reviewer.
+- Issue NV4 #5 (demo) và #15 (HOG + Linear SVM) đã đóng sau khi ghi nhận các bằng chứng và phạm vi đã hoàn thành. PR #24 theo dõi riêng phần tăng coverage CI.
