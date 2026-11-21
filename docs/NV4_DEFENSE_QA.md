@@ -17,8 +17,8 @@
 5. **Ảnh đi qua những bước nào?** Kiểm tra ảnh → RGB → resize/crop/normalize → mô hình → softmax bốn lớp → hiển thị.
 6. **Vì sao hai model có xác suất khác nhau?** Kiến trúc và trọng số học khác nhau; mỗi model tạo logits riêng, dù có thể cùng nhãn top-1.
 7. **HOG là gì?** Vector mô tả hướng cạnh và hình dạng lá; V1 có 1.764 chiều.
-8. **Vì sao chọn `C=0.01`?** Nó cho macro-F1 Validation tốt nhất trong sáu cấu hình V1 đã thử; không chọn bằng Test.
-9. **Kết quả SVM V1?** 1.002/1.356 ảnh Test đúng, Accuracy 73,89%, macro-F1 69,40%; log fit 18,12 giây.
-10. **Chứng minh đã test thế nào?** Mở PR #1/#16/#19, CSV dự đoán và log; chạy `python -m pytest -q`, `python -m demo.check_consistency <ảnh> --model both`, rồi demo ảnh thật trên Streamlit. Báo cáo mới nhất: 122 pass, 6 skip, 28 subtests từ `main`.
+8. **Vì sao chọn `C=0.01`?** Đây là cấu hình có macro-F1 Validation cao nhất trong sáu lượt thử V1; không chọn bằng Test. V2 được chọn riêng bằng Validation với `C=0.001`, `class_weight=balanced`.
+9. **Kết quả SVM V1 và V2?** V1 đúng 1.002/1.356, Accuracy 73,89%, macro-F1 69,40%. V2 đúng 1.073/1.356, Accuracy 79,13%, macro-F1 73,59%; V2 là thực nghiệm bổ sung vì Test V1 đã được xem trước đó.
+10. **Chứng minh đã test thế nào?** Mở PR #1/#16/#19, CSV dự đoán và log; chạy `python -m pytest -q`, `python -m demo.check_consistency <ảnh> --model both`, rồi demo ảnh thật trên Streamlit. Kiểm tra checkout sạch ngày 21/11: 130 passed, 7 skipped, 28 subtests; riêng HOG V1/V2 có 12 passed.
 
-**Hạn chế và bước tiếp:** cần checkpoint ResNet18 bàn giao ngoài Git khi chạy máy mới, video demo cuối chưa được quay/xem lại, và cần thử thêm ảnh thực tế ngoài PlantVillage. [Báo cáo kiểm toán](audits/NV4_FINAL_AUDIT_20261114.md) ghi đầy đủ hash, confusion matrix và trạng thái GitHub.
+**Hạn chế:** khi chạy trên máy mới, cần lấy checkpoint ResNet18 từ gói bàn giao NV3 và xác minh SHA-256. Nhóm thống nhất trình bày demo trực tiếp khi bảo vệ, không yêu cầu video. Kết quả PlantVillage chưa thay thế kiểm định trên ảnh thực tế ngoài đồng ruộng. [Báo cáo kiểm toán](audits/NV4_FINAL_AUDIT_20261114.md) ghi hash và confusion matrix.
